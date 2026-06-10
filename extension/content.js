@@ -6,7 +6,9 @@
   const IGNORED_INPUT_TYPES = new Set(["password", "file", "checkbox", "radio", "hidden"]);
   const PAYMENT_FIELD_PATTERN = /\b(cc-|cc_|card|credit|cvc|cvv|expiry|expiration|iban|payment)\b/i;
   const BUTTON_EDGE_OFFSET = 8;
-  const MAX_RECORDING_MS = 5000;
+  const DEFAULT_RECORDING_DURATION_MS = 5000;
+  const MIN_RECORDING_DURATION_MS = 1000;
+  const MAX_RECORDING_DURATION_MS = 30000;
   const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
   const TRANSCRIPTION_RESPONSE_TIMEOUT_MS = 55000;
 
@@ -460,6 +462,19 @@
     return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
   }
 
+  async function getRecordingDurationMs() {
+    const settings = await chrome.storage.local.get({
+      recordingDurationMs: DEFAULT_RECORDING_DURATION_MS,
+    });
+    const duration = Number(settings.recordingDurationMs);
+
+    if (!Number.isFinite(duration)) {
+      return DEFAULT_RECORDING_DURATION_MS;
+    }
+
+    return Math.min(MAX_RECORDING_DURATION_MS, Math.max(MIN_RECORDING_DURATION_MS, Math.round(duration)));
+  }
+
   async function startRecording() {
     const field = isSupportedField(activeField) ? activeField : getCurrentEditableField();
 
@@ -478,6 +493,7 @@
     setMicButtonState("requesting", "Requesting microphone access");
 
     try {
+      const recordingDurationMs = await getRecordingDurationMs();
       recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mimeType = pickSupportedMimeType();
       const options = {
@@ -500,7 +516,7 @@
 
       recordingTimeoutId = window.setTimeout(() => {
         stopRecording();
-      }, MAX_RECORDING_MS);
+      }, recordingDurationMs);
     } catch (_error) {
       clearRecordingResources();
       flashMicButtonState("error", "Microphone access failed");

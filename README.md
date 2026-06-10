@@ -66,6 +66,7 @@ Extension setup:
 3. Click Load unpacked.
 4. Select the `extension/` folder.
 5. Reload any test page after loading or reloading the extension.
+6. Open the extension popup to adjust the backend URL or recording limit if needed.
 
 QA page:
 
@@ -107,6 +108,7 @@ node --check extension/popup.js
 - `503`: `XAI_API_KEY` is missing or not loaded by the backend.
 - Extension stuck on `Transcribing`: reload the extension in `chrome://extensions`, refresh the page, and retry with a short recording.
 - Mic button does not appear: reload the page after loading the extension and focus a supported non-sensitive field.
+- Custom backend URL does not work: use `http://127.0.0.1`, `http://localhost`, or an HTTPS URL. The extension never accepts an xAI URL or xAI API key.
 
 ## Commit Readiness
 

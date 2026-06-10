@@ -1,5 +1,5 @@
 const TRANSCRIBE_AUDIO_MESSAGE = "VOICE_DICTATION_TRANSCRIBE_AUDIO";
-const TRANSCRIBE_ENDPOINT = "http://127.0.0.1:8000/api/transcribe";
+const DEFAULT_BACKEND_URL = "http://127.0.0.1:8000/api/transcribe";
 const TRANSCRIBE_TIMEOUT_MS = 45000;
 const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
 
@@ -44,6 +44,29 @@ function getFriendlyBackendError(status, detail) {
   return "Backend transcription request failed.";
 }
 
+function getStoredSettings() {
+  return chrome.storage.local.get({
+    backendUrl: DEFAULT_BACKEND_URL,
+  });
+}
+
+function normalizeBackendUrl(value) {
+  try {
+    const url = new URL(value || DEFAULT_BACKEND_URL);
+    const isLocalHttp = url.protocol === "http:" && ["127.0.0.1", "localhost"].includes(url.hostname);
+    const isHttps = url.protocol === "https:";
+    const isXaiHost = url.hostname === "x.ai" || url.hostname.endsWith(".x.ai");
+
+    if ((!isLocalHttp && !isHttps) || isXaiHost) {
+      return DEFAULT_BACKEND_URL;
+    }
+
+    return url.toString();
+  } catch (_error) {
+    return DEFAULT_BACKEND_URL;
+  }
+}
+
 async function transcribeAudio(message) {
   if (typeof message.audioDataUrl !== "string" || message.audioDataUrl.length === 0) {
     return {
@@ -71,6 +94,8 @@ async function transcribeAudio(message) {
   const formData = new FormData();
   const extension = audio.mimeType.includes("mp4") ? "mp4" : "webm";
   formData.append("file", audio.blob, `recording.${extension}`);
+  const settings = await getStoredSettings();
+  const endpoint = normalizeBackendUrl(settings.backendUrl);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
     controller.abort();
@@ -79,7 +104,7 @@ async function transcribeAudio(message) {
   let response;
 
   try {
-    response = await fetch(TRANSCRIBE_ENDPOINT, {
+    response = await fetch(endpoint, {
       method: "POST",
       body: formData,
       signal: controller.signal,

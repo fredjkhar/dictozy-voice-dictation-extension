@@ -26,10 +26,35 @@
         line-height: 1.4;
       }
 
+      form {
+        display: grid;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      label {
+        display: grid;
+        gap: 5px;
+        color: #374151;
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      input {
+        min-height: 32px;
+        box-sizing: border-box;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 6px 8px;
+        color: #111827;
+        font: inherit;
+        font-size: 12px;
+      }
+
       button {
         width: 100%;
         min-height: 36px;
-        margin-top: 14px;
+        margin-top: 10px;
         border: 1px solid #1f2937;
         border-radius: 6px;
         background: #1f2937;
@@ -55,6 +80,17 @@
   <body>
     <h1>Voice Dictation</h1>
     <p>Focus a supported text field, then use the page Mic button or this test control.</p>
+    <form id="settingsForm">
+      <label>
+        Backend URL
+        <input id="backendUrl" type="url" autocomplete="off" spellcheck="false">
+      </label>
+      <label>
+        Recording limit, seconds
+        <input id="recordingDurationSeconds" type="number" min="1" max="30" step="1">
+      </label>
+    </form>
+    <button id="saveSettings" type="button">Save Settings</button>
     <button id="insertFakeText" type="button">Insert Test Text</button>
     <p id="status" aria-live="polite"></p>
     <script src="popup.js"></script>

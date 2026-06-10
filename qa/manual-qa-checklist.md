@@ -15,11 +15,14 @@ Use this checklist after backend or extension changes.
 ## Extension
 
 - The unpacked extension loads without errors in `chrome://extensions`.
+- Popup settings persist after closing and reopening the popup.
+- Backend URL defaults to `http://127.0.0.1:8000/api/transcribe`.
+- Recording limit defaults to 5 seconds and clamps to the allowed range.
 - The Mic button appears on supported fields only.
 - The Mic button does not appear on password, payment, hidden, readonly, disabled, checkbox, radio, or file inputs.
 - Clicking Mic requests microphone permission only after the user clicks.
 - The user can stop recording immediately with the Stop button.
-- Recording auto-stops after the short safety cap currently set in `extension/content.js`.
+- Recording auto-stops after the configured popup recording limit.
 - The extension shows recording and transcribing status.
 - Short recordings should move from Stop to Transcribing quickly; long pauses here suggest extension message-passing or backend latency.
 - Transcribing must recover to success or an error message; it should not remain stuck indefinitely.
