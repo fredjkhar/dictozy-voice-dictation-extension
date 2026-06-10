@@ -141,6 +141,16 @@
           <span>role textbox</span>
           <div role="textbox" tabindex="0" contenteditable="true">Place cursor here and dictate.</div>
         </div>
+        <div class="field-group">
+          <span>Nested contenteditable</span>
+          <div contenteditable="true">
+            <p>Nested paragraph editor. Place cursor here and dictate.</p>
+          </div>
+        </div>
+        <div class="field-group">
+          <span>Shadow DOM text input</span>
+          <shadow-text-input></shadow-text-input>
+        </div>
       </div>
     </section>
 
@@ -200,6 +210,28 @@
 
       document.addEventListener("input", writeLog, true);
       document.addEventListener("change", writeLog, true);
+
+      customElements.define("shadow-text-input", class extends HTMLElement {
+        connectedCallback() {
+          const root = this.attachShadow({ mode: "open" });
+          root.innerHTML = `
+            <style>
+              input {
+                width: 100%;
+                box-sizing: border-box;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                background: #ffffff;
+                color: #111827;
+                font: inherit;
+                min-height: 40px;
+                padding: 9px 10px;
+              }
+            </style>
+            <input type="text" placeholder="Shadow DOM input">
+          `;
+        }
+      });
     </script>
   </body>
 </html>

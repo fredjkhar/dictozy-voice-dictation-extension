@@ -31,6 +31,30 @@
     return target.closest('[contenteditable="true"], [role="textbox"]');
   }
 
+  function getEditableFieldFromEvent(event) {
+    const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+
+    for (const target of path) {
+      const field = getEditableField(target);
+
+      if (field) {
+        return field;
+      }
+    }
+
+    return getEditableField(event.target);
+  }
+
+  function getCurrentEditableField() {
+    const focused = document.activeElement;
+
+    if (focused?.shadowRoot?.activeElement) {
+      return getEditableField(focused.shadowRoot.activeElement);
+    }
+
+    return getEditableField(focused);
+  }
+
   function hasPaymentSignal(element) {
     const values = [
       element.getAttribute("autocomplete"),
@@ -38,6 +62,7 @@
       element.getAttribute("id"),
       element.getAttribute("aria-label"),
       element.getAttribute("placeholder"),
+      element.getAttribute("inputmode"),
     ];
 
     return values.some((value) => value && PAYMENT_FIELD_PATTERN.test(value));
@@ -78,6 +103,7 @@
 
     if (element.matches('[contenteditable="true"], [role="textbox"]')) {
       return (
+        element.isContentEditable &&
         element.getAttribute("aria-disabled") !== "true" &&
         element.getAttribute("aria-readonly") !== "true"
       );
@@ -211,7 +237,7 @@
   }
 
   function updateMicButton() {
-    const field = isSupportedField(activeField) ? activeField : getEditableField(document.activeElement);
+    const field = isSupportedField(activeField) ? activeField : getCurrentEditableField();
 
     if (!isSupportedField(field)) {
       hideMicButton();
@@ -248,7 +274,7 @@
       return;
     }
 
-    const field = getEditableField(event.target);
+    const field = getEditableFieldFromEvent(event);
 
     if (isSupportedField(field)) {
       activeField = field;
@@ -276,8 +302,24 @@
   }
 
   function dispatchInputEvents(element) {
-    element.dispatchEvent(new Event("input", { bubbles: true }));
+    element.dispatchEvent(new InputEvent("input", {
+      bubbles: true,
+      composed: true,
+      inputType: "insertText",
+    }));
     element.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  function setNativeFieldValue(element, value) {
+    const prototype = Object.getPrototypeOf(element);
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
+
+    if (descriptor?.set) {
+      descriptor.set.call(element, value);
+      return;
+    }
+
+    element.value = value;
   }
 
   function insertIntoFormField(element, text) {
@@ -289,9 +331,37 @@
     const nextText = `${separator}${text}`;
     const nextPosition = start + nextText.length;
 
-    element.value = `${before}${nextText}${after}`;
+    element.dispatchEvent(new InputEvent("beforeinput", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      data: nextText,
+      inputType: "insertText",
+    }));
+    setNativeFieldValue(element, `${before}${nextText}${after}`);
     element.setSelectionRange(nextPosition, nextPosition);
     dispatchInputEvents(element);
+  }
+
+  function getRichTextInsertionRange(element) {
+    if (activeTextRange && element.contains(activeTextRange.commonAncestorContainer)) {
+      return activeTextRange.cloneRange();
+    }
+
+    const selection = window.getSelection();
+
+    if (selection?.rangeCount) {
+      const range = selection.getRangeAt(0);
+
+      if (element.contains(range.commonAncestorContainer)) {
+        return range.cloneRange();
+      }
+    }
+
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    return range;
   }
 
   function insertIntoRichTextField(element, text) {
@@ -303,18 +373,34 @@
     }
 
     selection.removeAllRanges();
-
-    if (activeTextRange && element.contains(activeTextRange.commonAncestorContainer)) {
-      selection.addRange(activeTextRange);
-    } else {
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      range.collapse(false);
-      selection.addRange(range);
-    }
+    selection.addRange(getRichTextInsertionRange(element));
 
     const range = selection.getRangeAt(0);
-    const prefix = range.startOffset > 0 ? " " : "";
+    const prefix = range.collapsed && range.startOffset > 0 ? " " : "";
+    const insertedText = `${prefix}${text}`;
+    const beforeInputEvent = new InputEvent("beforeinput", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      data: insertedText,
+      inputType: "insertText",
+    });
+
+    if (!element.dispatchEvent(beforeInputEvent)) {
+      return;
+    }
+
+    if (document.queryCommandSupported?.("insertText")) {
+      selection.removeAllRanges();
+      selection.addRange(range);
+
+      if (document.execCommand("insertText", false, insertedText)) {
+        rememberTextRange();
+        dispatchInputEvents(element);
+        return;
+      }
+    }
+
     const textNode = document.createTextNode(`${prefix}${text}`);
 
     range.deleteContents();
@@ -329,7 +415,7 @@
   }
 
   function insertFakeText(text = FALLBACK_TRANSCRIPT) {
-    const field = isSupportedField(activeField) ? activeField : getEditableField(document.activeElement);
+    const field = isSupportedField(activeField) ? activeField : getCurrentEditableField();
 
     if (!isSupportedField(field)) {
       return {
@@ -375,7 +461,7 @@
   }
 
   async function startRecording() {
-    const field = isSupportedField(activeField) ? activeField : getEditableField(document.activeElement);
+    const field = isSupportedField(activeField) ? activeField : getCurrentEditableField();
 
     if (!isSupportedField(field)) {
       flashMicButtonState("error", "Focus a supported field");

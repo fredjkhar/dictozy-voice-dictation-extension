@@ -48,7 +48,7 @@ Extension setup:
 8. Click the Mic button.
 9. Allow microphone access if Chrome prompts.
 10. Confirm the button changes to Stop and a recording status appears.
-11. Click Stop, or wait for the short recording limit.
+11. Click Stop, or wait for the short recording limit. The current safety cap is set in `content.js` so recording cannot continue indefinitely.
 12. Confirm a transcribing status appears.
 13. Confirm the backend transcript is inserted into the focused field.
 

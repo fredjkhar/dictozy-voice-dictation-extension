@@ -19,12 +19,16 @@ Use this checklist after backend or extension changes.
 - The Mic button does not appear on password, payment, hidden, readonly, disabled, checkbox, radio, or file inputs.
 - Clicking Mic requests microphone permission only after the user clicks.
 - The user can stop recording immediately with the Stop button.
+- Recording auto-stops after the short safety cap currently set in `extension/content.js`.
 - The extension shows recording and transcribing status.
 - Short recordings should move from Stop to Transcribing quickly; long pauses here suggest extension message-passing or backend latency.
 - Transcribing must recover to success or an error message; it should not remain stuck indefinitely.
 - A successful transcript is inserted into the focused field.
 - Inserted text dispatches `input` and `change` events.
 - Focus returns to the active field after insertion.
+- React-style controlled inputs should retain inserted text after blur or subsequent typing.
+- Nested `contenteditable` fields should insert at the cursor rather than always appending.
+- Shadow DOM inputs on the local QA page should show the Mic button and accept inserted text.
 - xAI API keys never appear in extension files, browser console output, or network calls from the page.
 
 ## Local Test Page
