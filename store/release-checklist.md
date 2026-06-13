@@ -24,8 +24,8 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 - [ ] Use the single-purpose statement and accurate copy in `listing.md`.
 - [ ] Choose Productivity and English unless the release plan changes.
 - [ ] Upload the existing 128x128 store icon.
-- [ ] Create at least one accurate 1280x800 screenshot showing a real supported field, visible Mic state, and inserted transcript.
-- [ ] Create the required 440x280 small promotional tile.
+- [ ] Review `assets/screenshot-dictation-1280x800.png` and `assets/screenshot-settings-1280x800.png` at full size.
+- [ ] Review the required `assets/promo-small-440x280.png` tile at full size.
 - [ ] Add other assets only when they accurately represent the shipped extension.
 - [ ] Do not claim real-time streaming, offline transcription, grammar correction, accounts, or other unimplemented features.
 - [ ] Set Homepage and Support URLs to the public GitHub repository and issue tracker.
@@ -73,6 +73,12 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 - [ ] Inspect extension network activity and confirm audio goes only to the configured FastAPI backend.
 - [ ] Confirm the xAI key is absent from the ZIP, repository status, browser storage, and browser network requests.
 - [ ] Keep the Developer Dashboard item in draft until a separate submission phase is explicitly approved.
+
+Validate the visual assets before using the checklist:
+
+```bash
+python3 scripts/validate_store_assets.py
+```
 
 ## Official References
 

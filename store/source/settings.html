@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Voice Dictation Settings Store Screenshot</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+      body {
+        position: relative;
+        display: grid;
+        width: 1280px;
+        height: 800px;
+        place-items: center;
+        background: #e6eff1;
+      }
+
+      .page {
+        position: relative;
+        padding: 52px 64px;
+        background: #ffffff;
+      }
+
+      .page h1 {
+        margin: 8px 0 14px;
+        color: #102f38;
+        font-size: 38px;
+        font-weight: 720;
+        letter-spacing: 0;
+      }
+
+      .page p {
+        width: 570px;
+        color: #647980;
+        font-size: 16px;
+        line-height: 1.55;
+      }
+
+      .sample-fields {
+        display: grid;
+        width: 600px;
+        gap: 20px;
+        margin-top: 34px;
+      }
+
+      .sample-field {
+        height: 62px;
+        border: 1px solid #cbd8dc;
+        border-radius: 7px;
+        padding: 19px 18px;
+        color: #86989d;
+        font-size: 15px;
+      }
+
+      .popup {
+        position: absolute;
+        top: 28px;
+        right: 34px;
+        width: 292px;
+        padding: 18px;
+        border: 1px solid #aebdc2;
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow: 0 22px 50px rgb(15 42 50 / 22%);
+      }
+
+      .popup-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .popup-brand img {
+        width: 32px;
+        height: 32px;
+      }
+
+      .popup h2 {
+        margin: 0;
+        color: #1f2937;
+        font-size: 18px;
+        font-weight: 650;
+      }
+
+      .popup > p {
+        width: auto;
+        margin: 0;
+        color: #4b5563;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .popup label {
+        display: grid;
+        gap: 5px;
+        margin-top: 12px;
+        color: #374151;
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .popup input {
+        width: 100%;
+        min-height: 32px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 6px 8px;
+        color: #111827;
+        font: 12px/1.3 inherit;
+      }
+
+      .popup button {
+        width: 100%;
+        min-height: 36px;
+        margin-top: 10px;
+        border: 1px solid #1f2937;
+        border-radius: 6px;
+        background: #1f2937;
+        color: #ffffff;
+        font: 600 13px/1 inherit;
+      }
+
+      .popup button.secondary {
+        margin-top: 8px;
+        border-color: #64748b;
+        background: #ffffff;
+        color: #1f2937;
+      }
+
+      .status {
+        margin-top: 10px !important;
+        color: #047857 !important;
+        font-weight: 700;
+      }
+
+      .callout {
+        position: absolute;
+        right: 370px;
+        bottom: 84px;
+        width: 250px;
+        padding-left: 18px;
+        border-left: 3px solid #0a9aa6;
+        color: #536b72;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="store-caption">
+      <img src="../../extension/icons/icon-128.png" alt="">
+      Voice Dictation Browser Extension
+    </div>
+    <main class="browser">
+      <header class="browser-bar">
+        <div class="window-controls"><span></span><span></span><span></span></div>
+        <div class="address-bar">https://example.com/form</div>
+        <img class="extension-mark" src="../../extension/icons/icon-128.png" alt="">
+      </header>
+      <section class="page">
+        <div class="eyebrow">Settings</div>
+        <h1>Connected to your secure backend.</h1>
+        <p>The popup keeps the production endpoint and recording limit visible, while the xAI API key stays entirely on the backend.</p>
+        <div class="sample-fields">
+          <div class="sample-field">Name</div>
+          <div class="sample-field">Write a short message...</div>
+          <div class="sample-field">Search</div>
+        </div>
+        <div class="callout">The health check verifies connectivity without recording or uploading audio.</div>
+        <aside class="popup">
+          <div class="popup-brand">
+            <img src="../../extension/icons/icon-128.png" alt="">
+            <h2>Voice Dictation</h2>
+          </div>
+          <p>Focus a supported text field, then use the page Mic button.</p>
+          <label>Backend URL
+            <input value="https://voice-dictation-extension.onrender.com/api/transcribe" readonly>
+          </label>
+          <label>Recording limit, seconds
+            <input value="5" readonly>
+          </label>
+          <button type="button">Save Settings</button>
+          <button class="secondary" type="button">Test Backend</button>
+          <p class="status">Backend is reachable.</p>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Voice Dictation Store Screenshot</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="../../extension/content.css">
+    <style>
+      body {
+        position: relative;
+        display: grid;
+        width: 1280px;
+        height: 800px;
+        place-items: center;
+        background: linear-gradient(120deg, #d8eef0 0%, #f7faf8 48%, #e6edf2 100%);
+      }
+
+      .page {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+      }
+
+      .sidebar {
+        padding: 34px 26px;
+        border-right: 1px solid #dce5e8;
+        background: #f5f8f8;
+      }
+
+      .sidebar strong {
+        display: block;
+        margin-bottom: 30px;
+        color: #153a43;
+        font-size: 20px;
+      }
+
+      .sidebar div {
+        margin: 14px 0;
+        color: #647980;
+        font-size: 14px;
+      }
+
+      .sidebar .active {
+        color: #087f8c;
+        font-weight: 700;
+      }
+
+      .workspace {
+        padding: 54px 72px;
+      }
+
+      h1 {
+        max-width: 600px;
+        margin: 8px 0 14px;
+        color: #102f38;
+        font-size: 38px;
+        font-weight: 720;
+        letter-spacing: 0;
+        line-height: 1.12;
+      }
+
+      .intro {
+        max-width: 610px;
+        margin: 0 0 34px;
+        color: #62777e;
+        font-size: 16px;
+        line-height: 1.55;
+      }
+
+      .field-label {
+        display: block;
+        margin-bottom: 9px;
+        color: #23434c;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .field-wrap {
+        position: relative;
+        width: 690px;
+      }
+
+      textarea {
+        width: 100%;
+        height: 180px;
+        resize: none;
+        border: 2px solid #0795a3;
+        border-radius: 8px;
+        padding: 20px 72px 20px 20px;
+        background: #ffffff;
+        box-shadow: 0 0 0 4px rgb(7 149 163 / 12%);
+        color: #16363f;
+        font: 500 18px/1.55 inherit;
+        outline: none;
+      }
+
+      .voice-dictation-mic-button {
+        position: absolute;
+        top: 20px;
+        right: 18px;
+        left: auto;
+      }
+
+      .voice-dictation-status {
+        position: absolute;
+        top: 66px;
+        right: 18px;
+        left: auto;
+        background: #047857;
+      }
+
+      .privacy-note {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-top: 20px;
+        color: #60757c;
+        font-size: 13px;
+      }
+
+      .privacy-note span {
+        display: inline-grid;
+        width: 20px;
+        height: 20px;
+        place-items: center;
+        border-radius: 50%;
+        background: #dcefee;
+        color: #087f8c;
+        font-weight: 800;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="store-caption">
+      <img src="../../extension/icons/icon-128.png" alt="">
+      Voice Dictation Browser Extension
+    </div>
+    <main class="browser">
+      <header class="browser-bar">
+        <div class="window-controls"><span></span><span></span><span></span></div>
+        <div class="address-bar">https://example.com/compose</div>
+        <img class="extension-mark" src="../../extension/icons/icon-128.png" alt="">
+      </header>
+      <div class="page">
+        <aside class="sidebar">
+          <strong>Workspace</strong>
+          <div class="active">New message</div>
+          <div>Drafts</div>
+          <div>Sent</div>
+          <div>Archive</div>
+        </aside>
+        <section class="workspace">
+          <div class="eyebrow">New message</div>
+          <h1>Speak naturally. Keep writing.</h1>
+          <p class="intro">Voice Dictation places a small microphone control beside supported text fields and inserts the returned transcript where you are typing.</p>
+          <label class="field-label" for="message">Message</label>
+          <div class="field-wrap">
+            <textarea id="message" readonly>Meeting moved to Thursday at 10 AM. Please send the updated agenda.</textarea>
+            <button class="voice-dictation-mic-button voice-dictation-mic-button--success" type="button">Mic</button>
+            <div class="voice-dictation-status">Transcript inserted</div>
+          </div>
+          <div class="privacy-note"><span>✓</span> Recording starts only when you click Mic.</div>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

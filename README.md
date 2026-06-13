@@ -110,6 +110,12 @@ Validate and create the Chrome Web Store draft ZIP:
 python3 scripts/package_extension.py
 ```
 
+Validate the Chrome Web Store visual assets:
+
+```bash
+python3 scripts/validate_store_assets.py
+```
+
 ## Troubleshooting
 
 - `502 Bad Gateway`: FastAPI reached xAI but xAI failed or rejected the request. Check backend logs for `xAI STT` warning lines.

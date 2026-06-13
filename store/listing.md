@@ -1,4 +1,4 @@
-# Chrome Web Store Listing Draft
+# Chrome Web Store Listing Copy
 
 ## Product Details
 
@@ -8,19 +8,41 @@ Category: Productivity
 
 Language: English
 
-Short description:
+Short description, 97 characters:
 
 > Dictate text into supported web fields using your microphone and a secure speech-to-text backend.
 
 Detailed description:
 
-> Voice Dictation adds a small microphone control beside supported text fields. Click Mic, speak a short phrase, stop recording, and the returned transcript is inserted into the field you selected.
+> Dictate into supported text fields on HTTPS websites without leaving the page.
 >
-> Recording begins only after an explicit click and can be stopped immediately. The extension ignores password, payment, hidden, disabled, readonly, file, checkbox, and radio fields.
+> Focus a text field, click the visible Mic button, speak a short phrase, and stop recording. Voice Dictation sends the recording to its secure speech-to-text backend and inserts the returned transcript where you were typing.
 >
-> Audio is sent over HTTPS to the Voice Dictation backend and processed by xAI Speech-to-Text. The xAI API key remains on the backend and is never included in the extension.
+> Privacy and control:
+> - Recording starts only after you click Mic.
+> - You can stop recording immediately.
+> - Password, payment, hidden, disabled, readonly, file, checkbox, and radio fields are ignored.
+> - Raw audio and transcripts are not intentionally stored by the extension or backend application.
+> - The xAI API key remains on the backend and is never included in the extension.
 >
-> The MVP has no accounts, payments, advertising, background recording, or real-time streaming.
+> Audio is sent over HTTPS to the Voice Dictation FastAPI backend and processed by xAI Speech-to-Text. No account is required. The extension contains no advertising, payments, background recording, or real-time streaming.
+
+## Visual Assets
+
+Store icon:
+
+- `extension/icons/icon-128.png`
+
+Screenshots:
+
+- `store/assets/screenshot-dictation-1280x800.png`
+  Caption: Dictate directly into supported text fields.
+- `store/assets/screenshot-settings-1280x800.png`
+  Caption: Verify backend connectivity and choose a recording limit.
+
+Small promotional tile:
+
+- `store/assets/promo-small-440x280.png`
 
 ## Single Purpose
 
