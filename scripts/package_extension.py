@@ -29,6 +29,7 @@ EXPECTED_CONTENT_MATCHES = {
 PACKAGE_FILES = (
     "manifest.json",
     "config.js",
+    "dom-utils.js",
     "content.js",
     "content.css",
     "background.js",
@@ -137,7 +138,7 @@ def build_zip(manifest: dict[str, object], output_dir: Path) -> Path:
         raise ValueError("manifest version is missing")
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / f"voice-dictation-extension-v{version}.zip"
+    output_path = output_dir / f"fieldmic-v{version}.zip"
 
     with zipfile.ZipFile(output_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name in sorted(PACKAGE_FILES):

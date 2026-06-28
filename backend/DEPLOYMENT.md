@@ -87,7 +87,7 @@ After the backend is deployed:
 1. Open the extension popup.
 2. Set Backend URL to the deployed HTTPS endpoint ending in `/api/transcribe`.
 3. Save settings.
-4. Click Test Backend and confirm `Backend is reachable.`
+4. Expand Advanced, click Check Backend, and confirm `Backend is reachable.`
 5. Reload the test page and run a short dictation test.
 
 The extension must call only your backend. It must never call xAI directly.

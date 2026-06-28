@@ -6,7 +6,7 @@ Audit date: June 13, 2026
 
 `storage`: retained.
 
-Required to save the backend URL and recording-duration preference in `chrome.storage.local`.
+Required to save the enabled state, backend URL, and recording-duration preference in `chrome.storage.local`.
 
 `activeTab`: removed.
 
@@ -43,7 +43,7 @@ HTTPS page access remains broad because the extension's single purpose is to det
 
 ## Microphone Access
 
-No manifest microphone permission is requested. Microphone access is initiated through `navigator.mediaDevices.getUserMedia` only after the user clicks the visible Mic button, allowing Chrome to provide its normal permission prompt and site controls.
+No manifest microphone permission is requested. Microphone access is initiated through `navigator.mediaDevices.getUserMedia` only after the user clicks the visible microphone button, allowing Chrome to provide its normal permission prompt and site controls.
 
 ## Remote Code
 

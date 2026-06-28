@@ -1,4 +1,4 @@
-# Voice Dictation Browser Extension
+# FieldMic: Voice Dictation
 
 A Chrome browser extension and FastAPI backend for dictating text into web input fields using speech-to-text.
 
@@ -23,7 +23,8 @@ The extension must never call xAI directly. API keys belong only on the backend.
 The local MVP is working:
 
 - Chrome extension detects supported fields and ignores unsafe fields.
-- Mic button records only after explicit user click.
+- Microphone button records only after explicit user click.
+- Popup includes an enabled/disabled toggle for FieldMic.
 - Extension sends audio to the configured FastAPI backend.
 - Backend calls xAI Speech-to-Text.
 - Transcript is inserted back into the focused field.
@@ -68,7 +69,7 @@ Extension setup:
 3. Click Load unpacked.
 4. Select the `extension/` folder.
 5. Reload any test page after loading or reloading the extension.
-6. Open the extension popup to adjust the backend URL or recording limit if needed.
+6. Open the extension popup to enable/disable FieldMic, adjust the recording limit, or open Advanced backend settings if needed.
 
 QA page:
 
@@ -99,9 +100,11 @@ Run extension syntax checks from the repository root:
 ```bash
 python3 -m json.tool extension/manifest.json >/dev/null
 node --check extension/content.js
+node --check extension/dom-utils.js
 node --check extension/background.js
 node --check extension/popup.js
 node --check extension/config.js
+node --test extension/tests/*.test.js
 ```
 
 Validate and create the Chrome Web Store draft ZIP:
@@ -122,7 +125,7 @@ python3 scripts/validate_store_assets.py
 - `403` from xAI: the xAI team may need credits or Speech-to-Text access.
 - `503`: `XAI_API_KEY` is missing or not loaded by the backend.
 - Extension stuck on `Transcribing`: reload the extension in `chrome://extensions`, refresh the page, and retry with a short recording.
-- Mic button does not appear: reload the page after loading the extension and focus a supported non-sensitive field.
+- Microphone button does not appear: reload the page after loading the extension and focus a supported non-sensitive field.
 - Backend URL does not work: use the production Render endpoint or local HTTP on `127.0.0.1` or `localhost`. Other remote hosts and xAI URLs are rejected.
 
 ## Deployment
@@ -131,7 +134,7 @@ The backend includes Docker deployment files under `backend/`. See [backend/DEPL
 
 After deploying the backend, set the extension popup Backend URL to the deployed HTTPS `/api/transcribe` endpoint.
 
-Use the popup's Test Backend control to verify `/health`, then follow [qa/deployment-smoke-test.md](qa/deployment-smoke-test.md) for a complete production-path check. The backend also includes a reusable command-line smoke test:
+Use the popup's Advanced Check Backend control to verify `/health`, then follow [qa/deployment-smoke-test.md](qa/deployment-smoke-test.md) for a complete production-path check. The backend also includes a reusable command-line smoke test:
 
 ```bash
 cd backend

@@ -5,6 +5,7 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 ## Package
 
 - [ ] Run all backend and extension checks.
+- [ ] Run `node --test extension/tests/*.test.js`.
 - [ ] Run `python3 scripts/package_extension.py` from the repository root.
 - [ ] Confirm the generated ZIP is under `dist/` and contains `manifest.json` at its root.
 - [ ] Load the generated ZIP contents as an unpacked extension and repeat the manual QA checklist.
@@ -22,9 +23,10 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 ## Listing
 
 - [ ] Use the single-purpose statement and accurate copy in `listing.md`.
+- [ ] Confirm the listing name matches `FieldMic: Voice Dictation`.
 - [ ] Choose Tools and English unless the release plan changes.
 - [ ] Upload the existing 128x128 store icon.
-- [ ] Review `assets/screenshot-dictation-1280x800.png` and `assets/screenshot-settings-1280x800.png` at full size.
+- [ ] Regenerate and review `assets/screenshot-dictation-1280x800.png` and `assets/screenshot-settings-1280x800.png` after the 0.1.2 popup changes.
 - [ ] Review the required `assets/promo-small-440x280.png` tile at full size.
 - [ ] Add other assets only when they accurately represent the shipped extension.
 - [ ] Do not claim real-time streaming, offline transcription, grammar correction, accounts, or other unimplemented features.
@@ -70,6 +72,7 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 - [ ] Verify recording starts only after clicking Mic and can be stopped immediately.
 - [ ] Verify a successful Render transcription inserts text and restores field focus.
 - [ ] Verify backend failure and timeout states recover without remaining stuck on Transcribing.
+- [ ] Verify the FieldMic enabled toggle hides and restores the page microphone button.
 - [ ] Inspect extension network activity and confirm audio goes only to the configured FastAPI backend.
 - [ ] Confirm the xAI key is absent from the ZIP, repository status, browser storage, and browser network requests.
 - [ ] Keep the Developer Dashboard item in draft until a separate submission phase is explicitly approved.

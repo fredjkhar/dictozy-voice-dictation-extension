@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Voice Dictation Browser Extension",
-  "short_name": "Voice Dictation",
-  "version": "0.1.1",
+  "name": "FieldMic: Voice Dictation",
+  "short_name": "FieldMic",
+  "version": "0.1.2",
   "description": "Dictate text into supported web fields using your microphone and a secure speech-to-text backend.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -35,7 +35,7 @@
         "http://localhost/*",
         "https://*/*"
       ],
-      "js": ["content.js"],
+      "js": ["dom-utils.js", "content.js"],
       "css": ["content.css"]
     }
   ]

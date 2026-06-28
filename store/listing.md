@@ -2,7 +2,7 @@
 
 ## Product Details
 
-Name: Voice Dictation Browser Extension
+Name: FieldMic: Voice Dictation
 
 Category: Tools
 
@@ -16,16 +16,16 @@ Detailed description:
 
 > Dictate into supported text fields on HTTPS websites without leaving the page.
 >
-> Focus a text field, click the visible Mic button, speak a short phrase, and stop recording. Voice Dictation sends the recording to its secure speech-to-text backend and inserts the returned transcript where you were typing.
+> Focus a text field, click the visible microphone button, speak a short phrase, and stop recording. FieldMic sends the recording to its secure speech-to-text backend and inserts the returned transcript where you were typing.
 >
 > Privacy and control:
-> - Recording starts only after you click Mic.
+> - Recording starts only after you click the microphone button.
 > - You can stop recording immediately.
 > - Password, payment, hidden, disabled, readonly, file, checkbox, and radio fields are ignored.
 > - Raw audio and transcripts are not intentionally stored by the extension or backend application.
 > - The xAI API key remains on the backend and is never included in the extension.
 >
-> Audio is sent over HTTPS to the Voice Dictation FastAPI backend and processed by xAI Speech-to-Text. No account is required. The extension contains no advertising, payments, background recording, or real-time streaming.
+> Audio is sent over HTTPS to the FieldMic FastAPI backend and processed by xAI Speech-to-Text. No account is required. The extension contains no advertising, payments, background recording, or real-time streaming.
 
 ## Visual Assets
 
@@ -52,7 +52,7 @@ Allow users to dictate short text into supported web input fields by recording a
 
 `storage`:
 
-Stores the backend URL and recording-duration preference locally in Chrome. No account or cloud synchronization is used.
+Stores the enabled state, backend URL, and recording-duration preference locally in Chrome. No account or cloud synchronization is used.
 
 Site access on HTTPS pages:
 
@@ -97,11 +97,11 @@ Dashboard guidance:
 
 1. Install the submitted ZIP.
 2. Open an HTTPS webpage containing a normal text input or textarea.
-3. Focus the field and confirm that the Mic button appears.
-4. Click Mic and allow microphone access.
-5. Speak a short phrase and click Stop, or wait for the recording limit.
+3. Focus the field and confirm that the microphone icon button appears.
+4. Click the microphone icon and allow microphone access.
+5. Speak a short phrase and click the stop icon, or wait for the recording limit.
 6. Confirm that the transcription status completes and text appears in the focused field.
-7. Open the popup and click Test Backend to verify the production backend health endpoint.
+7. Open the popup, expand Advanced, and click Check Backend to verify the production backend health endpoint.
 
 No test account or credentials are required. The production backend must have the submitted extension ID configured in CORS before review.
 

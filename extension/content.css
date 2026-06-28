@@ -1,47 +1,77 @@
 .voice-dictation-mic-button {
   position: fixed;
   z-index: 2147483647;
-  width: 38px;
-  height: 38px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
   margin: 0;
   padding: 0;
-  border: 1px solid #111827;
+  border: 1px solid #0f766e;
   border-radius: 999px;
-  background: #111827;
-  box-shadow: 0 8px 20px rgb(17 24 39 / 24%);
+  background: #0f766e;
+  box-shadow: 0 9px 22px rgb(15 23 42 / 22%), 0 0 0 1px rgb(255 255 255 / 70%) inset;
   color: #ffffff;
   cursor: pointer;
-  font: 700 11px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  letter-spacing: 0;
+  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 }
 
 .voice-dictation-mic-button:hover {
-  background: #374151;
+  background: #115e59;
+  border-color: #115e59;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgb(15 23 42 / 25%), 0 0 0 1px rgb(255 255 255 / 70%) inset;
 }
 
 .voice-dictation-mic-button:disabled {
   cursor: wait;
   opacity: 0.75;
+  transform: none;
 }
 
 .voice-dictation-mic-button:focus-visible {
-  outline: 3px solid #60a5fa;
+  outline: 3px solid #38bdf8;
   outline-offset: 2px;
 }
 
+.voice-dictation-mic-icon {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.voice-dictation-mic-icon--filled {
+  fill: currentColor;
+  stroke: none;
+}
+
+.voice-dictation-mic-icon--spin {
+  animation: voice-dictation-spin 850ms linear infinite;
+  transform-origin: 50% 50%;
+}
+
+.voice-dictation-mic-button--busy {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
 .voice-dictation-mic-button--recording {
-  background: #b91c1c;
-  border-color: #b91c1c;
+  background: #dc2626;
+  border-color: #dc2626;
 }
 
 .voice-dictation-mic-button--success {
-  background: #047857;
-  border-color: #047857;
+  background: #059669;
+  border-color: #059669;
 }
 
 .voice-dictation-mic-button--error {
-  background: #92400e;
-  border-color: #92400e;
+  background: #d97706;
+  border-color: #d97706;
 }
 
 .voice-dictation-mic-button[hidden] {
@@ -64,4 +94,10 @@
 
 .voice-dictation-status[hidden] {
   display: none;
+}
+
+@keyframes voice-dictation-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

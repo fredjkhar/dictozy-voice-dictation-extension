@@ -41,9 +41,9 @@ Confirm that health and transcription both pass. If transcription fails while he
 1. Reload the unpacked extension on `chrome://extensions`.
 2. Open the popup and enter `https://YOUR_BACKEND_HOST/api/transcribe`.
 3. Click Save Settings, close the popup, reopen it, and confirm the URL persisted.
-4. Click Test Backend and confirm `Backend is reachable.`
+4. Expand Advanced, click Check Backend, and confirm `Backend is reachable.`
 5. Open or refresh the local QA page or a normal HTTPS site.
-6. Focus a supported, non-sensitive field and click Mic.
+6. Focus a supported, non-sensitive field and click the microphone icon.
 7. Record a short phrase and stop.
 8. Confirm the status advances through recording and transcribing.
 9. Confirm the transcript appears in the original field and focus returns to it.

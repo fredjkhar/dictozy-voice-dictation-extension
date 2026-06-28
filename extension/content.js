@@ -1,16 +1,82 @@
 (() => {
-  const INSERT_FAKE_TEXT_MESSAGE = "VOICE_DICTATION_INSERT_FAKE_TEXT";
   const TRANSCRIBE_AUDIO_MESSAGE = "VOICE_DICTATION_TRANSCRIBE_AUDIO";
-  const FALLBACK_TRANSCRIPT = "This is fake dictation text.";
-  const SUPPORTED_INPUT_TYPES = new Set(["", "text", "search", "email", "url", "tel"]);
-  const IGNORED_INPUT_TYPES = new Set(["password", "file", "checkbox", "radio", "hidden"]);
-  const PAYMENT_FIELD_PATTERN = /\b(cc-|cc_|card|credit|cvc|cvv|expiry|expiration|iban|payment)\b/i;
+  const DEFAULT_EXTENSION_ENABLED = true;
   const BUTTON_EDGE_OFFSET = 8;
-  const DEFAULT_RECORDING_DURATION_MS = 5000;
+  const DEFAULT_RECORDING_DURATION_MS = 10000;
   const MIN_RECORDING_DURATION_MS = 1000;
   const MAX_RECORDING_DURATION_MS = 30000;
   const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
   const TRANSCRIPTION_RESPONSE_TIMEOUT_MS = 55000;
+  const MIC_BUTTON_ICONS = Object.freeze({
+    alert: `
+      <svg class="voice-dictation-mic-icon" aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M12 9v4"></path>
+        <path d="M12 17h.01"></path>
+        <path d="M10.3 4.9 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.9a2 2 0 0 0-3.4 0Z"></path>
+      </svg>
+    `,
+    busy: `
+      <svg class="voice-dictation-mic-icon voice-dictation-mic-icon--spin" aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M21 12a9 9 0 1 1-6.2-8.6"></path>
+      </svg>
+    `,
+    check: `
+      <svg class="voice-dictation-mic-icon" aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M20 6 9 17l-5-5"></path>
+      </svg>
+    `,
+    mic: `
+      <svg class="voice-dictation-mic-icon" aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+        <path d="M19 10v1a7 7 0 0 1-14 0v-1"></path>
+        <path d="M12 18v4"></path>
+        <path d="M8 22h8"></path>
+      </svg>
+    `,
+    stop: `
+      <svg class="voice-dictation-mic-icon voice-dictation-mic-icon--filled" aria-hidden="true" viewBox="0 0 24 24">
+        <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+      </svg>
+    `,
+  });
+  const MIC_BUTTON_STATES = Object.freeze({
+    error: {
+      icon: "alert",
+      label: "Dictation needs attention",
+      status: "Dictation needs attention",
+    },
+    idle: {
+      icon: "mic",
+      label: "Start dictation",
+      status: "",
+    },
+    recording: {
+      icon: "stop",
+      label: "Stop dictation",
+      status: "Recording",
+    },
+    requesting: {
+      icon: "busy",
+      label: "Requesting microphone access",
+      status: "Requesting microphone access",
+    },
+    success: {
+      icon: "check",
+      label: "Transcript inserted",
+      status: "Transcript inserted",
+    },
+    transcribing: {
+      icon: "busy",
+      label: "Transcribing recording",
+      status: "Transcribing",
+    },
+  });
+  const {
+    dispatchInputEvents,
+    getEditableField,
+    insertIntoFormField,
+    isSupportedField,
+  } = globalThis.FieldMicDom;
 
   let activeField = null;
   let activeTextRange = null;
@@ -20,18 +86,8 @@
   let recordingStream = null;
   let recordingTimeoutId = null;
   let recordingChunks = [];
-
-  function getEditableField(target) {
-    if (!(target instanceof Element)) {
-      return null;
-    }
-
-    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
-      return target;
-    }
-
-    return target.closest('[contenteditable="true"], [role="textbox"]');
-  }
+  let extensionEnabled = DEFAULT_EXTENSION_ENABLED;
+  let recordingCanceled = false;
 
   function getEditableFieldFromEvent(event) {
     const path = typeof event.composedPath === "function" ? event.composedPath() : [];
@@ -57,70 +113,11 @@
     return getEditableField(focused);
   }
 
-  function hasPaymentSignal(element) {
-    const values = [
-      element.getAttribute("autocomplete"),
-      element.getAttribute("name"),
-      element.getAttribute("id"),
-      element.getAttribute("aria-label"),
-      element.getAttribute("placeholder"),
-      element.getAttribute("inputmode"),
-    ];
-
-    return values.some((value) => value && PAYMENT_FIELD_PATTERN.test(value));
-  }
-
-  function isHidden(element) {
-    if (element.hidden) {
-      return true;
-    }
-
-    if (element instanceof HTMLInputElement && element.type.toLowerCase() === "hidden") {
-      return true;
-    }
-
-    const style = window.getComputedStyle(element);
-    return style.display === "none" || style.visibility === "hidden";
-  }
-
-  function isSupportedField(element) {
-    if (!element || isHidden(element) || hasPaymentSignal(element)) {
-      return false;
-    }
-
-    if (element instanceof HTMLTextAreaElement) {
-      return !element.disabled && !element.readOnly;
-    }
-
-    if (element instanceof HTMLInputElement) {
-      const inputType = element.type.toLowerCase();
-
-      return (
-        SUPPORTED_INPUT_TYPES.has(inputType) &&
-        !IGNORED_INPUT_TYPES.has(inputType) &&
-        !element.disabled &&
-        !element.readOnly
-      );
-    }
-
-    if (element.matches('[contenteditable="true"], [role="textbox"]')) {
-      return (
-        element.isContentEditable &&
-        element.getAttribute("aria-disabled") !== "true" &&
-        element.getAttribute("aria-readonly") !== "true"
-      );
-    }
-
-    return false;
-  }
-
   function createMicButton() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "voice-dictation-mic-button";
-    button.textContent = "Mic";
-    button.title = "Record a short test clip";
-    button.setAttribute("aria-label", "Record a short test clip");
+    setMicButtonVisual(button, "idle");
     button.hidden = true;
 
     button.addEventListener("mousedown", (event) => {
@@ -138,6 +135,15 @@
 
     document.documentElement.append(button);
     return button;
+  }
+
+  function setMicButtonVisual(button, state) {
+    const visual = MIC_BUTTON_STATES[state] || MIC_BUTTON_STATES.idle;
+
+    button.dataset.state = state;
+    button.innerHTML = MIC_BUTTON_ICONS[visual.icon] || MIC_BUTTON_ICONS.mic;
+    button.title = visual.label;
+    button.setAttribute("aria-label", visual.label);
   }
 
   function createStatusBubble() {
@@ -190,43 +196,21 @@
 
   function setMicButtonState(state, message = "") {
     const button = getMicButton();
+    const visual = MIC_BUTTON_STATES[state] || MIC_BUTTON_STATES.idle;
 
     button.classList.toggle("voice-dictation-mic-button--recording", state === "recording");
+    button.classList.toggle("voice-dictation-mic-button--busy", state === "requesting" || state === "transcribing");
     button.classList.toggle("voice-dictation-mic-button--success", state === "success");
     button.classList.toggle("voice-dictation-mic-button--error", state === "error");
-    button.disabled = state === "requesting" || state === "transcribing";
+    button.disabled = state === "requesting" || state === "transcribing" || !extensionEnabled;
+    setMicButtonVisual(button, state);
 
-    if (state === "requesting") {
-      button.textContent = "...";
-      button.title = "Requesting microphone access";
-      button.setAttribute("aria-label", "Requesting microphone access");
-      setStatusMessage(message || "Requesting microphone access");
+    if (message || visual.status) {
+      setStatusMessage(message || visual.status);
       return;
     }
 
-    if (state === "transcribing") {
-      button.textContent = "...";
-      button.title = "Sending recording to backend";
-      button.setAttribute("aria-label", "Sending recording to backend");
-      setStatusMessage(message || "Transcribing");
-      return;
-    }
-
-    if (state === "recording") {
-      button.textContent = "Stop";
-      button.title = "Stop recording";
-      button.setAttribute("aria-label", "Stop recording");
-      setStatusMessage(message || "Recording");
-      return;
-    }
-
-    button.textContent = "Mic";
-    button.title = "Record a short test clip";
-    button.setAttribute("aria-label", "Record a short test clip");
-
-    if (message) {
-      setStatusMessage(message);
-    } else if (statusBubble) {
+    if (statusBubble) {
       statusBubble.hidden = true;
     }
   }
@@ -235,13 +219,33 @@
     setMicButtonState(state, message);
     window.setTimeout(() => {
       setMicButtonState("idle");
+      updateMicButton();
     }, 1400);
   }
 
-  function updateMicButton() {
-    const field = isSupportedField(activeField) ? activeField : getCurrentEditableField();
+  function clearActiveField() {
+    activeField = null;
+    activeTextRange = null;
+  }
 
-    if (!isSupportedField(field)) {
+  function getUsableField(field) {
+    return isSupportedField(field) ? field : null;
+  }
+
+  function getFocusedSupportedField() {
+    return getUsableField(getCurrentEditableField());
+  }
+
+  function updateMicButton() {
+    if (!extensionEnabled) {
+      hideMicButton();
+      return;
+    }
+
+    const field = getUsableField(activeField) || getFocusedSupportedField();
+
+    if (!field) {
+      clearActiveField();
       hideMicButton();
       return;
     }
@@ -250,7 +254,7 @@
 
     const rect = field.getBoundingClientRect();
     const button = getMicButton();
-    const buttonSize = button.offsetWidth || 38;
+    const buttonSize = button.offsetWidth || 42;
     const top = Math.max(
       BUTTON_EDGE_OFFSET,
       Math.min(window.innerHeight - buttonSize - BUTTON_EDGE_OFFSET, rect.top + rect.height / 2 - buttonSize / 2),
@@ -276,15 +280,35 @@
       return;
     }
 
+    if (!extensionEnabled) {
+      clearActiveField();
+      hideMicButton();
+      return;
+    }
+
     const field = getEditableFieldFromEvent(event);
 
-    if (isSupportedField(field)) {
+    if (getUsableField(field)) {
       activeField = field;
       rememberTextRange();
       updateMicButton();
     } else {
+      clearActiveField();
       hideMicButton();
     }
+  }
+
+  function forgetActiveFieldAfterBlur(event) {
+    if (micButton?.contains(event.relatedTarget)) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      if (!getFocusedSupportedField()) {
+        clearActiveField();
+        hideMicButton();
+      }
+    }, 0);
   }
 
   function rememberTextRange() {
@@ -301,48 +325,6 @@
     if (activeField.contains(range.commonAncestorContainer)) {
       activeTextRange = range.cloneRange();
     }
-  }
-
-  function dispatchInputEvents(element) {
-    element.dispatchEvent(new InputEvent("input", {
-      bubbles: true,
-      composed: true,
-      inputType: "insertText",
-    }));
-    element.dispatchEvent(new Event("change", { bubbles: true }));
-  }
-
-  function setNativeFieldValue(element, value) {
-    const prototype = Object.getPrototypeOf(element);
-    const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
-
-    if (descriptor?.set) {
-      descriptor.set.call(element, value);
-      return;
-    }
-
-    element.value = value;
-  }
-
-  function insertIntoFormField(element, text) {
-    const start = element.selectionStart ?? element.value.length;
-    const end = element.selectionEnd ?? element.value.length;
-    const before = element.value.slice(0, start);
-    const after = element.value.slice(end);
-    const separator = before && !/\s$/.test(before) ? " " : "";
-    const nextText = `${separator}${text}`;
-    const nextPosition = start + nextText.length;
-
-    element.dispatchEvent(new InputEvent("beforeinput", {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      data: nextText,
-      inputType: "insertText",
-    }));
-    setNativeFieldValue(element, `${before}${nextText}${after}`);
-    element.setSelectionRange(nextPosition, nextPosition);
-    dispatchInputEvents(element);
   }
 
   function getRichTextInsertionRange(element) {
@@ -398,7 +380,7 @@
 
       if (document.execCommand("insertText", false, insertedText)) {
         rememberTextRange();
-        dispatchInputEvents(element);
+        dispatchInputEvents(element, insertedText);
         return;
       }
     }
@@ -413,16 +395,35 @@
     selection.removeAllRanges();
     selection.addRange(range);
     activeTextRange = range.cloneRange();
-    dispatchInputEvents(element);
+    dispatchInputEvents(element, insertedText);
   }
 
-  function insertFakeText(text = FALLBACK_TRANSCRIPT) {
-    const field = isSupportedField(activeField) ? activeField : getCurrentEditableField();
+  function getTranscriptTargetField() {
+    const focusedField = getFocusedSupportedField();
 
-    if (!isSupportedField(field)) {
+    if (focusedField) {
+      return focusedField;
+    }
+
+    if (document.hasFocus?.() === false) {
+      return null;
+    }
+
+    const focused = document.activeElement;
+    if (activeField && getUsableField(activeField) && (focused === activeField || activeField.contains(focused))) {
+      return activeField;
+    }
+
+    return null;
+  }
+
+  function insertTranscript(text) {
+    const field = getTranscriptTargetField();
+
+    if (!field) {
       return {
         ok: false,
-        message: "Focus a supported text field first.",
+        message: "Focus moved before insertion. Try again.",
       };
     }
 
@@ -437,7 +438,7 @@
 
     return {
       ok: true,
-      message: "Inserted fake dictation text.",
+      message: "Transcript inserted.",
     };
   }
 
@@ -454,6 +455,27 @@
 
     mediaRecorder = null;
     recordingChunks = [];
+  }
+
+  function cancelRecording() {
+    recordingCanceled = true;
+
+    if (recordingTimeoutId) {
+      window.clearTimeout(recordingTimeoutId);
+      recordingTimeoutId = null;
+    }
+
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      try {
+        mediaRecorder.stop();
+      } catch (_error) {
+        clearRecordingResources();
+      }
+    } else {
+      clearRecordingResources();
+    }
+
+    setMicButtonState("idle");
   }
 
   function pickSupportedMimeType() {
@@ -476,9 +498,14 @@
   }
 
   async function startRecording() {
-    const field = isSupportedField(activeField) ? activeField : getCurrentEditableField();
+    if (!extensionEnabled) {
+      hideMicButton();
+      return;
+    }
 
-    if (!isSupportedField(field)) {
+    const field = getFocusedSupportedField();
+
+    if (!field) {
       flashMicButtonState("error", "Focus a supported field");
       return;
     }
@@ -490,6 +517,7 @@
 
     activeField = field;
     field.focus();
+    recordingCanceled = false;
     setMicButtonState("requesting", "Requesting microphone access");
 
     try {
@@ -611,6 +639,12 @@
 
   async function finishRecording() {
     try {
+      if (recordingCanceled || !extensionEnabled) {
+        clearRecordingResources();
+        updateMicButton();
+        return;
+      }
+
       const mimeType = mediaRecorder?.mimeType || "audio/webm";
       const recordingBlob = new Blob(recordingChunks, { type: mimeType });
 
@@ -630,13 +664,24 @@
 
       const result = await sendAudioToBackend(recordingBlob);
 
+      if (!extensionEnabled) {
+        updateMicButton();
+        return;
+      }
+
       if (!result?.ok || typeof result.transcript !== "string") {
         flashMicButtonState("error", result?.message || "Transcription failed");
         updateMicButton();
         return;
       }
 
-      insertFakeText(result.transcript);
+      const insertion = insertTranscript(result.transcript);
+      if (!insertion.ok) {
+        flashMicButtonState("error", insertion.message);
+        updateMicButton();
+        return;
+      }
+
       flashMicButtonState("success", "Transcript inserted");
       updateMicButton();
     } catch (_error) {
@@ -646,19 +691,51 @@
     }
   }
 
+  async function loadExtensionState() {
+    try {
+      const settings = await chrome.storage.local.get({
+        extensionEnabled: DEFAULT_EXTENSION_ENABLED,
+      });
+
+      extensionEnabled = settings.extensionEnabled !== false;
+    } catch (_error) {
+      extensionEnabled = DEFAULT_EXTENSION_ENABLED;
+    }
+
+    if (!extensionEnabled) {
+      clearActiveField();
+      hideMicButton();
+      return;
+    }
+
+    updateMicButton();
+  }
+
+  function handleStorageChanges(changes, areaName) {
+    if (areaName !== "local" || !changes.extensionEnabled) {
+      return;
+    }
+
+    extensionEnabled = changes.extensionEnabled.newValue !== false;
+
+    if (!extensionEnabled) {
+      cancelRecording();
+      clearActiveField();
+      hideMicButton();
+      return;
+    }
+
+    updateMicButton();
+  }
+
   document.addEventListener("focusin", rememberActiveField, true);
+  document.addEventListener("focusout", forgetActiveFieldAfterBlur, true);
   document.addEventListener("keyup", rememberActiveField, true);
   document.addEventListener("mouseup", rememberActiveField, true);
   document.addEventListener("selectionchange", rememberTextRange);
   window.addEventListener("scroll", updateMicButton, true);
   window.addEventListener("resize", updateMicButton);
+  chrome.storage.onChanged.addListener(handleStorageChanges);
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type !== INSERT_FAKE_TEXT_MESSAGE) {
-      return false;
-    }
-
-    sendResponse(insertFakeText(message.text));
-    return false;
-  });
+  loadExtensionState();
 })();

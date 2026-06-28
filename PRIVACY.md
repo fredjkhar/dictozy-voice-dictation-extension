@@ -2,15 +2,15 @@
 
 Effective date: June 13, 2026
 
-Voice Dictation Browser Extension converts a short microphone recording into text and inserts the returned transcript into a text field selected by the user.
+FieldMic: Voice Dictation converts a short microphone recording into text and inserts the returned transcript into a text field selected by the user.
 
 ## Data Handled
 
 The extension handles the following data only to provide voice dictation:
 
-- Audio recorded after the user clicks the visible Mic button.
+- Audio recorded after the user clicks the visible microphone button.
 - The transcript returned from the speech-to-text service.
-- The backend URL and recording-duration preference stored locally with `chrome.storage.local`.
+- The enabled state, backend URL, and recording-duration preference stored locally with `chrome.storage.local`.
 - Page field information inspected locally to determine whether the focused field is supported. The extension does not transmit the page URL, browsing history, existing field contents, or surrounding page content to the backend.
 
 The extension does not activate on password or payment fields and does not record automatically or in the background.
@@ -19,7 +19,7 @@ The extension does not activate on password or payment fields and does not recor
 
 Recorded audio is sent to the configured FastAPI backend solely to generate a transcript. The backend sends that audio to xAI Speech-to-Text, receives the transcript, and returns it to the extension. The extension inserts the transcript into the user-selected field.
 
-The Test Backend control sends a health-check request without audio or page content.
+The Advanced Check Backend control sends a health-check request without audio or page content.
 
 Data is not used for advertising, profiling, credit decisions, or sale to third parties.
 
@@ -44,7 +44,7 @@ Production audio requests use HTTPS. The xAI API key is stored only in backend e
 
 ## User Controls
 
-Recording begins only after the user clicks Mic. The user can stop recording immediately. Users may clear locally stored settings by removing the extension or clearing its extension data in Chrome.
+Recording begins only after the user clicks the microphone button. The user can stop recording immediately. Users may clear locally stored settings by removing the extension or clearing its extension data in Chrome.
 
 ## Limited Use
 

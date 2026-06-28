@@ -30,11 +30,19 @@ function parseAudioDataUrl(dataUrl) {
 
 function getFriendlyBackendError(status, detail) {
   if (status === 503) {
+    if (/temporarily unavailable/i.test(detail)) {
+      return "Dictation is temporarily unavailable.";
+    }
+
     return "Backend speech-to-text is not configured.";
   }
 
+  if (status === 429) {
+    return "Too many dictation requests. Try again in a moment.";
+  }
+
   if (status === 502) {
-    return "Speech-to-text failed. Check backend logs.";
+    return "Speech-to-text failed. Please try again.";
   }
 
   if (status === 413) {
@@ -45,7 +53,7 @@ function getFriendlyBackendError(status, detail) {
     return detail;
   }
 
-  return "Backend transcription request failed.";
+  return "Dictation request failed. Please try again.";
 }
 
 function getStoredSettings() {

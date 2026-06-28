@@ -1,6 +1,6 @@
 # Backend
 
-This folder contains the FastAPI backend for the Voice Dictation Browser Extension.
+This folder contains the FastAPI backend for FieldMic: Voice Dictation.
 
 The backend accepts audio from the browser extension, calls xAI Speech-to-Text, and returns transcripts.
 

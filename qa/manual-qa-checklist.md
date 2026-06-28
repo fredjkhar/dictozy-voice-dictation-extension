@@ -16,25 +16,29 @@ Use this checklist after backend or extension changes.
 
 - The unpacked extension loads without errors in `chrome://extensions`.
 - Popup settings persist after closing and reopening the popup.
+- The popup shows `FieldMic` branding and version `0.1.2` in `chrome://extensions`.
+- Turning FieldMic off hides the page microphone button and prevents recording from starting.
+- Turning FieldMic back on restores microphone behavior on supported fields.
 - Backend URL defaults to `https://voice-dictation-extension.onrender.com/api/transcribe`.
 - Backend URL rejects unapproved remote hosts, xAI URLs, and paths that do not end in `/api/transcribe`.
 - Backend URL rejects embedded credentials, query strings, and fragments.
-- Test Backend reports success when the configured backend `/health` endpoint returns `{"status":"ok"}`.
-- Recording limit defaults to 5 seconds and clamps to the allowed range.
-- The Mic button appears on supported fields only.
-- The Mic button does not appear on password, payment, hidden, readonly, disabled, checkbox, radio, or file inputs.
-- Clicking Mic requests microphone permission only after the user clicks.
-- The user can stop recording immediately with the Stop button.
+- Advanced Check Backend reports success when the configured backend `/health` endpoint returns `{"status":"ok"}`.
+- Recording limit defaults to 10 seconds and clamps to the allowed range.
+- The microphone icon button appears on supported fields only.
+- The microphone icon button does not appear on password, payment, hidden, readonly, disabled, checkbox, radio, or file inputs.
+- Clicking the microphone icon requests microphone permission only after the user clicks.
+- The user can stop recording immediately with the stop icon button.
 - Recording auto-stops after the configured popup recording limit.
 - The extension shows recording and transcribing status.
-- Short recordings should move from Stop to Transcribing quickly; long pauses here suggest extension message-passing or backend latency.
+- Short recordings should move from the stop icon to Transcribing quickly; long pauses here suggest extension message-passing or backend latency.
 - Transcribing must recover to success or an error message; it should not remain stuck indefinitely.
 - A successful transcript is inserted into the focused field.
+- If focus moves away before transcription completes, the transcript is not inserted into an old field.
 - Inserted text dispatches `input` and `change` events.
 - Focus returns to the active field after insertion.
 - React-style controlled inputs should retain inserted text after blur or subsequent typing.
 - Nested `contenteditable` fields should insert at the cursor rather than always appending.
-- Shadow DOM inputs on the local QA page should show the Mic button and accept inserted text.
+- Shadow DOM inputs on the local QA page should show the microphone icon button and accept inserted text.
 - xAI API keys never appear in extension files, browser console output, or network calls from the page.
 
 ## Local Test Page
