@@ -54,4 +54,4 @@ The use of information received from Google APIs adheres to the Chrome Web Store
 
 This policy will be updated if the extension's data handling changes. Questions or privacy requests can be submitted through the project's public issue tracker:
 
-https://github.com/fredjkhar/voice-dictation-extension/issues
+https://github.com/fredjkhar/dictozy-voice-dictation-extension/issues

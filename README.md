@@ -49,8 +49,8 @@ The extension records a short user-triggered clip, sends it to the configured Fa
 Clone and enter the project:
 
 ```bash
-git clone https://github.com/fredjkhar/voice-dictation-extension.git
-cd voice-dictation-extension
+git clone https://github.com/fredjkhar/dictozy-voice-dictation-extension.git
+cd dictozy-voice-dictation-extension
 ```
 
 Backend setup:
@@ -151,6 +151,16 @@ python scripts/smoke_test.py https://YOUR_BACKEND_HOST
 ## Chrome Web Store Readiness
 
 Privacy and release-preparation materials are available in [PRIVACY.md](PRIVACY.md), [store/](store/), and [site/](site/). The generated ZIP under `dist/` is intentionally ignored by Git and should be rebuilt from the reviewed source before each draft upload.
+
+## Repository Rename
+
+The recommended GitHub repository name is `dictozy-voice-dictation-extension`. After renaming the repository on GitHub, update the local remote with:
+
+```bash
+git remote set-url origin https://github.com/fredjkhar/dictozy-voice-dictation-extension.git
+```
+
+The local folder does not need to be renamed for the project to keep working.
 
 ## Commit Readiness
 

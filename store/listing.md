@@ -92,7 +92,7 @@ Do not upload assets that show unreleased features or development-only controls.
 Homepage URL:
 
 ```text
-https://github.com/fredjkhar/voice-dictation-extension
+https://github.com/fredjkhar/dictozy-voice-dictation-extension
 ```
 
 If the static landing page in `site/` is published through GitHub Pages later, replace the homepage URL with that public HTTPS page.
@@ -100,13 +100,13 @@ If the static landing page in `site/` is published through GitHub Pages later, r
 Support URL:
 
 ```text
-https://github.com/fredjkhar/voice-dictation-extension/issues
+https://github.com/fredjkhar/dictozy-voice-dictation-extension/issues
 ```
 
 Privacy policy URL:
 
 ```text
-https://github.com/fredjkhar/voice-dictation-extension/blob/main/PRIVACY.md
+https://github.com/fredjkhar/dictozy-voice-dictation-extension/blob/main/PRIVACY.md
 ```
 
 Use a stable public HTTPS URL for the Privacy Policy field before submission.
