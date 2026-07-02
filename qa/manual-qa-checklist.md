@@ -2,6 +2,8 @@
 
 Use this checklist after backend, extension, listing, or release-package changes. It covers the user-visible flow first, then the technical safety checks.
 
+For the published extension, use [post-publish-monitoring.md](post-publish-monitoring.md) after this checklist.
+
 ## Backend
 
 - `GET /health` returns `{"status":"ok"}`.
@@ -47,6 +49,17 @@ Use this checklist after backend, extension, listing, or release-package changes
 - `site/index.html` opens locally and presents the real 0.1.2 product without unsupported features.
 - `store/assets/screenshot-dictation-1280x800.png`, `store/assets/screenshot-settings-1280x800.png`, and `store/assets/promo-small-440x280.png` match the current Dictozy name, icon, and popup.
 - The Chrome Web Store description does not imply background recording, direct xAI calls from the extension, or features that are not implemented.
+
+## Published Extension Smoke QA
+
+- Install Dictozy from the Chrome Web Store.
+- Confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
+- Confirm version `0.1.2`.
+- Run a short dictation on a supported HTTPS text field.
+- Confirm recording starts only after clicking the visible microphone button.
+- Confirm transcript insertion and focus behavior.
+- Confirm unsupported and sensitive fields are ignored.
+- Confirm extension network traffic goes only to `https://voice-dictation-extension.onrender.com`, never directly to xAI.
 
 ## Local Test Page
 

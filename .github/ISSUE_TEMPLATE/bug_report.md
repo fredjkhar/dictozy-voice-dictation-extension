@@ -28,12 +28,16 @@ What happened instead?
 
 - Browser:
 - Extension loaded from:
+- Extension version:
+- Extension ID:
 - Backend running locally: yes/no
 - Operating system:
 
 ## Logs or Screenshots
 
-Paste safe logs only. Do not include `XAI_API_KEY`, raw audio, or private page content.
+Paste safe logs only. Do not include `XAI_API_KEY`, raw audio, transcript text, passwords, payment details, or private page content.
+
+If available, include a safe `request_id` and approximate time of the failed attempt.
 
 ## Notes
 

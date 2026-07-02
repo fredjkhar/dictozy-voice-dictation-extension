@@ -170,3 +170,17 @@ Emergency cutoff process:
 - Do not store raw audio by default.
 - Monitor `429`, `502`, and `503` response trends by request ID.
 - Monitor xAI usage and spending daily during launch.
+
+## Post-Publish Monitoring
+
+After the Chrome Web Store release is live, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md) for the operational checklist.
+
+Minimum ongoing checks:
+
+- Confirm `/health` is reachable.
+- Confirm Render CORS includes `chrome-extension://folpeencabfejhjokmldikaelonphmma`.
+- Run one Store-installed extension transcription smoke test during the first daily checks.
+- Review Render logs for `request_id`, method, path, status, latency, `429`, `502`, `503`, and CORS failures.
+- Confirm logs do not include audio, transcripts, API keys, raw IPs when avoidable, or full upstream response bodies.
+- Review xAI Console usage and spend for unexpected spikes.
+- Use `TRANSCRIPTION_ENABLED=false` only when intentionally cutting off transcription, then restore `true` after the incident is resolved.

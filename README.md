@@ -26,7 +26,7 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.2` is prepared locally:
+Version `0.1.2` is published on the Chrome Web Store:
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Microphone button records only after explicit user click.
@@ -38,7 +38,8 @@ Version `0.1.2` is prepared locally:
 - Backend tests and a local manual QA page are available.
 - Backend Docker deployment files are available.
 - Production endpoint validation and deployment smoke tests are available.
-- Chrome Web Store copy, screenshots, promo tile, icon, and release checklist are prepared under `store/`.
+- Chrome Web Store copy, screenshots, promo tile, icon, and release notes are available under `store/`.
+- Post-publish monitoring and support triage checklists are available under `qa/`.
 
 ## Local Development
 
@@ -148,9 +149,15 @@ cd backend
 python scripts/smoke_test.py https://YOUR_BACKEND_HOST
 ```
 
-## Chrome Web Store Readiness
+## Chrome Web Store Materials
 
 Privacy and release-preparation materials are available in [PRIVACY.md](PRIVACY.md), [store/](store/), and [site/](site/). The generated ZIP under `dist/` is intentionally ignored by Git and should be rebuilt from the reviewed source before each draft upload.
+
+## Post-Publish Operations
+
+Use [qa/post-publish-monitoring.md](qa/post-publish-monitoring.md) for daily first-week checks, weekly follow-up, Store-installed smoke testing, Render log review, xAI usage review, emergency cutoff steps, and mitigation guidance.
+
+Use [qa/support-triage.md](qa/support-triage.md) for safe support intake and issue routing. Do not ask users for raw audio, transcript text, passwords, payment details, API keys, or private page content.
 
 ## Repository Rename
 

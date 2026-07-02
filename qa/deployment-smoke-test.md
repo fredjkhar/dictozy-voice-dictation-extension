@@ -2,6 +2,8 @@
 
 Use this checklist after deploying or changing the production FastAPI backend. Use a short, non-sensitive recording for transcription checks.
 
+For the already-published Chrome Web Store extension, also follow [post-publish-monitoring.md](post-publish-monitoring.md).
+
 ## Production Configuration
 
 - The public backend URL uses HTTPS with a valid certificate.
@@ -38,6 +40,8 @@ Confirm that health and transcription both pass. If transcription fails while he
 
 ## Extension Checks
 
+For local or staging backend checks:
+
 1. Reload the unpacked extension on `chrome://extensions`.
 2. Open the popup and enter `https://YOUR_BACKEND_HOST/api/transcribe`.
 3. Click Save Settings, close the popup, reopen it, and confirm the URL persisted.
@@ -48,6 +52,15 @@ Confirm that health and transcription both pass. If transcription fails while he
 8. Confirm the status advances through recording and transcribing.
 9. Confirm the transcript appears in the original field and focus returns to it.
 10. Confirm the request target in the extension service worker network tools is your backend, never an `x.ai` host.
+
+For the published production path:
+
+1. Install Dictozy from the Chrome Web Store.
+2. Confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
+3. Confirm version `0.1.2`.
+4. Run the same supported-field recording and insertion checks.
+5. Confirm production network traffic goes only to `https://voice-dictation-extension.onrender.com`, never directly to xAI.
+6. Confirm Render logs include request ID, status, and latency for the smoke test without audio or transcript content.
 
 ## Failure Checks
 

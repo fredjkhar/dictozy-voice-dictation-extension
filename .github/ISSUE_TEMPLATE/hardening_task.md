@@ -27,3 +27,7 @@ What should not change?
 ## Testing Notes
 
 How should this be verified?
+
+## Post-Publish Notes
+
+Does this affect Store-installed smoke QA, Render monitoring, xAI usage review, support triage, or emergency cutoff procedures?

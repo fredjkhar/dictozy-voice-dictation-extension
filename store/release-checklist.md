@@ -1,6 +1,6 @@
 # Chrome Web Store Release Checklist
 
-This checklist prepares a draft upload. It does not authorize submission or publication.
+This checklist prepares a draft upload. It does not authorize submission or publication. For live-release monitoring after publication, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 
 ## Package
 
@@ -93,6 +93,17 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 - [ ] Confirm the xAI key is absent from the ZIP, repository status, browser storage, and browser network requests.
 - [ ] Keep the Developer Dashboard item in draft until a separate submission phase is explicitly approved.
 - [ ] Do not submit for review or publish until the user explicitly approves the submission step.
+
+## After Publication
+
+- [ ] Confirm the public listing is visible and shows the intended name, icon, screenshots, promotional tile, support link, homepage link, and privacy policy link.
+- [ ] Install the Chrome Web Store version and confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
+- [ ] Confirm version `0.1.2`.
+- [ ] Run the Store-installed smoke test in [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
+- [ ] Confirm Render CORS includes `chrome-extension://folpeencabfejhjokmldikaelonphmma`.
+- [ ] Review Render logs for request IDs, status, latency, `429`, `502`, `503`, and safe logging.
+- [ ] Review xAI usage and spend after the smoke test.
+- [ ] Start daily first-week monitoring.
 
 Validate the visual assets before using the checklist:
 
