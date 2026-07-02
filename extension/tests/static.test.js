@@ -9,12 +9,12 @@ function readExtensionFile(name) {
   return fs.readFileSync(path.join(extensionDir, name), "utf8");
 }
 
-test("manifest is prepared for Dictozy 0.1.2 without new permissions", () => {
+test("manifest is prepared for Dictozy 0.1.3 without new permissions", () => {
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
 
   assert.equal(manifest.name, "Dictozy: Voice Dictation");
   assert.equal(manifest.short_name, "Dictozy");
-  assert.equal(manifest.version, "0.1.2");
+  assert.equal(manifest.version, "0.1.3");
   assert.deepEqual(manifest.permissions, ["storage"]);
 });
 

@@ -7,7 +7,7 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 - [ ] Run all backend and extension checks.
 - [ ] Run `node --test extension/tests/*.test.js`.
 - [ ] Run `python3 scripts/package_extension.py` from the repository root.
-- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.2.zip` and contains `manifest.json` at its root.
+- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.3.zip` and contains `manifest.json` at its root.
 - [ ] Load the generated ZIP contents as an unpacked extension and repeat the manual QA checklist.
 - [ ] Confirm no source maps, environment files, raw audio, test fixtures, or unrelated repository files are included.
 - [ ] Confirm all executable JavaScript is packaged locally and no remote code is used.
@@ -28,10 +28,10 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 - [ ] Paste the short description and detailed description from `listing.md`.
 - [ ] Review the product landing page in `../site/index.html`; if it is published at a stable HTTPS URL, use it as the Homepage URL.
 - [ ] Upload the existing 128x128 store icon.
-- [ ] Regenerate and review `assets/screenshot-dictation-1280x800.png` and `assets/screenshot-settings-1280x800.png` after the 0.1.2 popup changes.
+- [ ] Regenerate and review `assets/screenshot-dictation-1280x800.png` and `assets/screenshot-settings-1280x800.png` after the 0.1.3 popup/icon changes.
 - [ ] Confirm screenshots show Dictozy branding, microphone/stop icon controls, the 10-second default, and no development-only controls.
 - [ ] Review the required `assets/promo-small-440x280.png` tile at full size.
-- [ ] Confirm visual assets match the `0.1.2` extension UI before opening a Web Store draft.
+- [ ] Confirm visual assets match the `0.1.3` extension UI before opening a Web Store draft.
 - [ ] Add other assets only when they accurately represent the shipped extension.
 - [ ] Do not claim real-time streaming, offline transcription, grammar correction, accounts, or other unimplemented features.
 - [ ] Set Homepage and Support URLs to the public GitHub repository and issue tracker.
@@ -39,7 +39,7 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 ## Developer Dashboard Update
 
 - [ ] Open the existing Chrome Web Store item for extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Package tab: upload only the reviewed `dist/dictozy-v0.1.2.zip`.
+- [ ] Package tab: upload only the reviewed `dist/dictozy-v0.1.3.zip`.
 - [ ] Store Listing tab: update name, summary, detailed description, category, language, screenshots, promo tile, homepage URL, support URL, and privacy policy URL.
 - [ ] Privacy practices tab: update data-use declarations, permission justifications, remote-code declaration, and Limited Use certifications.
 - [ ] Distribution tab: confirm visibility, regions, and rollout settings.
@@ -82,7 +82,7 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 ## Final QA Before Submission
 
 - [ ] Open `https://voice-dictation-extension.onrender.com/health` and confirm the production backend returns `{"status":"ok"}`.
-- [ ] Load the `0.1.2` unpacked extension in real Chrome and confirm there are no errors in `chrome://extensions`.
+- [ ] Load the `0.1.3` unpacked extension in real Chrome and confirm there are no errors in `chrome://extensions`.
 - [ ] Test a normal text input, textarea, contenteditable field, and role textbox.
 - [ ] Verify password, payment, readonly, disabled, hidden, file, checkbox, and radio fields are ignored.
 - [ ] Verify recording starts only after clicking the microphone icon and can be stopped immediately with the stop icon.
@@ -98,7 +98,7 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 
 - [ ] Confirm the public listing is visible and shows the intended name, icon, screenshots, promotional tile, support link, homepage link, and privacy policy link.
 - [ ] Install the Chrome Web Store version and confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Confirm version `0.1.2`.
+- [ ] Confirm version `0.1.3`.
 - [ ] Run the Store-installed smoke test in [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 - [ ] Confirm Render CORS includes `chrome-extension://folpeencabfejhjokmldikaelonphmma`.
 - [ ] Review Render logs for request IDs, status, latency, `429`, `502`, `503`, and safe logging.

@@ -26,7 +26,7 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.2` is published on the Chrome Web Store:
+Version `0.1.2` is published on the Chrome Web Store. Version `0.1.3` is prepared as a minimal icon-consistency patch:
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Microphone button records only after explicit user click.
@@ -40,6 +40,7 @@ Version `0.1.2` is published on the Chrome Web Store:
 - Production endpoint validation and deployment smoke tests are available.
 - Chrome Web Store copy, screenshots, promo tile, icon, and release notes are available under `store/`.
 - Post-publish monitoring and support triage checklists are available under `qa/`.
+- The `0.1.3` package bundles the current Dictozy icon files for the toolbar, popup, and Chrome extensions page.
 
 ## Local Development
 

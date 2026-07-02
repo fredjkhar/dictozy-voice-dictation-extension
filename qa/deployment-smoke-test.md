@@ -57,7 +57,7 @@ For the published production path:
 
 1. Install Dictozy from the Chrome Web Store.
 2. Confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm version `0.1.2`.
+3. Confirm version `0.1.3` after the patch release is installed.
 4. Run the same supported-field recording and insertion checks.
 5. Confirm production network traffic goes only to `https://voice-dictation-extension.onrender.com`, never directly to xAI.
 6. Confirm Render logs include request ID, status, and latency for the smoke test without audio or transcript content.

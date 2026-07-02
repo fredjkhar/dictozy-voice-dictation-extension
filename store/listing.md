@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the Chrome Web Store Developer Dashboard for Dictozy `0.1.2`.
+Use this file as the source of truth when updating the Chrome Web Store Developer Dashboard for Dictozy `0.1.3`.
 
 ## Dashboard Product Details
 
@@ -66,6 +66,10 @@ What's new in 0.1.2
 - 10-second default recording limit.
 - Improved supported-field detection and safer stale-field behavior.
 - Updated Chrome Web Store screenshots and promotional tile.
+
+What's new in 0.1.3
+
+- Patch release to ensure the new Dictozy logo is bundled consistently in the extension toolbar, popup, and Chrome extensions page.
 ```
 
 ## Visual Assets
@@ -178,7 +182,7 @@ No test account or credentials are required. The production backend must have th
 
 Use the Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
 
-1. Package tab: upload `dist/dictozy-v0.1.2.zip` only after rebuilding it from the reviewed source.
+1. Package tab: upload `dist/dictozy-v0.1.3.zip` only after rebuilding it from the reviewed source.
 2. Store Listing tab: update the name, summary, detailed description, category, language, screenshots, promo tile, homepage URL, support URL, and privacy policy URL from this file.
 3. Privacy practices tab: update the single-purpose statement, data-use declarations, permission justifications, remote-code declaration, and privacy policy URL.
 4. Distribution tab: confirm visibility, regions, and any rollout settings before submission.

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Dictozy: Voice Dictation",
   "short_name": "Dictozy",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Dictate short text into supported web fields with a visible microphone button and secure backend transcription.",
   "icons": {
     "16": "icons/icon-16.png",

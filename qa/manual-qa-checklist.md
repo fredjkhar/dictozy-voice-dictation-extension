@@ -18,7 +18,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - The unpacked extension loads without errors in `chrome://extensions`.
 - Popup settings persist after closing and reopening the popup.
-- The popup shows `Dictozy` branding and version `0.1.2` in `chrome://extensions`.
+- The popup shows `Dictozy` branding and version `0.1.3` in `chrome://extensions`.
 - Turning Dictozy off hides the page microphone button and prevents recording from starting.
 - Turning Dictozy back on restores microphone behavior on supported fields.
 - Backend URL defaults to `https://voice-dictation-extension.onrender.com/api/transcribe`.
@@ -46,7 +46,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 ## Store Presentation
 
 - `store/listing.md` uses user-friendly copy for the public listing and technical language for reviewer notes.
-- `site/index.html` opens locally and presents the real 0.1.2 product without unsupported features.
+- `site/index.html` opens locally and presents the real 0.1.3 product without unsupported features.
 - `store/assets/screenshot-dictation-1280x800.png`, `store/assets/screenshot-settings-1280x800.png`, and `store/assets/promo-small-440x280.png` match the current Dictozy name, icon, and popup.
 - The Chrome Web Store description does not imply background recording, direct xAI calls from the extension, or features that are not implemented.
 
@@ -54,7 +54,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - Install Dictozy from the Chrome Web Store.
 - Confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- Confirm version `0.1.2`.
+- Confirm version `0.1.3` after the patch release is installed.
 - Run a short dictation on a supported HTTPS text field.
 - Confirm recording starts only after clicking the visible microphone button.
 - Confirm transcript insertion and focus behavior.

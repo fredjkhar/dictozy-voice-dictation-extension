@@ -2,7 +2,7 @@
 
 Audit date: June 13, 2026
 
-This audit explains why Dictozy `0.1.2` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
+This audit explains why Dictozy `0.1.3` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
 
 ## API Permissions
 
