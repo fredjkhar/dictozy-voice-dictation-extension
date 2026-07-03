@@ -127,9 +127,9 @@ Render's public docs do not expose a simple per-service request-body-size settin
 
 ## Audio Normalization
 
-Before calling xAI Speech-to-Text, the backend converts accepted browser audio to mono 16 kHz WAV in memory. This keeps the extension package unchanged while giving the provider a stable, speech-friendly input format. The conversion uses the pinned `imageio-ffmpeg` Python package and does not write uploaded audio to disk.
+Before calling xAI Speech-to-Text, the backend converts accepted browser audio to mono 16 kHz WAV in memory. It checks privacy-safe signal metrics first, rejects silent or near-silent uploads before they reach xAI, then applies speech-focused filtering and dynamic normalization to usable audio. This keeps the extension package unchanged while giving the provider a stable, speech-friendly input format. The conversion uses the pinned `imageio-ffmpeg` Python package and does not write uploaded audio to disk.
 
-If normalization fails, `/api/transcribe` returns a safe `400` response without logging audio bytes, transcripts, ffmpeg stderr, API keys, or provider response bodies.
+If normalization fails, `/api/transcribe` returns a safe `400` response without logging audio bytes, transcripts, ffmpeg stderr, API keys, or provider response bodies. If no speech signal is detected, `/api/transcribe` returns a safe `400` asking the user to check the microphone and try again.
 
 ## Render Readiness
 

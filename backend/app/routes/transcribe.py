@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.core.limits import InMemoryRateLimiter, InProcessConcurrencyLimiter, LimitExceeded
 from app.core.security import normalize_content_type, safe_audio_filename, validate_audio_upload
 from app.schemas.transcription import TranscriptionResponse
-from app.services.audio_normalization import AudioNormalizationError, normalize_audio_for_stt
+from app.services.audio_normalization import AudioNoSpeechError, AudioNormalizationError, normalize_audio_for_stt
 from app.services.xai_service import (
     XAIConfigurationError,
     XAIEmptyTranscriptError,
@@ -64,6 +64,11 @@ async def transcribe_audio_route(request: Request, file: UploadFile = File(...))
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many transcription requests. Please try again later.",
+        ) from exc
+    except AudioNoSpeechError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No speech was detected. Please check your microphone and try again.",
         ) from exc
     except AudioNormalizationError as exc:
         raise HTTPException(

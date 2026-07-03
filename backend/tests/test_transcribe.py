@@ -8,7 +8,7 @@ import pytest
 from app.core.security import normalize_content_type, safe_audio_filename
 from app.main import app
 from app.routes import transcribe
-from app.services.audio_normalization import AudioNormalizationError, NormalizedAudio
+from app.services.audio_normalization import AudioNoSpeechError, AudioNormalizationError, AudioSignal, NormalizedAudio
 from app.services.xai_service import XAIEmptyTranscriptError, XAIServiceError, XAITranscriptionResult
 
 
@@ -20,6 +20,7 @@ def normalized_audio_stub(audio_bytes: bytes) -> NormalizedAudio:
         audio_bytes=audio_bytes,
         filename="recording.wav",
         content_type="audio/wav",
+        signal=AudioSignal(duration_seconds=1.0, rms_dbfs=-20.0, peak_dbfs=-10.0),
     )
 
 
@@ -51,6 +52,7 @@ def test_transcribe_returns_provider_transcript(monkeypatch) -> None:
             audio_bytes=b"normalized wav bytes",
             filename="recording.wav",
             content_type="audio/wav",
+            signal=AudioSignal(duration_seconds=1.0, rms_dbfs=-20.0, peak_dbfs=-10.0),
         )
 
     async def fake_transcribe(audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
@@ -215,6 +217,26 @@ def test_transcribe_returns_safe_audio_processing_error(monkeypatch) -> None:
     assert response.status_code == 400
     assert response.json() == {"detail": "Could not process recorded audio."}
     assert "ffmpeg stderr" not in response.text
+
+
+def test_transcribe_returns_safe_no_speech_error(monkeypatch) -> None:
+    def fake_normalize(_audio_bytes: bytes) -> NormalizedAudio:
+        raise AudioNoSpeechError("audio metrics should not reach the client")
+
+    async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+        raise AssertionError("xAI should not be called when no speech is detected")
+
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", fake_normalize)
+    monkeypatch.setattr(transcribe, "transcribe_with_xai", fake_transcribe)
+
+    response = client.post(
+        "/api/transcribe",
+        files={"file": ("recording.webm", b"fake audio bytes", "audio/webm")},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "No speech was detected. Please check your microphone and try again."}
+    assert "audio metrics" not in response.text
 
 
 def test_transcribe_returns_safe_empty_transcript_error(monkeypatch) -> None:
