@@ -125,6 +125,12 @@ The app keeps the uploaded audio file limit at 10 MiB and accepts only known aud
 
 Render's public docs do not expose a simple per-service request-body-size setting for this web service. Keep the app-level guard enabled, and add an upstream proxy or edge rule later if you need a hard platform-level request body cap before traffic reaches FastAPI.
 
+## Audio Normalization
+
+Before calling xAI Speech-to-Text, the backend converts accepted browser audio to mono 16 kHz WAV in memory. This keeps the extension package unchanged while giving the provider a stable, speech-friendly input format. The conversion uses the pinned `imageio-ffmpeg` Python package and does not write uploaded audio to disk.
+
+If normalization fails, `/api/transcribe` returns a safe `400` response without logging audio bytes, transcripts, ffmpeg stderr, API keys, or provider response bodies.
+
 ## Render Readiness
 
 Render Free web services spin down after idle periods and can take about a minute to spin back up. Before publishing the approved Chrome Web Store package, move the backend to a paid always-on instance if you want the first dictation request to avoid cold-start delay. See Render's Free instance notes: <https://render.com/docs/free>.

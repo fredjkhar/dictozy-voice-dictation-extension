@@ -8,10 +8,19 @@ import pytest
 from app.core.security import normalize_content_type, safe_audio_filename
 from app.main import app
 from app.routes import transcribe
-from app.services.xai_service import XAIServiceError, XAITranscriptionResult
+from app.services.audio_normalization import AudioNormalizationError, NormalizedAudio
+from app.services.xai_service import XAIEmptyTranscriptError, XAIServiceError, XAITranscriptionResult
 
 
 client = TestClient(app)
+
+
+def normalized_audio_stub(audio_bytes: bytes) -> NormalizedAudio:
+    return NormalizedAudio(
+        audio_bytes=audio_bytes,
+        filename="recording.wav",
+        content_type="audio/wav",
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -36,12 +45,21 @@ def test_request_id_header_accepts_safe_caller_value() -> None:
 
 
 def test_transcribe_returns_provider_transcript(monkeypatch) -> None:
-    async def fake_transcribe(audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+    def fake_normalize(audio_bytes: bytes) -> NormalizedAudio:
         assert audio_bytes == b"fake audio bytes"
-        assert filename == "recording.webm"
-        assert content_type == "audio/webm"
+        return NormalizedAudio(
+            audio_bytes=b"normalized wav bytes",
+            filename="recording.wav",
+            content_type="audio/wav",
+        )
+
+    async def fake_transcribe(audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+        assert audio_bytes == b"normalized wav bytes"
+        assert filename == "recording.wav"
+        assert content_type == "audio/wav"
         return XAITranscriptionResult(text="Mock transcript.")
 
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", fake_normalize)
     monkeypatch.setattr(transcribe, "transcribe_with_xai", fake_transcribe)
 
     response = client.post(
@@ -74,6 +92,7 @@ def test_transcribe_rate_limit_returns_safe_429(monkeypatch) -> None:
     async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
         return XAITranscriptionResult(text="Mock transcript.")
 
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
     monkeypatch.setattr(
         transcribe,
         "settings",
@@ -109,6 +128,7 @@ def test_transcribe_concurrency_limit_returns_safe_429(monkeypatch) -> None:
         await asyncio.to_thread(release_first_request.wait, 5)
         return XAITranscriptionResult(text="Mock transcript.")
 
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
     monkeypatch.setattr(
         transcribe,
         "settings",
@@ -177,10 +197,48 @@ def test_transcribe_rejects_oversized_content_length_before_upload_parsing() -> 
     assert response.headers["x-request-id"]
 
 
+def test_transcribe_returns_safe_audio_processing_error(monkeypatch) -> None:
+    def fake_normalize(_audio_bytes: bytes) -> NormalizedAudio:
+        raise AudioNormalizationError("ffmpeg stderr should not reach the client")
+
+    async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+        raise AssertionError("xAI should not be called when audio normalization fails")
+
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", fake_normalize)
+    monkeypatch.setattr(transcribe, "transcribe_with_xai", fake_transcribe)
+
+    response = client.post(
+        "/api/transcribe",
+        files={"file": ("recording.webm", b"fake audio bytes", "audio/webm")},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Could not process recorded audio."}
+    assert "ffmpeg stderr" not in response.text
+
+
+def test_transcribe_returns_safe_empty_transcript_error(monkeypatch) -> None:
+    async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+        raise XAIEmptyTranscriptError("provider returned blank text")
+
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
+    monkeypatch.setattr(transcribe, "transcribe_with_xai", fake_transcribe)
+
+    response = client.post(
+        "/api/transcribe",
+        files={"file": ("recording.webm", b"fake audio bytes", "audio/webm")},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "No speech was detected. Please try again."}
+    assert "provider returned blank text" not in response.text
+
+
 def test_transcribe_returns_safe_provider_error(monkeypatch) -> None:
     async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
         raise XAIServiceError("upstream details should not reach the client")
 
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
     monkeypatch.setattr(transcribe, "transcribe_with_xai", fake_transcribe)
 
     response = client.post(

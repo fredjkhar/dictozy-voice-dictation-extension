@@ -16,6 +16,10 @@ class XAIConfigurationError(XAIServiceError):
     """Raised when required xAI backend configuration is missing."""
 
 
+class XAIEmptyTranscriptError(XAIServiceError):
+    """Raised when xAI returns a successful response without usable text."""
+
+
 @dataclass(frozen=True)
 class XAITranscriptionResult:
     text: str
@@ -65,8 +69,12 @@ async def transcribe_audio(
         raise XAIServiceError("xAI transcription response was not valid JSON.") from exc
 
     text = payload.get("text")
-    if not isinstance(text, str) or not text.strip():
+    if not isinstance(text, str):
         logger.warning("xAI STT response did not include text. Keys: %s", sorted(payload.keys()))
         raise XAIServiceError("xAI transcription response did not include text.")
+
+    if not text.strip():
+        logger.warning("xAI STT response included empty text. Keys: %s", sorted(payload.keys()))
+        raise XAIEmptyTranscriptError("xAI transcription response included empty text.")
 
     return XAITranscriptionResult(text=text.strip())
