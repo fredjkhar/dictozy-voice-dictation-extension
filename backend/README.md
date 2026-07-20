@@ -27,11 +27,13 @@ On Windows:
 .venv\Scripts\activate
 ```
 
-Install dependencies:
+Install development and test dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
+
+Production builds install only `requirements.txt`; test tooling stays out of the runtime image.
 
 Create a local environment file:
 

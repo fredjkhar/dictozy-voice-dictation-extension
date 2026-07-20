@@ -18,10 +18,15 @@ jobs:
         with:
           python-version: "3.14"
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
 
       - name: Install backend dependencies
-        run: python -m pip install -r backend/requirements.txt
+        run: python -m pip install -r backend/requirements-dev.txt
+
+      - name: Verify backend dependency graph
+        run: python -m pip check
 
       - name: Run backend tests
         working-directory: backend

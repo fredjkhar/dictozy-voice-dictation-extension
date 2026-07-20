@@ -114,7 +114,7 @@ The backend includes launch guardrails for `/api/transcribe`:
 
 - A global kill switch: set `TRANSCRIPTION_ENABLED=false` and redeploy or restart the service to stop transcription calls immediately. `/health` remains available.
 - In-process concurrency limiting: extra simultaneous transcription requests return `429` before calling xAI.
-- In-memory rate limiting: repeated requests from the same client key return `429` before calling xAI. The client key may use forwarded request metadata in memory, but it is not written to logs.
+- In-memory rate limiting: repeated requests from the same client key return `429` before calling xAI. Expired client buckets are pruned periodically. The client key may use forwarded request metadata in memory, but it is not written to logs.
 - Request IDs: every response includes `X-Request-ID`. Backend request logs include request ID, method, path, status, and latency only.
 
 These guards are intentionally simple for the MVP. They reset when the process restarts and are per-process if the service is scaled horizontally. Use provider-level or edge-level controls before broader public rollout.

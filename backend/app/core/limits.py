@@ -12,7 +12,13 @@ class LimitExceeded(Exception):
 class InMemoryRateLimiter:
     def __init__(self) -> None:
         self._hits: dict[str, deque[float]] = defaultdict(deque)
+        self._last_prune_at = 0.0
         self._lock = threading.Lock()
+
+    def _prune_stale_buckets(self, cutoff: float) -> None:
+        stale_keys = [key for key, hits in self._hits.items() if not hits or hits[-1] <= cutoff]
+        for key in stale_keys:
+            del self._hits[key]
 
     def allow(self, key: str, *, limit: int, window_seconds: int) -> bool:
         if limit <= 0:
@@ -22,6 +28,10 @@ class InMemoryRateLimiter:
         cutoff = now - window_seconds
 
         with self._lock:
+            if now - self._last_prune_at >= window_seconds:
+                self._prune_stale_buckets(cutoff)
+                self._last_prune_at = now
+
             hits = self._hits[key]
             while hits and hits[0] <= cutoff:
                 hits.popleft()
@@ -35,6 +45,7 @@ class InMemoryRateLimiter:
     def reset(self) -> None:
         with self._lock:
             self._hits.clear()
+            self._last_prune_at = 0.0
 
 
 class InProcessConcurrencyLimiter:
