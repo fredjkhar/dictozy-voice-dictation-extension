@@ -6,7 +6,7 @@ The extension uses Manifest V3 with plain JavaScript, content scripts for page i
 
 ## Current State
 
-Dictozy detects supported fields, shows a microphone button beside the active field, records a short audio clip after the user clicks, sends the clip to the configured FastAPI backend, and inserts the returned transcript. Pending requests can be cancelled locally, failures offer a fresh-recording retry, and short request references help correlate safe backend logs. The extension does not call xAI directly.
+Dictozy detects supported fields, shows a microphone button beside the active field, and records a short audio clip after an explicit microphone-button click or assigned browser shortcut. The clip is sent to the configured FastAPI backend and the returned transcript is inserted into the active field. The shortcut and visible control share the same start, stop, cancellation, retry, and stale-operation protections. The extension does not call xAI directly.
 
 `dictation-lifecycle.js` owns privacy-safe request IDs, stale-operation rejection, cancellation signals, and conservative local microphone-signal inspection. `content.js` remains responsible for page fields, the visible control, recording, insertion, and accessible status UI. Runtime code has no third-party JavaScript dependencies.
 
@@ -29,6 +29,7 @@ The normalized source image is `icons/icon-source.png`, with larger exported siz
 The popup stores local settings with `chrome.storage.local`:
 
 - Enabled state: defaults to on. When off, the page microphone button is hidden and recording cannot start.
+- Keyboard shortcut: the `toggle-dictation` command suggests `Ctrl+Shift+Y` by default and `Command+Shift+Y` on macOS. Chrome may leave it unassigned after a conflict; the popup shows the current assignment and opens `chrome://extensions/shortcuts` for remapping.
 - Backend URL: defaults to `https://voice-dictation-extension.onrender.com/api/transcribe`.
 - Recording limit: defaults to 10 seconds and is clamped between 1 and 30 seconds.
 - Check Backend: available under Advanced and checks the corresponding `/health` endpoint without recording or uploading audio.
@@ -74,23 +75,28 @@ Extension setup:
 6. Open or reload a normal web page with a text field. For local QA, use `http://127.0.0.1:8080/qa/manual-test-page.html`.
 7. Focus a supported field such as a text input or textarea.
 8. Confirm a small microphone icon button appears beside the field.
-9. Click the microphone icon button.
-10. Allow microphone access if Chrome prompts.
-11. Confirm the button changes to a stop icon and a recording status appears.
-12. Click the stop icon, or wait for the configured recording limit.
-13. Confirm a transcribing status appears.
-14. During one test, click the cancel icon and confirm no late result is inserted. Cancellation stops the extension-side request where practical but cannot guarantee that provider processing has stopped.
+9. Use the assigned shortcut and allow microphone access if Chrome prompts.
+10. Confirm the button changes to a stop icon and a recording status appears.
+11. Use the shortcut again to stop recording and confirm a transcribing status appears.
+12. During another recording, use the shortcut while transcribing and confirm no late result is inserted. Cancellation stops the extension-side request where practical but cannot guarantee that provider processing has stopped.
+13. Start a recording and use the shortcut while the microphone permission prompt is pending; deny or close the prompt and confirm no upload occurs.
+14. Press the shortcut repeatedly and confirm recordings or transcription requests do not overlap.
 15. Trigger a safe failure and confirm the error remains visible, includes a short reference when a request was sent, and offers a retry icon.
 16. Click the retry icon, make a new recording, and confirm only the new recording is used.
 17. Confirm a successful backend transcript is inserted only if the original field remains focused.
 18. Turn Dictozy off during recording and during transcription, then confirm active work is cancelled and no result is inserted.
-19. Turn Dictozy back on, refocus a supported field, and confirm the microphone button is usable again.
+19. While Dictozy is off, press the shortcut and confirm nothing records or uploads.
+20. Turn Dictozy back on, refocus a supported field, and confirm both the microphone button and shortcut are usable.
+21. Open the popup, confirm the displayed shortcut matches `chrome://extensions/shortcuts`, remap it, reopen the popup, and confirm the new assignment appears.
+22. Remove the assignment, reopen the popup, and confirm it shows `Not assigned`.
+23. Repeat the start, stop, cancel, and successful insertion flow with the visible click controls.
 
 For structured QA, use the checklist and local test page in `../qa/`.
 
 ## Troubleshooting
 
 - If the microphone button does not appear, reload the page after loading or reloading the extension.
+- If the keyboard shortcut does not work, check the popup for `Not assigned`, then use its keyboard icon to assign or remap the command in `chrome://extensions/shortcuts`.
 - If Chrome does not prompt for microphone permission, test on `http://127.0.0.1` or an HTTPS page.
 - If the button stays on Transcribing, click the cancel icon and retry with a short recording. The extension also applies a response timeout.
 - If an error includes a short `Reference`, use it to locate the matching privacy-safe backend request log. Do not share audio, transcript text, or field contents in support reports.

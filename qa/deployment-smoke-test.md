@@ -52,15 +52,19 @@ For local or staging backend checks:
 8. Confirm the status advances through recording and transcribing.
 9. Confirm the transcript appears in the original field and focus returns to it.
 10. Confirm the request target in the extension service worker network tools is your backend, never an `x.ai` host.
+11. Repeat the start, stop, and successful insertion flow with the assigned browser shortcut.
+12. Cancel one pending transcription with the shortcut and confirm no late result is inserted.
 
 For the published production path:
 
 1. Install Dictozy from the Chrome Web Store.
 2. Confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm version `0.1.4` after the reliability release is installed.
+3. Confirm version `0.1.5` after the keyboard-control release is installed.
 4. Run the same supported-field recording and insertion checks.
-5. Confirm production network traffic goes only to `https://voice-dictation-extension.onrender.com`, never directly to xAI.
-6. Confirm Render logs include request ID, status, and latency for the smoke test without audio or transcript content.
+5. Confirm the popup displays the assigned shortcut or `Not assigned`, and that the keyboard icon opens Chrome's shortcut settings.
+6. Confirm the assigned shortcut starts and stops one recording and cancels one pending transcription.
+7. Confirm production network traffic goes only to `https://voice-dictation-extension.onrender.com`, never directly to xAI.
+8. Confirm Render logs include request ID, status, and latency for the smoke test without audio or transcript content.
 
 ## Failure Checks
 
@@ -71,6 +75,8 @@ For the published production path:
 - Cancelling a pending transcription prevents any late response from being inserted; it does not guarantee provider-side processing stops after upload.
 - Turning Dictozy off during recording or transcription cancels extension-side active work safely.
 - A retry records a fresh clip and does not reuse failed audio.
+- Repeated shortcut presses do not overlap recording or transcription work.
+- The shortcut does nothing while Dictozy is disabled or an unsupported or sensitive field is focused.
 - Backend responses do not expose provider credentials or raw upstream error bodies.
 
 ## Local Script Check

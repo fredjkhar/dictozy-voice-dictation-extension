@@ -1,6 +1,7 @@
 (() => {
   const TRANSCRIBE_AUDIO_MESSAGE = "VOICE_DICTATION_TRANSCRIBE_AUDIO";
   const CANCEL_TRANSCRIPTION_MESSAGE = "VOICE_DICTATION_CANCEL_TRANSCRIPTION";
+  const TOGGLE_DICTATION_MESSAGE = "VOICE_DICTATION_TOGGLE";
   const DEFAULT_EXTENSION_ENABLED = true;
   const BUTTON_EDGE_OFFSET = 8;
   const DEFAULT_RECORDING_DURATION_MS = 10000;
@@ -57,6 +58,11 @@
       icon: "mic",
       label: "Start dictation",
       status: "",
+    },
+    processing: {
+      icon: "busy",
+      label: "Preparing transcription",
+      status: "Preparing transcription",
     },
     recording: {
       icon: "stop",
@@ -147,19 +153,7 @@
       event.preventDefault();
     });
 
-    button.addEventListener("click", async () => {
-      if (mediaRecorder?.state === "recording") {
-        stopRecording();
-        return;
-      }
-
-      if (currentMicButtonState === "transcribing") {
-        cancelTranscription();
-        return;
-      }
-
-      await startRecording();
-    });
+    button.addEventListener("click", handleDictationToggle);
 
     document.documentElement.append(button);
     return button;
@@ -253,11 +247,11 @@
 
     currentMicButtonState = state;
     button.classList.toggle("voice-dictation-mic-button--recording", state === "recording");
-    button.classList.toggle("voice-dictation-mic-button--busy", state === "requesting");
+    button.classList.toggle("voice-dictation-mic-button--busy", state === "requesting" || state === "processing");
     button.classList.toggle("voice-dictation-mic-button--transcribing", state === "transcribing");
     button.classList.toggle("voice-dictation-mic-button--success", state === "success");
     button.classList.toggle("voice-dictation-mic-button--error", state === "error");
-    button.disabled = state === "requesting" || !extensionEnabled;
+    button.disabled = state === "requesting" || state === "processing" || !extensionEnabled;
     setMicButtonVisual(button, state);
 
     if (message || visual.status) {
@@ -593,6 +587,67 @@
     cancelTranscription({ announce });
   }
 
+  async function handleDictationToggle() {
+    if (!extensionEnabled) {
+      return {
+        action: "ignored",
+        ok: false,
+        state: "disabled",
+      };
+    }
+
+    if (currentMicButtonState === "requesting") {
+      cancelRecording();
+      flashMicButtonState("idle", "Microphone request cancelled");
+      return {
+        action: "cancel-microphone",
+        ok: true,
+        state: "idle",
+      };
+    }
+
+    if (mediaRecorder?.state === "recording") {
+      stopRecording();
+      return {
+        action: "stop-recording",
+        ok: true,
+        state: "processing",
+      };
+    }
+
+    if (currentMicButtonState === "processing") {
+      return {
+        action: "ignored",
+        ok: false,
+        state: "processing",
+      };
+    }
+
+    if (currentMicButtonState === "transcribing") {
+      cancelTranscription();
+      return {
+        action: "cancel-transcription",
+        ok: true,
+        state: "idle",
+      };
+    }
+
+    if (!getFocusedSupportedField()) {
+      return {
+        action: "ignored",
+        ok: false,
+        state: currentMicButtonState,
+      };
+    }
+
+    await startRecording();
+    return {
+      action: currentMicButtonState === "recording" ? "start-recording" : "ignored",
+      ok: currentMicButtonState === "recording",
+      state: currentMicButtonState,
+    };
+  }
+
   function pickSupportedMimeType() {
     const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
 
@@ -696,7 +751,14 @@
       return;
     }
 
-    mediaRecorder.stop();
+    setMicButtonState("processing", "Preparing transcription");
+
+    try {
+      mediaRecorder.stop();
+    } catch (_error) {
+      clearRecordingResources();
+      showErrorState("Could not stop recording. Try again.");
+    }
   }
 
   function sendAudioToBackend(recordingBlob, operation) {
@@ -949,6 +1011,23 @@
     updateMicButton();
   }
 
+  function handleRuntimeMessage(message, _sender, sendResponse) {
+    if (message?.type !== TOGGLE_DICTATION_MESSAGE) {
+      return false;
+    }
+
+    handleDictationToggle()
+      .then(sendResponse)
+      .catch(() => {
+        sendResponse({
+          action: "ignored",
+          ok: false,
+          state: "error",
+        });
+      });
+    return true;
+  }
+
   document.addEventListener("focusin", rememberActiveField, true);
   document.addEventListener("focusout", forgetActiveFieldAfterBlur, true);
   document.addEventListener("keyup", rememberActiveField, true);
@@ -956,6 +1035,7 @@
   document.addEventListener("selectionchange", rememberTextRange);
   window.addEventListener("scroll", updateMicButton, true);
   window.addEventListener("resize", updateMicButton);
+  chrome.runtime.onMessage.addListener(handleRuntimeMessage);
   chrome.storage.onChanged.addListener(handleStorageChanges);
 
   loadExtensionState();

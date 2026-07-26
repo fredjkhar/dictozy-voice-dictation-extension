@@ -9,12 +9,12 @@ function readExtensionFile(name) {
   return fs.readFileSync(path.join(extensionDir, name), "utf8");
 }
 
-test("manifest is prepared for Dictozy 0.1.4 without new permissions", () => {
+test("manifest is prepared for Dictozy 0.1.5 without new permissions", () => {
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
 
   assert.equal(manifest.name, "Dictozy: Voice Dictation");
   assert.equal(manifest.short_name, "Dictozy");
-  assert.equal(manifest.version, "0.1.4");
+  assert.equal(manifest.version, "0.1.5");
   assert.deepEqual(manifest.permissions, ["storage"]);
   assert.deepEqual(manifest.host_permissions, [
     "http://127.0.0.1/*",
@@ -26,6 +26,15 @@ test("manifest is prepared for Dictozy 0.1.4 without new permissions", () => {
     "dictation-lifecycle.js",
     "content.js",
   ]);
+  assert.deepEqual(manifest.commands, {
+    "toggle-dictation": {
+      description: "Start, stop, or cancel Dictozy dictation",
+      suggested_key: {
+        default: "Ctrl+Shift+Y",
+        mac: "Command+Shift+Y",
+      },
+    },
+  });
 });
 
 test("production popup no longer exposes fake text controls", () => {
@@ -37,6 +46,8 @@ test("production popup no longer exposes fake text controls", () => {
   assert.match(popupHtml, /extensionEnabled/);
   assert.match(popupHtml, /Advanced Backend/);
   assert.match(popupHtml, /brand-mark/);
+  assert.match(popupHtml, /shortcutValue/);
+  assert.match(popupJs, /chrome\.commands\.getAll/);
   assert.match(popupHtml, /data-tone="neutral"/);
 });
 
@@ -46,6 +57,7 @@ test("content script honors enabled storage and has no fake text message path", 
   assert.equal(/VOICE_DICTATION_INSERT_FAKE_TEXT|fake dictation|insertFakeText/i.test(content), false);
   assert.match(content, /extensionEnabled/);
   assert.match(content, /chrome\.storage\.onChanged/);
+  assert.match(content, /VOICE_DICTATION_TOGGLE/);
 });
 
 test("page recording control uses icon states instead of text-only labels", () => {

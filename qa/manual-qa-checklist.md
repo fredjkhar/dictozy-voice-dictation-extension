@@ -18,7 +18,11 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - The unpacked extension loads without errors in `chrome://extensions`.
 - Popup settings persist after closing and reopening the popup.
-- The popup shows `Dictozy` branding and version `0.1.4` in `chrome://extensions`.
+- The popup shows `Dictozy` branding and version `0.1.5` in `chrome://extensions`.
+- The popup displays the current `toggle-dictation` shortcut or `Not assigned`.
+- The popup keyboard icon opens `chrome://extensions/shortcuts`.
+- The suggested shortcut is `Ctrl+Shift+Y`, or `Command+Shift+Y` on macOS, when Chrome can assign it without a conflict.
+- Remapping or removing the command in Chrome is reflected after reopening the popup.
 - Turning Dictozy off hides the page microphone button and prevents recording from starting.
 - Turning Dictozy back on restores microphone behavior on supported fields.
 - Backend URL defaults to `https://voice-dictation-extension.onrender.com/api/transcribe`.
@@ -29,6 +33,13 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 - The microphone icon button appears on supported fields only.
 - The microphone icon button does not appear on password, payment, hidden, readonly, disabled, checkbox, radio, or file inputs.
 - Clicking the microphone icon requests microphone permission only after the user clicks.
+- With a supported focused field, the assigned shortcut requests microphone permission as an explicit user action.
+- While recording, pressing the shortcut stops the current recording.
+- While microphone permission is pending, pressing the shortcut cancels the pending attempt safely and does not upload audio.
+- While transcribing, pressing the shortcut cancels extension-side work and prevents a late result from being inserted.
+- The shortcut does nothing when Dictozy is disabled, no supported field is focused, or a password, payment, hidden, readonly, disabled, checkbox, radio, or file field is focused.
+- Repeated shortcut presses do not create overlapping recordings or transcription requests.
+- The visible click controls and keyboard shortcut produce the same recording, cancellation, retry, and insertion behavior.
 - The user can stop recording immediately with the stop icon button.
 - Recording auto-stops after the configured popup recording limit.
 - The extension shows recording and transcribing status.
@@ -57,7 +68,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 ## Store Presentation
 
 - `store/listing.md` uses user-friendly copy for the public listing and technical language for reviewer notes.
-- `site/index.html` opens locally and presents the real `0.1.4` product without unsupported features.
+- `site/index.html` opens locally and presents the current product without unsupported features.
 - `store/assets/screenshot-dictation-1280x800.png`, `store/assets/screenshot-settings-1280x800.png`, and `store/assets/promo-small-440x280.png` match the current Dictozy name, icon, and popup.
 - The Chrome Web Store description does not imply background recording, direct xAI calls from the extension, or features that are not implemented.
 
@@ -65,9 +76,10 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - Install Dictozy from the Chrome Web Store.
 - Confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- Confirm version `0.1.4` after the reliability release is installed.
+- Confirm version `0.1.5` after the keyboard-control release is installed.
 - Run a short dictation on a supported HTTPS text field.
-- Confirm recording starts only after clicking the visible microphone button.
+- Confirm recording starts only after clicking the visible microphone button or pressing the assigned browser shortcut.
+- Confirm the shortcut stops recording and cancels pending transcription without late insertion.
 - Confirm transcript insertion and focus behavior.
 - Confirm unsupported and sensitive fields are ignored.
 - Confirm extension network traffic goes only to `https://voice-dictation-extension.onrender.com`, never directly to xAI.

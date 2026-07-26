@@ -4,6 +4,8 @@ importScripts("dictation-lifecycle.js");
 const TRANSCRIBE_AUDIO_MESSAGE = "VOICE_DICTATION_TRANSCRIBE_AUDIO";
 const CANCEL_TRANSCRIPTION_MESSAGE = "VOICE_DICTATION_CANCEL_TRANSCRIPTION";
 const TEST_BACKEND_MESSAGE = "VOICE_DICTATION_TEST_BACKEND";
+const TOGGLE_DICTATION_COMMAND = "toggle-dictation";
+const TOGGLE_DICTATION_MESSAGE = "VOICE_DICTATION_TOGGLE";
 const TRANSCRIBE_TIMEOUT_MS = 45000;
 const HEALTH_CHECK_TIMEOUT_MS = 10000;
 const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
@@ -251,6 +253,27 @@ function cancelTranscription(requestIdValue) {
   return true;
 }
 
+async function sendToggleToActiveTab() {
+  try {
+    const tabs = await chrome.tabs.query({
+      active: true,
+      lastFocusedWindow: true,
+    });
+    const tabId = tabs[0]?.id;
+
+    if (!Number.isInteger(tabId)) {
+      return false;
+    }
+
+    await chrome.tabs.sendMessage(tabId, {
+      type: TOGGLE_DICTATION_MESSAGE,
+    });
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === TEST_BACKEND_MESSAGE) {
     testBackend(message.backendUrl).then(sendResponse);
@@ -280,4 +303,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     });
 
   return true;
+});
+
+chrome.commands.onCommand.addListener((command) => {
+  if (command === TOGGLE_DICTATION_COMMAND) {
+    void sendToggleToActiveTab();
+  }
 });

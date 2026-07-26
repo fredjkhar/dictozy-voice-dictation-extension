@@ -1,4 +1,6 @@
 const TEST_BACKEND_MESSAGE = "VOICE_DICTATION_TEST_BACKEND";
+const TOGGLE_DICTATION_COMMAND = "toggle-dictation";
+const SHORTCUT_SETTINGS_URL = "chrome://extensions/shortcuts";
 const DEFAULT_EXTENSION_ENABLED = true;
 const DEFAULT_RECORDING_DURATION_SECONDS = 10;
 const MIN_RECORDING_DURATION_SECONDS = 1;
@@ -10,6 +12,8 @@ const saveSettingsButton = document.querySelector("#saveSettings");
 const testBackendButton = document.querySelector("#testBackend");
 const backendUrlInput = document.querySelector("#backendUrl");
 const recordingDurationInput = document.querySelector("#recordingDurationSeconds");
+const manageShortcutButton = document.querySelector("#manageShortcut");
+const shortcutValue = document.querySelector("#shortcutValue");
 const statusText = document.querySelector("#status");
 
 function setStatus(message, tone = "neutral") {
@@ -28,6 +32,51 @@ function normalizeRecordingDurationSeconds(value) {
     MAX_RECORDING_DURATION_SECONDS,
     Math.max(MIN_RECORDING_DURATION_SECONDS, Math.round(duration)),
   );
+}
+
+function getExtensionCommands() {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.commands.getAll((commands) => {
+        if (chrome.runtime.lastError) {
+          reject(new Error("Could not read extension shortcuts."));
+          return;
+        }
+
+        resolve(Array.isArray(commands) ? commands : []);
+      });
+    } catch (_error) {
+      reject(new Error("Could not read extension shortcuts."));
+    }
+  });
+}
+
+async function loadShortcut() {
+  try {
+    const commands = await getExtensionCommands();
+    const command = commands.find(({ name }) => name === TOGGLE_DICTATION_COMMAND);
+    const assignedShortcut = typeof command?.shortcut === "string" ? command.shortcut.trim() : "";
+
+    shortcutValue.textContent = assignedShortcut || "Not assigned";
+    shortcutValue.dataset.assigned = String(Boolean(assignedShortcut));
+  } catch (_error) {
+    shortcutValue.textContent = "Not assigned";
+    shortcutValue.dataset.assigned = "false";
+  }
+}
+
+async function openShortcutSettings() {
+  manageShortcutButton.disabled = true;
+
+  try {
+    await chrome.tabs.create({
+      url: SHORTCUT_SETTINGS_URL,
+    });
+  } catch (_error) {
+    setStatus("Unable to open Chrome shortcut settings.", "error");
+  } finally {
+    manageShortcutButton.disabled = false;
+  }
 }
 
 async function loadSettings() {
@@ -101,6 +150,8 @@ async function testBackend() {
 }
 
 enabledToggle.addEventListener("change", toggleEnabled);
+manageShortcutButton.addEventListener("click", openShortcutSettings);
 saveSettingsButton.addEventListener("click", saveSettings);
 testBackendButton.addEventListener("click", testBackend);
 loadSettings();
+loadShortcut();

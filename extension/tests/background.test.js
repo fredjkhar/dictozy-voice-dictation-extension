@@ -7,11 +7,23 @@ const vm = require("node:vm");
 const extensionDir = path.join(__dirname, "..");
 const TRANSCRIBE_MESSAGE = "VOICE_DICTATION_TRANSCRIBE_AUDIO";
 const CANCEL_MESSAGE = "VOICE_DICTATION_CANCEL_TRANSCRIPTION";
+const TOGGLE_COMMAND = "toggle-dictation";
+const TOGGLE_MESSAGE = "VOICE_DICTATION_TOGGLE";
 const AUDIO_DATA_URL = "data:audio/webm;base64,YXVkaW8=";
 
-function createBackground({ fetchImpl, useFakeTimers = false }) {
+function createBackground({
+  fetchImpl = async () => {
+    throw new Error("Unexpected fetch");
+  },
+  tabMessageError = null,
+  tabs = [],
+  useFakeTimers = false,
+} = {}) {
+  let commandListener = null;
   let messageListener = null;
   let nextTimerId = 1;
+  const tabMessageCalls = [];
+  const tabQueries = [];
   const timers = new Map();
   const sandbox = {
     AbortController,
@@ -23,6 +35,13 @@ function createBackground({ fetchImpl, useFakeTimers = false }) {
     Uint8Array,
     atob,
     chrome: {
+      commands: {
+        onCommand: {
+          addListener(listener) {
+            commandListener = listener;
+          },
+        },
+      },
       runtime: {
         onMessage: {
           addListener(listener) {
@@ -33,6 +52,21 @@ function createBackground({ fetchImpl, useFakeTimers = false }) {
       storage: {
         local: {
           get: async (defaults) => defaults,
+        },
+      },
+      tabs: {
+        async query(queryInfo) {
+          tabQueries.push(queryInfo);
+          return tabs;
+        },
+        async sendMessage(tabId, message) {
+          tabMessageCalls.push({ message, tabId });
+
+          if (tabMessageError) {
+            throw tabMessageError;
+          }
+
+          return { ok: true };
         },
       },
     },
@@ -73,6 +107,11 @@ function createBackground({ fetchImpl, useFakeTimers = false }) {
     });
   }
 
+  async function dispatchCommand(command) {
+    commandListener(command);
+    await new Promise((resolve) => setImmediate(resolve));
+  }
+
   function runTimer(delay) {
     const timerEntry = [...timers.entries()].find(([, timer]) => timer.delay === delay);
     assert.ok(timerEntry, `Expected a ${delay}ms timer`);
@@ -80,8 +119,47 @@ function createBackground({ fetchImpl, useFakeTimers = false }) {
     timerEntry[1].callback();
   }
 
-  return { dispatch, runTimer };
+  return {
+    dispatch,
+    dispatchCommand,
+    runTimer,
+    tabMessageCalls,
+    tabQueries,
+  };
 }
+
+test("background routes the toggle command to only the active tab ID", async () => {
+  const background = createBackground({
+    tabs: [{ id: 42, title: "Must not be read", url: "https://private.example" }],
+  });
+
+  await background.dispatchCommand(TOGGLE_COMMAND);
+
+  assert.equal(background.tabQueries.length, 1);
+  assert.equal(background.tabQueries[0].active, true);
+  assert.equal(background.tabQueries[0].lastFocusedWindow, true);
+  assert.equal(background.tabMessageCalls.length, 1);
+  assert.equal(background.tabMessageCalls[0].tabId, 42);
+  assert.equal(background.tabMessageCalls[0].message.type, TOGGLE_MESSAGE);
+});
+
+test("background safely ignores missing, restricted, and unrelated command targets", async () => {
+  const missingTab = createBackground();
+  await missingTab.dispatchCommand(TOGGLE_COMMAND);
+  assert.equal(missingTab.tabMessageCalls.length, 0);
+
+  const restrictedTab = createBackground({
+    tabMessageError: new Error("Receiving end does not exist"),
+    tabs: [{ id: 7 }],
+  });
+  await restrictedTab.dispatchCommand(TOGGLE_COMMAND);
+  assert.equal(restrictedTab.tabMessageCalls.length, 1);
+
+  const unrelatedCommand = createBackground({ tabs: [{ id: 9 }] });
+  await unrelatedCommand.dispatchCommand("unrelated-command");
+  assert.equal(unrelatedCommand.tabQueries.length, 0);
+  assert.equal(unrelatedCommand.tabMessageCalls.length, 0);
+});
 
 test("background sends and returns the request ID header", async () => {
   let receivedHeaders = null;

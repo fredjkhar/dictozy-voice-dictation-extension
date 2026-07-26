@@ -27,6 +27,15 @@ EXPECTED_CONTENT_MATCHES = {
     "https://*/*",
 }
 EXPECTED_CONTENT_SCRIPTS = ["dom-utils.js", "dictation-lifecycle.js", "content.js"]
+EXPECTED_COMMANDS = {
+    "toggle-dictation": {
+        "suggested_key": {
+            "default": "Ctrl+Shift+Y",
+            "mac": "Command+Shift+Y",
+        },
+        "description": "Start, stop, or cancel Dictozy dictation",
+    }
+}
 PACKAGE_FILES = (
     "manifest.json",
     "config.js",
@@ -95,6 +104,8 @@ def validate_manifest(manifest: dict[str, object]) -> None:
         errors.append(f"permissions must be exactly {EXPECTED_PERMISSIONS}")
     if set(manifest.get("host_permissions", [])) != EXPECTED_HOST_PERMISSIONS:
         errors.append("host_permissions do not match the audited backend hosts")
+    if manifest.get("commands") != EXPECTED_COMMANDS:
+        errors.append("commands do not match the audited keyboard shortcut")
 
     content_scripts = manifest.get("content_scripts")
     if not isinstance(content_scripts, list) or len(content_scripts) != 1:

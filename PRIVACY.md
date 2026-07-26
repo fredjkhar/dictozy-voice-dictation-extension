@@ -44,7 +44,7 @@ Production audio requests use HTTPS. The xAI API key is stored only in backend e
 
 ## User Controls
 
-Recording begins only after the user clicks the microphone button. The user can stop recording immediately. Users may turn Dictozy off from the popup, change the recording limit, or clear locally stored settings by removing the extension or clearing its extension data in Chrome.
+Recording begins only after the user clicks the microphone button or presses the assigned browser shortcut. The user can stop recording immediately with the visible control or shortcut. Users may turn Dictozy off from the popup, remap or remove the shortcut in Chrome, change the recording limit, or clear locally stored settings by removing the extension or clearing its extension data in Chrome.
 
 ## Limited Use
 

@@ -1,8 +1,8 @@
 # Extension Permission Audit
 
-Audit date: June 13, 2026
+Audit date: July 25, 2026
 
-This audit explains why Dictozy `0.1.4` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
+This audit explains why Dictozy `0.1.5` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
 
 ## API Permissions
 
@@ -15,6 +15,12 @@ Required to save the enabled state, backend URL, and recording-duration preferen
 The popup can query the active tab and message an already-injected content script without this permission. Keeping it would not enable a required capability.
 
 No `tabs`, `scripting`, `identity`, `notifications`, `cookies`, clipboard, downloads, history, geolocation, or manifest microphone permission is requested.
+
+## Keyboard Command
+
+The manifest declares one standard, browser-scoped `toggle-dictation` command. A command declaration is not an API permission. The service worker queries only the active tab ID and sends a toggle message to the content script already injected by the manifest. It does not inspect or log the tab URL, title, page content, or field content.
+
+The command does not require `tabs`, `activeTab`, or `scripting`. Chrome users may remap or remove the shortcut in `chrome://extensions/shortcuts`; the popup reads the current assignment with `chrome.commands.getAll()`.
 
 ## Backend Host Permissions
 
@@ -45,7 +51,7 @@ HTTPS page access remains broad because the extension's single purpose is to det
 
 ## Microphone Access
 
-No manifest microphone permission is requested. Microphone access is initiated through `navigator.mediaDevices.getUserMedia` only after the user clicks the visible microphone button, allowing Chrome to provide its normal permission prompt and site controls.
+No manifest microphone permission is requested. Microphone access is initiated through `navigator.mediaDevices.getUserMedia` only after the user clicks the visible microphone button or presses the assigned browser shortcut. Both are explicit user actions, and Chrome retains its normal permission prompt and site controls.
 
 ## Remote Code
 

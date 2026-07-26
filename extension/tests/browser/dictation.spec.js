@@ -5,9 +5,13 @@ const STATUS_MESSAGE = ".voice-dictation-status__message";
 
 async function installChromeMocks(page) {
   await page.addInitScript(() => {
+    const DEFAULT_SHORTCUT = "Ctrl+Shift+Y";
+    const SHORTCUT_KEY = "dictozy-playwright-shortcut";
     const STORAGE_KEY = "dictozy-playwright-storage";
+    const runtimeListeners = [];
     const storageListeners = [];
     const pendingResponses = new Map();
+    const pendingMicrophones = [];
     const defaultStorage = {
       backendUrl: "https://voice-dictation-extension.onrender.com/api/transcribe",
       extensionEnabled: true,
@@ -44,11 +48,44 @@ async function installChromeMocks(page) {
       }
     }
 
+    function createMicrophoneStream() {
+      const track = {
+        muted: false,
+        readyState: "live",
+        stop() {
+          if (this.readyState !== "ended") {
+            this.readyState = "ended";
+            testState.trackStops += 1;
+          }
+        },
+      };
+
+      return {
+        getAudioTracks: () => [track],
+        getTracks: () => [track],
+      };
+    }
+
     const testState = {
       cancellations: [],
+      createdTabs: [],
+      deferMicrophone: false,
       recordingStarts: 0,
       requests: [],
       trackStops: 0,
+      dispatchRuntimeMessage(message) {
+        return new Promise((resolve) => {
+          for (const listener of runtimeListeners) {
+            const keepChannelOpen = listener(message, {}, resolve);
+
+            if (keepChannelOpen === true) {
+              return;
+            }
+          }
+
+          resolve(undefined);
+        });
+      },
       queueResponse(response, options = {}) {
         responseQueue.push({
           defer: options.defer === true,
@@ -66,13 +103,34 @@ async function installChromeMocks(page) {
         pendingResponses.delete(requestId);
         queueMicrotask(() => callback(response));
       },
+      resolveMicrophone() {
+        const resolve = pendingMicrophones.shift();
+
+        if (!resolve) {
+          throw new Error("No pending microphone request");
+        }
+
+        resolve(createMicrophoneStream());
+      },
+      setShortcut(shortcut) {
+        localStorage.setItem(SHORTCUT_KEY, shortcut);
+      },
       setStorage,
+      shortcut() {
+        const storedShortcut = localStorage.getItem(SHORTCUT_KEY);
+        return storedShortcut === null ? DEFAULT_SHORTCUT : storedShortcut;
+      },
       storage: readStorage,
     };
     window.__dictozyTest = testState;
 
     const runtime = {
       lastError: null,
+      onMessage: {
+        addListener(listener) {
+          runtimeListeners.push(listener);
+        },
+      },
       sendMessage(message, callback) {
         if (message?.type === "VOICE_DICTATION_CANCEL_TRANSCRIPTION") {
           testState.cancellations.push(message.requestId);
@@ -115,6 +173,17 @@ async function installChromeMocks(page) {
     };
 
     window.chrome = {
+      commands: {
+        getAll(callback) {
+          callback([
+            {
+              description: "Start, stop, or cancel Dictozy dictation",
+              name: "toggle-dictation",
+              shortcut: testState.shortcut(),
+            },
+          ]);
+        },
+      },
       runtime,
       storage: {
         local: {
@@ -127,6 +196,12 @@ async function installChromeMocks(page) {
           addListener(listener) {
             storageListeners.push(listener);
           },
+        },
+      },
+      tabs: {
+        async create(createProperties) {
+          testState.createdTabs.push(createProperties);
+          return { id: testState.createdTabs.length };
         },
       },
     };
@@ -181,22 +256,14 @@ async function installChromeMocks(page) {
     Object.defineProperty(navigator, "mediaDevices", {
       configurable: true,
       value: {
-        async getUserMedia() {
-          const track = {
-            muted: false,
-            readyState: "live",
-            stop() {
-              if (this.readyState !== "ended") {
-                this.readyState = "ended";
-                testState.trackStops += 1;
-              }
-            },
-          };
+        getUserMedia() {
+          if (testState.deferMicrophone) {
+            return new Promise((resolve) => {
+              pendingMicrophones.push(resolve);
+            });
+          }
 
-          return {
-            getAudioTracks: () => [track],
-            getTracks: () => [track],
-          };
+          return Promise.resolve(createMicrophoneStream());
         },
       },
     });
@@ -235,6 +302,12 @@ async function waitForRequestCount(page, count) {
   await expect.poll(() => page.evaluate(() => window.__dictozyTest.requests.length)).toBe(count);
 }
 
+function invokeShortcut(page) {
+  return page.evaluate(() => window.__dictozyTest.dispatchRuntimeMessage({
+    type: "VOICE_DICTATION_TOGGLE",
+  }));
+}
+
 test.beforeEach(async ({ page }) => {
   await installChromeMocks(page);
 });
@@ -269,6 +342,120 @@ test("records only after a click, stops, and inserts a successful transcript", a
   expect(request.requestId).toMatch(/^[A-Za-z0-9_-]{8,80}$/);
   expect(request.audioDataUrl).toMatch(/^data:audio\/webm(?:;[^,]+)?;base64,/);
   await expect.poll(() => page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+});
+
+test("shortcut starts, stops, and completes one recording", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "Shortcut transcript" });
+  });
+
+  const started = await invokeShortcut(page);
+  expect(started.action).toBe("start-recording");
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+
+  const stopped = await invokeShortcut(page);
+  expect(stopped.action).toBe("stop-recording");
+  await expect(field).toHaveValue("Shortcut transcript");
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(1);
+  await waitForRequestCount(page, 1);
+});
+
+test("repeated shortcut events do not overlap recording work", async ({ page }) => {
+  await loadContentScript(page);
+  await focusFirstTextField(page);
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "Single request" });
+  });
+
+  await invokeShortcut(page);
+  const results = await page.evaluate(() => Promise.all([
+    window.__dictozyTest.dispatchRuntimeMessage({ type: "VOICE_DICTATION_TOGGLE" }),
+    window.__dictozyTest.dispatchRuntimeMessage({ type: "VOICE_DICTATION_TOGGLE" }),
+  ]));
+
+  expect(results[0].action).toBe("stop-recording");
+  expect(results[1]).toEqual({
+    action: "ignored",
+    ok: false,
+    state: "processing",
+  });
+  await waitForRequestCount(page, 1);
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(1);
+});
+
+test("shortcut cancels pending microphone access without starting a recording", async ({ page }) => {
+  await loadContentScript(page);
+  await focusFirstTextField(page);
+  await page.evaluate(() => {
+    window.__dictozyTest.deferMicrophone = true;
+    window.__pendingShortcut = window.__dictozyTest.dispatchRuntimeMessage({
+      type: "VOICE_DICTATION_TOGGLE",
+    });
+  });
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "requesting");
+
+  const canceled = await invokeShortcut(page);
+  expect(canceled.action).toBe("cancel-microphone");
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "idle");
+  await page.evaluate(() => window.__dictozyTest.resolveMicrophone());
+  await page.evaluate(() => window.__pendingShortcut);
+
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+});
+
+test("shortcut cancels transcription and rejects a late response", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({}, { defer: true });
+  });
+
+  await invokeShortcut(page);
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+  await invokeShortcut(page);
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "transcribing");
+  await waitForRequestCount(page, 1);
+  const requestId = await page.evaluate(() => window.__dictozyTest.requests[0].requestId);
+
+  const canceled = await invokeShortcut(page);
+  expect(canceled.action).toBe("cancel-transcription");
+  await page.evaluate((id) => {
+    window.__dictozyTest.resolveRequest(id, {
+      ok: true,
+      requestId: id,
+      transcript: "Late shortcut result",
+    });
+  }, requestId);
+
+  await expect(field).toHaveValue("");
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.cancellations.length)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(1);
+});
+
+test("shortcut ignores disabled, unsupported, and sensitive fields", async ({ page }) => {
+  await loadContentScript(page);
+
+  await page.locator("body").click({ position: { x: 2, y: 2 } });
+  const unsupportedResult = await invokeShortcut(page);
+  expect(unsupportedResult.ok).toBe(false);
+  await expect(page.locator(MIC_BUTTON)).toHaveCount(0);
+
+  await page.locator('input[type="password"]').focus();
+  const sensitiveResult = await invokeShortcut(page);
+  expect(sensitiveResult.ok).toBe(false);
+  await expect(page.locator(MIC_BUTTON)).toHaveCount(0);
+
+  await page.locator('input[type="text"]').first().focus();
+  await page.evaluate(() => window.__dictozyTest.setStorage({ extensionEnabled: false }));
+  const disabledResult = await invokeShortcut(page);
+  expect(disabledResult.state).toBe("disabled");
+
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
 });
 
 test("cancels transcription and ignores a late successful response", async ({ page }) => {
@@ -473,4 +660,20 @@ test("popup settings persist after reload", async ({ page }) => {
   await expect(page.locator("#backendUrl")).toHaveValue("http://localhost:9000/api/transcribe");
   await expect(page.locator("#recordingDurationSeconds")).toHaveValue("14");
   await expect(page.locator("#status")).toHaveText("Dictozy is off.");
+});
+
+test("popup shows assigned and unassigned shortcut states and opens Chrome settings", async ({ page }) => {
+  await page.goto("/extension/popup.html");
+  await expect(page.locator("#shortcutValue")).toHaveText("Ctrl+Shift+Y");
+  await expect(page.locator("#shortcutValue")).toHaveAttribute("data-assigned", "true");
+
+  await page.evaluate(() => window.__dictozyTest.setShortcut(""));
+  await page.reload();
+  await expect(page.locator("#shortcutValue")).toHaveText("Not assigned");
+  await expect(page.locator("#shortcutValue")).toHaveAttribute("data-assigned", "false");
+
+  await page.locator("#manageShortcut").click();
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.createdTabs[0]?.url)).toBe(
+    "chrome://extensions/shortcuts",
+  );
 });

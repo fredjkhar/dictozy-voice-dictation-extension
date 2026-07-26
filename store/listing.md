@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the Chrome Web Store Developer Dashboard for Dictozy `0.1.4`.
+Use this file as the source of truth when updating the Chrome Web Store Developer Dashboard for Dictozy `0.1.5`.
 
 ## Dashboard Product Details
 
@@ -35,20 +35,21 @@ The short description is 91 characters. Chrome's current guidance says the item 
 ```text
 Dictozy lets you speak short text into supported web fields without leaving the page.
 
-Focus a text field, click the visible microphone button, speak, and stop recording. Dictozy sends the recording to its secure backend for speech-to-text transcription, then inserts the returned text into the field you were using.
+Focus a text field, use the visible microphone button or your assigned browser shortcut, speak, and stop recording. Dictozy sends the recording to its secure backend for speech-to-text transcription, then inserts the returned text into the field you were using.
 
 Why it is useful
 
 - Write short messages, notes, searches, and form entries with your voice.
 - Keep your hands on the current page instead of switching to another dictation tool.
 - Start and stop recording from a clear on-page control.
+- Start, stop, or cancel dictation with a configurable browser shortcut.
 - Cancel a pending transcription and record again after a failure.
 - Adjust the recording limit from the extension popup.
 - Turn Dictozy on or off whenever you do not want the page microphone control shown.
 
 Privacy and control
 
-- Recording starts only after you click the visible microphone button.
+- Recording starts only after you click the visible microphone button or press the assigned browser shortcut.
 - You can stop recording immediately.
 - Audio is sent over HTTPS to the Dictozy FastAPI backend for transcription.
 - The backend calls xAI Speech-to-Text; the extension never calls xAI directly.
@@ -79,6 +80,12 @@ What's new in 0.1.4
 - Improved handling for clearly silent or missing microphone input.
 - Stronger protection against late responses and focus changes.
 - Expanded automated reliability tests in Chromium.
+
+What's new in 0.1.5
+
+- Configurable browser shortcut for starting and stopping a recording or cancelling pending dictation.
+- The popup shows the current shortcut assignment and links to Chrome's shortcut settings.
+- Shortcut actions use the same supported-field, privacy, cancellation, and stale-focus protections as the visible page control.
 ```
 
 ## Visual Assets
@@ -92,7 +99,7 @@ Screenshots:
 - `store/assets/screenshot-dictation-1280x800.png`
   Caption: Dictate directly into supported text fields.
 - `store/assets/screenshot-settings-1280x800.png`
-  Caption: Keep Dictozy enabled, choose a recording limit, and check backend connectivity.
+  Caption: View your shortcut, keep Dictozy enabled, choose a recording limit, and check backend connectivity.
 
 Small promotional tile:
 
@@ -126,7 +133,7 @@ Use a stable public HTTPS URL for the Privacy Policy field before submission.
 
 ## Single Purpose
 
-Dictozy lets users dictate short text into supported web fields by recording audio only after an explicit user click, sending that audio to a backend speech-to-text service, and inserting the returned transcript into the selected field.
+Dictozy lets users dictate short text into supported web fields by recording audio only after an explicit microphone-button click or assigned browser shortcut, sending that audio to a backend speech-to-text service, and inserting the returned transcript into the selected field.
 
 ## Permission Justifications
 
@@ -180,8 +187,8 @@ Dashboard guidance:
 1. Install the submitted ZIP.
 2. Open an HTTPS webpage containing a normal text input or textarea.
 3. Focus the field and confirm that the microphone icon button appears.
-4. Click the microphone icon and allow microphone access.
-5. Speak a short phrase and click the stop icon, or wait for the recording limit.
+4. Click the microphone icon or press the assigned browser shortcut, then allow microphone access.
+5. Speak a short phrase and click the stop icon, press the shortcut again, or wait for the recording limit.
 6. Confirm that the transcription status completes and text appears in the focused field.
 7. Open the popup, expand Advanced, and click Check Backend to verify the production backend health endpoint.
 
@@ -191,7 +198,7 @@ No test account or credentials are required. The production backend must have th
 
 Use the Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
 
-1. Package tab: upload `dist/dictozy-v0.1.4.zip` only after rebuilding it from the reviewed source.
+1. Package tab: upload `dist/dictozy-v0.1.5.zip` only after rebuilding it from the reviewed source.
 2. Store Listing tab: update the name, summary, detailed description, category, language, screenshots, promo tile, homepage URL, support URL, and privacy policy URL from this file.
 3. Privacy practices tab: update the single-purpose statement, data-use declarations, permission justifications, remote-code declaration, and privacy policy URL.
 4. Distribution tab: confirm visibility, regions, and any rollout settings before submission.
