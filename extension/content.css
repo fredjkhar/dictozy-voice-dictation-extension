@@ -59,6 +59,11 @@
   border-color: #2563eb;
 }
 
+.voice-dictation-mic-button--transcribing {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
 .voice-dictation-mic-button--recording {
   background: #dc2626;
   border-color: #dc2626;
@@ -81,7 +86,10 @@
 .voice-dictation-status {
   position: fixed;
   z-index: 2147483647;
-  max-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
   padding: 5px 8px;
   border-radius: 6px;
   background: #111827;
@@ -89,7 +97,44 @@
   box-shadow: 0 6px 16px rgb(17 24 39 / 20%);
   font: 500 12px/1.3 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   letter-spacing: 0;
-  pointer-events: none;
+  pointer-events: auto;
+}
+
+.voice-dictation-status__message {
+  min-width: 0;
+}
+
+.voice-dictation-status__dismiss {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  margin: -2px -4px -2px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.voice-dictation-status__dismiss:hover {
+  background: rgb(255 255 255 / 16%);
+}
+
+.voice-dictation-status__dismiss:focus-visible {
+  outline: 2px solid #7dd3fc;
+  outline-offset: 1px;
+}
+
+.voice-dictation-status__dismiss .voice-dictation-mic-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.voice-dictation-status__dismiss[hidden] {
+  display: none;
 }
 
 .voice-dictation-status[hidden] {

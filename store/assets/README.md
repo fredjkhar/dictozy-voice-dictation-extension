@@ -8,7 +8,7 @@
 
 The deterministic HTML sources live in `../source/`. Re-render them at their exact viewport sizes after changing listing visuals.
 
-For the `0.1.3` Dictozy patch release, these assets should show the production popup, Dictozy branding, 10-second default recording limit, microphone/stop icon controls, and no development-only text controls.
+For Dictozy `0.1.4`, these assets continue to show the production popup, Dictozy branding, 10-second default recording limit, microphone/stop icon controls, and no development-only text controls. Retry, cancellation, and transient error states are verified in manual QA rather than represented as permanent screenshot states.
 
 ## Rendering
 

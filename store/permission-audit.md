@@ -2,7 +2,7 @@
 
 Audit date: June 13, 2026
 
-This audit explains why Dictozy `0.1.3` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
+This audit explains why Dictozy `0.1.4` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
 
 ## API Permissions
 
@@ -49,4 +49,4 @@ No manifest microphone permission is requested. Microphone access is initiated t
 
 ## Remote Code
 
-No remote code is loaded or executed. The popup scripts, content script, service worker, and shared configuration are all packaged in the extension ZIP. Backend responses contain health data, errors, or transcript text only.
+No remote code is loaded or executed. The popup scripts, content scripts, lifecycle helper, service worker, and shared configuration are all packaged in the extension ZIP. Backend responses contain health data, errors, or transcript text only.

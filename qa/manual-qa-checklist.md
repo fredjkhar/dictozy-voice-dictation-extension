@@ -18,7 +18,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - The unpacked extension loads without errors in `chrome://extensions`.
 - Popup settings persist after closing and reopening the popup.
-- The popup shows `Dictozy` branding and version `0.1.3` in `chrome://extensions`.
+- The popup shows `Dictozy` branding and version `0.1.4` in `chrome://extensions`.
 - Turning Dictozy off hides the page microphone button and prevents recording from starting.
 - Turning Dictozy back on restores microphone behavior on supported fields.
 - Backend URL defaults to `https://voice-dictation-extension.onrender.com/api/transcribe`.
@@ -32,8 +32,19 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 - The user can stop recording immediately with the stop icon button.
 - Recording auto-stops after the configured popup recording limit.
 - The extension shows recording and transcribing status.
+- During transcription, the on-page control is an enabled cancel icon with an accessible `Cancel transcription` label and tooltip.
+- Cancelling transcription returns the control to idle and prevents a late response from inserting text.
+- Cancellation aborts the extension-side request where practical; it does not claim that already-uploaded provider work is guaranteed to stop.
 - Short recordings should move from the stop icon to Transcribing quickly; long pauses here suggest extension message-passing or backend latency.
-- Transcribing must recover to success or an error message; it should not remain stuck indefinitely.
+- Transcribing must recover to success or a persistent error/retry state; it should not remain stuck indefinitely.
+- Failure details remain visible until dismissed, retried, disabled, or cleared by moving to another field.
+- A request failure shows only a short support reference, not audio, transcript text, field content, or a full request ID.
+- Clicking the retry icon starts a new recording with a new request ID; failed audio is not resent.
+- A backend timeout returns to the persistent retry state.
+- Turning Dictozy off during recording stops the stream and does not upload the cancelled recording.
+- Turning Dictozy off during transcription prevents any late response from being inserted.
+- Turning Dictozy back on restores an enabled microphone control.
+- A clearly silent or unavailable microphone produces a local, privacy-safe message where signal inspection is reliable.
 - A successful transcript is inserted into the focused field.
 - If focus moves away before transcription completes, the transcript is not inserted into an old field.
 - Inserted text dispatches `input` and `change` events.
@@ -46,7 +57,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 ## Store Presentation
 
 - `store/listing.md` uses user-friendly copy for the public listing and technical language for reviewer notes.
-- `site/index.html` opens locally and presents the real 0.1.3 product without unsupported features.
+- `site/index.html` opens locally and presents the real `0.1.4` product without unsupported features.
 - `store/assets/screenshot-dictation-1280x800.png`, `store/assets/screenshot-settings-1280x800.png`, and `store/assets/promo-small-440x280.png` match the current Dictozy name, icon, and popup.
 - The Chrome Web Store description does not imply background recording, direct xAI calls from the extension, or features that are not implemented.
 
@@ -54,7 +65,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - Install Dictozy from the Chrome Web Store.
 - Confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- Confirm version `0.1.3` after the patch release is installed.
+- Confirm version `0.1.4` after the reliability release is installed.
 - Run a short dictation on a supported HTTPS text field.
 - Confirm recording starts only after clicking the visible microphone button.
 - Confirm transcript insertion and focus behavior.

@@ -26,7 +26,7 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.2` is published on the Chrome Web Store. Version `0.1.3` is prepared as a minimal icon-consistency patch:
+Version `0.1.3` is the completed icon-consistency patch. Version `0.1.4` is prepared as a focused reliability and error-recovery update; the public Chrome Web Store may still show an earlier version until the update is reviewed and published.
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Microphone button records only after explicit user click.
@@ -35,12 +35,15 @@ Version `0.1.2` is published on the Chrome Web Store. Version `0.1.3` is prepare
 - Backend calls xAI Speech-to-Text.
 - Transcript is inserted back into the focused field.
 - xAI API key stays backend-only in `.env`.
-- Backend tests and a local manual QA page are available.
+- Pending transcription can be cancelled from the on-page control without inserting a late result.
+- Failures remain visible with a fresh-recording retry state and a short support reference.
+- A conservative local signal check rejects clearly silent microphone input without storing or transmitting signal data.
+- Backend tests, Node extension tests, Chromium workflow tests, and a local manual QA page are available.
 - Backend Docker deployment files are available.
 - Production endpoint validation and deployment smoke tests are available.
 - Chrome Web Store copy, screenshots, promo tile, icon, and release notes are available under `store/`.
 - Post-publish monitoring and support triage checklists are available under `qa/`.
-- The `0.1.3` package bundles the current Dictozy icon files for the toolbar, popup, and Chrome extensions page.
+- The `0.1.4` package keeps the current Dictozy icons consistent across the toolbar, popup, and Chrome extensions page.
 
 ## Local Development
 
@@ -110,10 +113,18 @@ Run extension syntax checks from the repository root:
 python3 -m json.tool extension/manifest.json >/dev/null
 node --check extension/content.js
 node --check extension/dom-utils.js
+node --check extension/dictation-lifecycle.js
 node --check extension/background.js
 node --check extension/popup.js
 node --check extension/config.js
 node --test extension/tests/*.test.js
+```
+
+Run mocked Chromium workflows without contacting the production backend:
+
+```bash
+npm ci
+npm run test:browser
 ```
 
 Validate and create the Chrome Web Store draft ZIP:
@@ -133,7 +144,9 @@ python3 scripts/validate_store_assets.py
 - `502 Bad Gateway`: FastAPI reached xAI but xAI failed or rejected the request. Check backend logs for `xAI STT` warning lines.
 - `403` from xAI: the xAI team may need credits or Speech-to-Text access.
 - `503`: `XAI_API_KEY` is missing or not loaded by the backend.
-- Extension stuck on `Transcribing`: reload the extension in `chrome://extensions`, refresh the page, and retry with a short recording.
+- Extension stays on `Transcribing`: click the cancel icon, then record again. Dictozy also returns to an actionable error state after its timeout.
+- Error includes `Reference`: include that short reference when reporting the failure; do not include private transcript or field content.
+- No microphone signal detected: confirm Chrome is using the intended input and that the input is not muted, then record again.
 - Microphone button does not appear: reload the page after loading the extension and focus a supported non-sensitive field.
 - Backend URL does not work: use the production Render endpoint or local HTTP on `127.0.0.1` or `localhost`. Other remote hosts and xAI URLs are rejected.
 

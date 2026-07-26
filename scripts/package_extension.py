@@ -26,10 +26,12 @@ EXPECTED_CONTENT_MATCHES = {
     "http://localhost/*",
     "https://*/*",
 }
+EXPECTED_CONTENT_SCRIPTS = ["dom-utils.js", "dictation-lifecycle.js", "content.js"]
 PACKAGE_FILES = (
     "manifest.json",
     "config.js",
     "dom-utils.js",
+    "dictation-lifecycle.js",
     "content.js",
     "content.css",
     "background.js",
@@ -101,6 +103,8 @@ def validate_manifest(manifest: dict[str, object]) -> None:
         matches = content_scripts[0].get("matches", [])
         if set(matches) != EXPECTED_CONTENT_MATCHES:
             errors.append("content script matches do not match the audited page scope")
+        if content_scripts[0].get("js") != EXPECTED_CONTENT_SCRIPTS:
+            errors.append(f"content scripts must be exactly {EXPECTED_CONTENT_SCRIPTS}")
 
     if manifest.get("background") != {"service_worker": "background.js"}:
         errors.append("background service worker configuration changed")
@@ -130,6 +134,8 @@ def validate_files() -> None:
     background = (EXTENSION_DIR / "background.js").read_text(encoding="utf-8")
     if 'importScripts("config.js")' not in background:
         raise ValueError("background.js must import the packaged config.js")
+    if 'importScripts("dictation-lifecycle.js")' not in background:
+        raise ValueError("background.js must import the packaged dictation-lifecycle.js")
 
 
 def build_zip(manifest: dict[str, object], output_dir: Path) -> Path:

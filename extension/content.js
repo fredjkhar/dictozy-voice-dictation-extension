@@ -1,5 +1,6 @@
 (() => {
   const TRANSCRIBE_AUDIO_MESSAGE = "VOICE_DICTATION_TRANSCRIBE_AUDIO";
+  const CANCEL_TRANSCRIPTION_MESSAGE = "VOICE_DICTATION_CANCEL_TRANSCRIPTION";
   const DEFAULT_EXTENSION_ENABLED = true;
   const BUTTON_EDGE_OFFSET = 8;
   const DEFAULT_RECORDING_DURATION_MS = 10000;
@@ -8,13 +9,6 @@
   const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
   const TRANSCRIPTION_RESPONSE_TIMEOUT_MS = 55000;
   const MIC_BUTTON_ICONS = Object.freeze({
-    alert: `
-      <svg class="voice-dictation-mic-icon" aria-hidden="true" viewBox="0 0 24 24">
-        <path d="M12 9v4"></path>
-        <path d="M12 17h.01"></path>
-        <path d="M10.3 4.9 2.8 18a2 2 0 0 0 1.7 3h15a2 2 0 0 0 1.7-3L13.7 4.9a2 2 0 0 0-3.4 0Z"></path>
-      </svg>
-    `,
     busy: `
       <svg class="voice-dictation-mic-icon voice-dictation-mic-icon--spin" aria-hidden="true" viewBox="0 0 24 24">
         <path d="M21 12a9 9 0 1 1-6.2-8.6"></path>
@@ -25,12 +19,26 @@
         <path d="M20 6 9 17l-5-5"></path>
       </svg>
     `,
+    close: `
+      <svg class="voice-dictation-mic-icon" aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M18 6 6 18"></path>
+        <path d="m6 6 12 12"></path>
+      </svg>
+    `,
     mic: `
       <svg class="voice-dictation-mic-icon" aria-hidden="true" viewBox="0 0 24 24">
         <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
         <path d="M19 10v1a7 7 0 0 1-14 0v-1"></path>
         <path d="M12 18v4"></path>
         <path d="M8 22h8"></path>
+      </svg>
+    `,
+    retry: `
+      <svg class="voice-dictation-mic-icon" aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M20 7v5h-5"></path>
+        <path d="M4 17v-5h5"></path>
+        <path d="M6.1 9a7 7 0 0 1 11.7-2.6L20 12"></path>
+        <path d="m4 12 2.2 5.6A7 7 0 0 0 18 15"></path>
       </svg>
     `,
     stop: `
@@ -41,8 +49,8 @@
   });
   const MIC_BUTTON_STATES = Object.freeze({
     error: {
-      icon: "alert",
-      label: "Dictation needs attention",
+      icon: "retry",
+      label: "Record again",
       status: "Dictation needs attention",
     },
     idle: {
@@ -66,8 +74,8 @@
       status: "Transcript inserted",
     },
     transcribing: {
-      icon: "busy",
-      label: "Transcribing recording",
+      icon: "close",
+      label: "Cancel transcription",
       status: "Transcribing",
     },
   });
@@ -77,17 +85,32 @@
     insertIntoFormField,
     isSupportedField,
   } = globalThis.DictozyDom;
+  const {
+    addRequestReference,
+    createMicrophoneSignalMonitor,
+    createRequestId,
+    createRequestLifecycle,
+  } = globalThis.DictozyLifecycle;
 
   let activeField = null;
   let activeTextRange = null;
   let micButton = null;
   let statusBubble = null;
+  let statusMessageElement = null;
+  let statusDismissButton = null;
   let mediaRecorder = null;
   let recordingStream = null;
+  let recordingSignalMonitor = null;
   let recordingTimeoutId = null;
+  let recordingAttempt = 0;
+  let recordingTargetField = null;
+  let transientStateTimeoutId = null;
   let recordingChunks = [];
   let extensionEnabled = DEFAULT_EXTENSION_ENABLED;
   let recordingCanceled = false;
+  let currentMicButtonState = "idle";
+  let transcriptionTargetField = null;
+  const requestLifecycle = createRequestLifecycle();
 
   function getEditableFieldFromEvent(event) {
     const path = typeof event.composedPath === "function" ? event.composedPath() : [];
@@ -130,6 +153,11 @@
         return;
       }
 
+      if (currentMicButtonState === "transcribing") {
+        cancelTranscription();
+        return;
+      }
+
       await startRecording();
     });
 
@@ -152,6 +180,23 @@
     bubble.setAttribute("role", "status");
     bubble.setAttribute("aria-live", "polite");
     bubble.hidden = true;
+
+    statusMessageElement = document.createElement("span");
+    statusMessageElement.className = "voice-dictation-status__message";
+
+    statusDismissButton = document.createElement("button");
+    statusDismissButton.type = "button";
+    statusDismissButton.className = "voice-dictation-status__dismiss";
+    statusDismissButton.innerHTML = MIC_BUTTON_ICONS.close;
+    statusDismissButton.title = "Dismiss message";
+    statusDismissButton.setAttribute("aria-label", "Dismiss dictation message");
+    statusDismissButton.hidden = true;
+    statusDismissButton.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+    });
+    statusDismissButton.addEventListener("click", dismissErrorState);
+
+    bubble.append(statusMessageElement, statusDismissButton);
     document.documentElement.append(bubble);
     return bubble;
   }
@@ -182,9 +227,10 @@
     }
   }
 
-  function setStatusMessage(message) {
+  function setStatusMessage(message, { dismissible = false } = {}) {
     const bubble = getStatusBubble();
-    bubble.textContent = message;
+    statusMessageElement.textContent = message;
+    statusDismissButton.hidden = !dismissible;
     bubble.hidden = false;
 
     if (micButton && !micButton.hidden) {
@@ -194,19 +240,28 @@
     }
   }
 
-  function setMicButtonState(state, message = "") {
+  function clearTransientStateTimeout() {
+    if (transientStateTimeoutId) {
+      window.clearTimeout(transientStateTimeoutId);
+      transientStateTimeoutId = null;
+    }
+  }
+
+  function setMicButtonState(state, message = "", { dismissible = false } = {}) {
     const button = getMicButton();
     const visual = MIC_BUTTON_STATES[state] || MIC_BUTTON_STATES.idle;
 
+    currentMicButtonState = state;
     button.classList.toggle("voice-dictation-mic-button--recording", state === "recording");
-    button.classList.toggle("voice-dictation-mic-button--busy", state === "requesting" || state === "transcribing");
+    button.classList.toggle("voice-dictation-mic-button--busy", state === "requesting");
+    button.classList.toggle("voice-dictation-mic-button--transcribing", state === "transcribing");
     button.classList.toggle("voice-dictation-mic-button--success", state === "success");
     button.classList.toggle("voice-dictation-mic-button--error", state === "error");
-    button.disabled = state === "requesting" || state === "transcribing" || !extensionEnabled;
+    button.disabled = state === "requesting" || !extensionEnabled;
     setMicButtonVisual(button, state);
 
     if (message || visual.status) {
-      setStatusMessage(message || visual.status);
+      setStatusMessage(message || visual.status, { dismissible });
       return;
     }
 
@@ -216,11 +271,28 @@
   }
 
   function flashMicButtonState(state, message) {
+    clearTransientStateTimeout();
     setMicButtonState(state, message);
-    window.setTimeout(() => {
+    transientStateTimeoutId = window.setTimeout(() => {
+      transientStateTimeoutId = null;
       setMicButtonState("idle");
       updateMicButton();
     }, 1400);
+  }
+
+  function showErrorState(message, requestId = "") {
+    clearTransientStateTimeout();
+    setMicButtonState("error", addRequestReference(message, requestId), { dismissible: true });
+    updateMicButton();
+  }
+
+  function dismissErrorState() {
+    if (currentMicButtonState !== "error") {
+      return;
+    }
+
+    setMicButtonState("idle");
+    updateMicButton();
   }
 
   function clearActiveField() {
@@ -276,7 +348,7 @@
   }
 
   function rememberActiveField(event) {
-    if (micButton?.contains(event.target)) {
+    if (micButton?.contains(event.target) || statusBubble?.contains(event.target)) {
       return;
     }
 
@@ -289,6 +361,10 @@
     const field = getEditableFieldFromEvent(event);
 
     if (getUsableField(field)) {
+      if (field !== activeField && currentMicButtonState === "error") {
+        setMicButtonState("idle");
+      }
+
       activeField = field;
       rememberTextRange();
       updateMicButton();
@@ -299,7 +375,7 @@
   }
 
   function forgetActiveFieldAfterBlur(event) {
-    if (micButton?.contains(event.relatedTarget)) {
+    if (micButton?.contains(event.relatedTarget) || statusBubble?.contains(event.relatedTarget)) {
       return;
     }
 
@@ -398,27 +474,22 @@
     dispatchInputEvents(element, insertedText);
   }
 
-  function getTranscriptTargetField() {
+  function getTranscriptTargetField(expectedField) {
     const focusedField = getFocusedSupportedField();
 
-    if (focusedField) {
-      return focusedField;
-    }
-
-    if (document.hasFocus?.() === false) {
+    if (!expectedField || document.hasFocus?.() === false) {
       return null;
     }
 
-    const focused = document.activeElement;
-    if (activeField && getUsableField(activeField) && (focused === activeField || activeField.contains(focused))) {
-      return activeField;
+    if (getUsableField(expectedField) && focusedField === expectedField) {
+      return expectedField;
     }
 
     return null;
   }
 
-  function insertTranscript(text) {
-    const field = getTranscriptTargetField();
+  function insertTranscript(text, expectedField) {
+    const field = getTranscriptTargetField(expectedField);
 
     if (!field) {
       return {
@@ -453,12 +524,19 @@
       recordingStream = null;
     }
 
+    if (recordingSignalMonitor) {
+      void recordingSignalMonitor.stop();
+      recordingSignalMonitor = null;
+    }
+
     mediaRecorder = null;
     recordingChunks = [];
   }
 
   function cancelRecording() {
+    recordingAttempt += 1;
     recordingCanceled = true;
+    recordingTargetField = null;
 
     if (recordingTimeoutId) {
       window.clearTimeout(recordingTimeoutId);
@@ -476,6 +554,43 @@
     }
 
     setMicButtonState("idle");
+  }
+
+  function sendCancellationToBackground(requestId) {
+    if (!requestId) {
+      return;
+    }
+
+    chrome.runtime.sendMessage(
+      {
+        type: CANCEL_TRANSCRIPTION_MESSAGE,
+        requestId,
+      },
+      () => {
+        void chrome.runtime.lastError;
+      },
+    );
+  }
+
+  function cancelTranscription({ announce = true } = {}) {
+    const operation = requestLifecycle.cancel();
+    transcriptionTargetField = null;
+
+    if (!operation) {
+      return;
+    }
+
+    sendCancellationToBackground(operation.requestId);
+    setMicButtonState("idle");
+
+    if (announce && extensionEnabled) {
+      flashMicButtonState("idle", "Transcription cancelled");
+    }
+  }
+
+  function cancelActiveWork({ announce = false } = {}) {
+    cancelRecording();
+    cancelTranscription({ announce });
   }
 
   function pickSupportedMimeType() {
@@ -506,23 +621,42 @@
     const field = getFocusedSupportedField();
 
     if (!field) {
-      flashMicButtonState("error", "Focus a supported field");
+      showErrorState("Focus a supported field.");
       return;
     }
 
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-      flashMicButtonState("error", "Recording is not available here");
+      showErrorState("Recording is not available here.");
       return;
     }
 
+    clearTransientStateTimeout();
+    recordingAttempt += 1;
+    const attempt = recordingAttempt;
     activeField = field;
     field.focus();
     recordingCanceled = false;
+    recordingTargetField = field;
+    transcriptionTargetField = null;
+    setMicButtonState("idle");
     setMicButtonState("requesting", "Requesting microphone access");
 
     try {
       const recordingDurationMs = await getRecordingDurationMs();
-      recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      if (!extensionEnabled || attempt !== recordingAttempt) {
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      if (!extensionEnabled || attempt !== recordingAttempt) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
+      recordingStream = stream;
+      recordingSignalMonitor = createMicrophoneSignalMonitor(recordingStream);
       const mimeType = pickSupportedMimeType();
       const options = {
         ...(mimeType ? { mimeType } : {}),
@@ -547,7 +681,11 @@
       }, recordingDurationMs);
     } catch (_error) {
       clearRecordingResources();
-      flashMicButtonState("error", "Microphone access failed");
+
+      if (extensionEnabled && attempt === recordingAttempt) {
+        recordingTargetField = null;
+        showErrorState("Microphone access failed. Check Chrome microphone access and try again.");
+      }
     }
   }
 
@@ -561,9 +699,11 @@
     mediaRecorder.stop();
   }
 
-  function sendAudioToBackend(recordingBlob) {
+  function sendAudioToBackend(recordingBlob, operation) {
     return new Promise((resolve) => {
-      const reader = new FileReader();
+      let audioDataUrl = "";
+      let blobReference = recordingBlob;
+      let reader = new FileReader();
       let settled = false;
       let timeoutId = null;
 
@@ -578,43 +718,74 @@
           window.clearTimeout(timeoutId);
         }
 
+        operation.signal?.removeEventListener("abort", handleAbort);
+        blobReference = null;
+        audioDataUrl = "";
+
+        if (reader) {
+          reader.onerror = null;
+          reader.onload = null;
+          reader.onabort = null;
+          reader = null;
+        }
+
         resolve(result);
       }
 
-      reader.addEventListener("error", () => {
+      function handleAbort() {
+        if (reader?.readyState === 1) {
+          reader.abort();
+        }
+
+        settle({
+          ok: false,
+          canceled: true,
+          message: "Transcription cancelled.",
+          requestId: operation.requestId,
+        });
+      }
+
+      reader.onerror = () => {
         settle({
           ok: false,
           message: "Could not read recorded audio.",
+          requestId: operation.requestId,
         });
-      });
+      };
 
-      reader.addEventListener("load", () => {
+      reader.onload = () => {
         try {
           if (typeof reader.result !== "string" || !reader.result.startsWith("data:audio/")) {
             settle({
               ok: false,
               message: "Could not prepare recorded audio.",
+              requestId: operation.requestId,
             });
             return;
           }
 
+          audioDataUrl = reader.result;
           timeoutId = window.setTimeout(() => {
+            sendCancellationToBackground(operation.requestId);
             settle({
               ok: false,
               message: "Transcription timed out. Try a shorter recording.",
+              requestId: operation.requestId,
             });
           }, TRANSCRIPTION_RESPONSE_TIMEOUT_MS);
 
           chrome.runtime.sendMessage(
             {
               type: TRANSCRIBE_AUDIO_MESSAGE,
-              audioDataUrl: reader.result,
+              audioDataUrl,
+              requestId: operation.requestId,
             },
             (response) => {
               if (chrome.runtime.lastError) {
                 settle({
                   ok: false,
                   message: "Could not reach the extension background service.",
+                  requestId: operation.requestId,
                 });
                 return;
               }
@@ -622,22 +793,30 @@
               settle(response || {
                 ok: false,
                 message: "No transcription response received.",
+                requestId: operation.requestId,
               });
             },
           );
+          blobReference = null;
+          audioDataUrl = "";
         } catch (_error) {
           settle({
             ok: false,
             message: "Could not send recorded audio.",
+            requestId: operation.requestId,
           });
         }
-      });
+      };
 
-      reader.readAsDataURL(recordingBlob);
+      operation.signal?.addEventListener("abort", handleAbort, { once: true });
+      reader.readAsDataURL(blobReference);
     });
   }
 
   async function finishRecording() {
+    let operation = null;
+    let recordingBlob = null;
+
     try {
       if (recordingCanceled || !extensionEnabled) {
         clearRecordingResources();
@@ -645,40 +824,70 @@
         return;
       }
 
+      const signalResult = recordingSignalMonitor?.getResult() || "unknown";
       const mimeType = mediaRecorder?.mimeType || "audio/webm";
-      const recordingBlob = new Blob(recordingChunks, { type: mimeType });
+      const targetField = getTranscriptTargetField(recordingTargetField);
+      recordingBlob = new Blob(recordingChunks, { type: mimeType });
+      recordingTargetField = null;
 
       clearRecordingResources();
 
       if (recordingBlob.size === 0) {
-        flashMicButtonState("error", "No audio captured");
+        showErrorState("No audio was captured. Check your microphone and try again.");
+        return;
+      }
+
+      if (signalResult === "silent") {
+        recordingBlob = null;
+        showErrorState("No microphone signal was detected. Check your input and try again.");
         return;
       }
 
       if (recordingBlob.size > MAX_AUDIO_UPLOAD_BYTES) {
-        flashMicButtonState("error", "Recording is too large");
+        recordingBlob = null;
+        showErrorState("Recording is too large. Try a shorter recording.");
         return;
       }
 
+      if (!targetField) {
+        recordingBlob = null;
+        showErrorState("Focus moved before transcription. Record again in a supported field.");
+        return;
+      }
+
+      transcriptionTargetField = targetField;
+      operation = requestLifecycle.begin(createRequestId());
       setMicButtonState("transcribing", "Transcribing");
 
-      const result = await sendAudioToBackend(recordingBlob);
+      const result = await sendAudioToBackend(recordingBlob, operation);
+      recordingBlob = null;
+
+      if (!requestLifecycle.isCurrent(operation)) {
+        return;
+      }
+
+      requestLifecycle.complete(operation);
+      const expectedField = transcriptionTargetField;
+      transcriptionTargetField = null;
 
       if (!extensionEnabled) {
         updateMicButton();
         return;
       }
 
-      if (!result?.ok || typeof result.transcript !== "string") {
-        flashMicButtonState("error", result?.message || "Transcription failed");
-        updateMicButton();
+      if (result?.canceled) {
+        flashMicButtonState("idle", "Transcription cancelled");
         return;
       }
 
-      const insertion = insertTranscript(result.transcript);
+      if (!result?.ok || typeof result.transcript !== "string") {
+        showErrorState(result?.message || "Transcription failed.", result?.requestId || operation.requestId);
+        return;
+      }
+
+      const insertion = insertTranscript(result.transcript, expectedField);
       if (!insertion.ok) {
-        flashMicButtonState("error", insertion.message);
-        updateMicButton();
+        showErrorState(insertion.message, result.requestId || operation.requestId);
         return;
       }
 
@@ -686,8 +895,18 @@
       updateMicButton();
     } catch (_error) {
       clearRecordingResources();
-      flashMicButtonState("error", "Transcription failed");
-      updateMicButton();
+      recordingBlob = null;
+
+      if (operation && !requestLifecycle.isCurrent(operation)) {
+        return;
+      }
+
+      if (operation) {
+        requestLifecycle.complete(operation);
+      }
+
+      transcriptionTargetField = null;
+      showErrorState("Transcription failed.", operation?.requestId || "");
     }
   }
 
@@ -719,12 +938,14 @@
     extensionEnabled = changes.extensionEnabled.newValue !== false;
 
     if (!extensionEnabled) {
-      cancelRecording();
+      clearTransientStateTimeout();
+      cancelActiveWork();
       clearActiveField();
       hideMicButton();
       return;
     }
 
+    setMicButtonState("idle");
     updateMicButton();
   }
 

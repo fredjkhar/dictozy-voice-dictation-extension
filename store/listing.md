@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the Chrome Web Store Developer Dashboard for Dictozy `0.1.3`.
+Use this file as the source of truth when updating the Chrome Web Store Developer Dashboard for Dictozy `0.1.4`.
 
 ## Dashboard Product Details
 
@@ -42,6 +42,7 @@ Why it is useful
 - Write short messages, notes, searches, and form entries with your voice.
 - Keep your hands on the current page instead of switching to another dictation tool.
 - Start and stop recording from a clear on-page control.
+- Cancel a pending transcription and record again after a failure.
 - Adjust the recording limit from the extension popup.
 - Turn Dictozy on or off whenever you do not want the page microphone control shown.
 
@@ -70,6 +71,14 @@ What's new in 0.1.2
 What's new in 0.1.3
 
 - Patch release to ensure the new Dictozy logo is bundled consistently in the extension toolbar, popup, and Chrome extensions page.
+
+What's new in 0.1.4
+
+- Clear retry and transcription-cancel controls.
+- Persistent, more actionable error messages with short support references.
+- Improved handling for clearly silent or missing microphone input.
+- Stronger protection against late responses and focus changes.
+- Expanded automated reliability tests in Chromium.
 ```
 
 ## Visual Assets
@@ -182,7 +191,7 @@ No test account or credentials are required. The production backend must have th
 
 Use the Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
 
-1. Package tab: upload `dist/dictozy-v0.1.3.zip` only after rebuilding it from the reviewed source.
+1. Package tab: upload `dist/dictozy-v0.1.4.zip` only after rebuilding it from the reviewed source.
 2. Store Listing tab: update the name, summary, detailed description, category, language, screenshots, promo tile, homepage URL, support URL, and privacy policy URL from this file.
 3. Privacy practices tab: update the single-purpose statement, data-use declarations, permission justifications, remote-code declaration, and privacy policy URL.
 4. Distribution tab: confirm visibility, regions, and any rollout settings before submission.

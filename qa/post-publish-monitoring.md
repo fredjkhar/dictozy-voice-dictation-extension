@@ -1,6 +1,6 @@
 # Post-Publish Monitoring
 
-Use this checklist after a Chrome Web Store release is live. It is written for Dictozy `0.1.3` and the published extension ID:
+Use this checklist after a Chrome Web Store release is live. It is written for Dictozy `0.1.4` and the published extension ID:
 
 ```text
 folpeencabfejhjokmldikaelonphmma
@@ -29,7 +29,7 @@ Use the Chrome Web Store-installed extension, not the unpacked development exten
 
 1. Install Dictozy from the Chrome Web Store.
 2. Open `chrome://extensions` and confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm the installed version is `0.1.3` after the patch release is installed.
+3. Confirm the installed version is `0.1.4` after the reliability release is installed.
 4. Open an HTTPS page with a normal text input or textarea.
 5. Focus a supported field and confirm the visible microphone button appears.
 6. Click the microphone button.
@@ -37,9 +37,10 @@ Use the Chrome Web Store-installed extension, not the unpacked development exten
 8. Speak a short, non-sensitive phrase.
 9. Stop recording with the stop icon, or wait for the configured recording limit.
 10. Confirm the status moves through recording and transcribing.
-11. Confirm the transcript is inserted into the focused field.
-12. Confirm password, payment, hidden, readonly, disabled, checkbox, radio, and file fields are ignored.
-13. Inspect extension network activity and confirm requests go only to `https://voice-dictation-extension.onrender.com`, never to an `x.ai` host.
+11. Cancel one pending transcription and confirm a late result is not inserted. This verifies extension-side cancellation only; it does not guarantee provider-side processing stops.
+12. Retry with a fresh recording, then confirm the transcript is inserted into the focused field.
+13. Confirm password, payment, hidden, readonly, disabled, checkbox, radio, and file fields are ignored.
+14. Inspect extension network activity and confirm requests go only to `https://voice-dictation-extension.onrender.com`, never to an `x.ai` host.
 
 ## Chrome Web Store Listing Check
 
@@ -110,7 +111,7 @@ Logs must not include:
 - Full upstream response bodies.
 - Raw IP addresses when avoidable.
 
-If a user reports a failed request and can safely provide a request ID, search Render logs by that `request_id`.
+If a user reports a failed request and can safely provide the short support reference shown by Dictozy, search Render logs for the matching request ID prefix. Do not ask for audio, transcript text, field contents, or a full request ID when the short reference is sufficient.
 
 ## xAI Usage And Spend Review
 

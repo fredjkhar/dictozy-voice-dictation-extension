@@ -57,7 +57,7 @@ For the published production path:
 
 1. Install Dictozy from the Chrome Web Store.
 2. Confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm version `0.1.3` after the patch release is installed.
+3. Confirm version `0.1.4` after the reliability release is installed.
 4. Run the same supported-field recording and insertion checks.
 5. Confirm production network traffic goes only to `https://voice-dictation-extension.onrender.com`, never directly to xAI.
 6. Confirm Render logs include request ID, status, and latency for the smoke test without audio or transcript content.
@@ -67,7 +67,10 @@ For the published production path:
 - Entering remote HTTP is rejected before it is saved.
 - Entering an xAI URL is rejected before it is saved.
 - A stopped or unavailable backend produces a reachable error state instead of leaving the extension on Transcribing.
-- A backend timeout returns control to the user.
+- A backend timeout returns control to the user with a retry state and short request reference.
+- Cancelling a pending transcription prevents any late response from being inserted; it does not guarantee provider-side processing stops after upload.
+- Turning Dictozy off during recording or transcription cancels extension-side active work safely.
+- A retry records a fresh clip and does not reuse failed audio.
 - Backend responses do not expose provider credentials or raw upstream error bodies.
 
 ## Local Script Check

@@ -9,13 +9,23 @@ function readExtensionFile(name) {
   return fs.readFileSync(path.join(extensionDir, name), "utf8");
 }
 
-test("manifest is prepared for Dictozy 0.1.3 without new permissions", () => {
+test("manifest is prepared for Dictozy 0.1.4 without new permissions", () => {
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
 
   assert.equal(manifest.name, "Dictozy: Voice Dictation");
   assert.equal(manifest.short_name, "Dictozy");
-  assert.equal(manifest.version, "0.1.3");
+  assert.equal(manifest.version, "0.1.4");
   assert.deepEqual(manifest.permissions, ["storage"]);
+  assert.deepEqual(manifest.host_permissions, [
+    "http://127.0.0.1/*",
+    "http://localhost/*",
+    "https://voice-dictation-extension.onrender.com/*",
+  ]);
+  assert.deepEqual(manifest.content_scripts[0].js, [
+    "dom-utils.js",
+    "dictation-lifecycle.js",
+    "content.js",
+  ]);
 });
 
 test("production popup no longer exposes fake text controls", () => {
@@ -45,8 +55,26 @@ test("page recording control uses icon states instead of text-only labels", () =
   assert.match(content, /MIC_BUTTON_ICONS/);
   assert.match(content, /icon: "mic"/);
   assert.match(content, /icon: "stop"/);
+  assert.match(content, /icon: "retry"/);
+  assert.match(content, /label: "Cancel transcription"/);
   assert.equal(/button\.textContent\s*=\s*"(Mic|Stop|\.\.\.)"/.test(content), false);
   assert.match(styles, /voice-dictation-mic-icon/);
+});
+
+test("dictation lifecycle adds cancellable request IDs without direct provider access", () => {
+  const background = readExtensionFile("background.js");
+  const content = readExtensionFile("content.js");
+  const lifecycle = readExtensionFile("dictation-lifecycle.js");
+  const directProviderEndpoint = ["api", ".x", ".ai"].join("");
+  const providerKeyName = ["XAI", "API", "KEY"].join("_");
+
+  assert.match(background, /X-Request-ID/);
+  assert.match(background, /AbortController/);
+  assert.match(content, /VOICE_DICTATION_CANCEL_TRANSCRIPTION/);
+  assert.match(content, /createRequestId/);
+  assert.match(lifecycle, /createRequestLifecycle/);
+  assert.equal(`${background}\n${content}\n${lifecycle}`.includes(directProviderEndpoint), false);
+  assert.equal(`${background}\n${content}\n${lifecycle}`.includes(providerKeyName), false);
 });
 
 test("default recording limit is 10 seconds", () => {
