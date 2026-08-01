@@ -10,7 +10,13 @@ const TRANSCRIBE_TIMEOUT_MS = 45000;
 const HEALTH_CHECK_TIMEOUT_MS = 10000;
 const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
 const REQUEST_ID_HEADER = "X-Request-ID";
-const { DEFAULT_BACKEND_URL, getHealthUrl, normalizeBackendUrl } = globalThis.VoiceDictationConfig;
+const {
+  DEFAULT_BACKEND_URL,
+  DEFAULT_TRANSCRIPTION_LANGUAGE,
+  getHealthUrl,
+  normalizeBackendUrl,
+  normalizeTranscriptionLanguage,
+} = globalThis.VoiceDictationConfig;
 const { normalizeRequestId } = globalThis.DictozyLifecycle;
 const activeTranscriptions = new Map();
 
@@ -66,6 +72,7 @@ function getFriendlyBackendError(status, detail) {
 function getStoredSettings() {
   return chrome.storage.local.get({
     backendUrl: DEFAULT_BACKEND_URL,
+    transcriptionLanguage: DEFAULT_TRANSCRIPTION_LANGUAGE,
   });
 }
 
@@ -144,9 +151,7 @@ async function transcribeAudio(message) {
     };
   }
 
-  const formData = new FormData();
   const extension = audio.mimeType.includes("mp4") ? "mp4" : "webm";
-  formData.append("file", audio.blob, `recording.${extension}`);
   const controller = new AbortController();
   const requestContext = {
     cancelReason: "",
@@ -161,6 +166,9 @@ async function transcribeAudio(message) {
   try {
     const settings = await getStoredSettings();
     const endpoint = normalizeBackendUrl(settings.backendUrl);
+    const formData = new FormData();
+    formData.append("language", normalizeTranscriptionLanguage(settings.transcriptionLanguage));
+    formData.append("file", audio.blob, `recording.${extension}`);
     const response = await fetch(endpoint, {
       method: "POST",
       body: formData,

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Effective date: June 13, 2026
+Effective date: July 26, 2026
 
 Dictozy: Voice Dictation helps you dictate short text into supported web fields. Recording starts only when you click the visible microphone button, and the returned transcript is inserted into the field you selected.
 
@@ -10,14 +10,14 @@ Dictozy handles the following data only to provide voice dictation:
 
 - Audio recorded after the user clicks the visible microphone button.
 - The transcript returned from the speech-to-text service.
-- The enabled state, backend URL, and recording-duration preference stored locally with `chrome.storage.local`.
+- The enabled state, backend URL, recording-duration preference, and language-formatting preference stored locally with `chrome.storage.local`.
 - Page field information inspected locally to determine whether the focused field is supported. The extension does not transmit the page URL, browsing history, existing field contents, or surrounding page content to the backend.
 
 Dictozy does not activate on password or payment fields. It does not record automatically and does not record in the background.
 
 ## How Data Is Used
 
-Recorded audio is sent to the configured FastAPI backend solely to generate a transcript. The backend sends that audio to xAI Speech-to-Text, receives the transcript, and returns it to the extension. The extension inserts the transcript into the user-selected field.
+Recorded audio is sent to the configured FastAPI backend solely to generate a transcript. The selected language-formatting code is sent with that user-triggered audio request. For an explicit language, the backend passes the code to xAI Speech-to-Text to guide written formatting such as numbers, currencies, and units. In Automatic mode, the backend omits the provider language and formatting parameters. The backend receives the transcript and returns it to the extension, which inserts it into the user-selected field.
 
 The Advanced Check Backend control sends a health-check request without audio or page content.
 
@@ -25,7 +25,7 @@ Data is not used for advertising, profiling, credit decisions, or sale to third 
 
 ## Data Sharing
 
-Audio and resulting transcript data are processed by:
+Audio, any selected explicit language code, and resulting transcript data are processed by:
 
 - The Dictozy FastAPI backend hosted on Render.
 - xAI, which provides the Speech-to-Text service.
@@ -34,7 +34,7 @@ Render and xAI receive the user's IP address and may process other technical req
 
 ## Storage And Retention
 
-The extension stores only the enabled state, backend URL, and recording-duration preference in Chrome local extension storage. These settings remain until the user changes them, clears extension data, or removes the extension.
+The extension stores only the enabled state, backend URL, recording-duration preference, and language-formatting preference in Chrome local extension storage. These settings remain until the user changes them, clears extension data, or removes the extension.
 
 The extension and backend application code do not intentionally persist raw audio or transcripts. Audio and transcripts are held in memory only as needed to complete a transcription request. Infrastructure and service providers may retain operational data according to their own policies.
 
@@ -44,7 +44,7 @@ Production audio requests use HTTPS. The xAI API key is stored only in backend e
 
 ## User Controls
 
-Recording begins only after the user clicks the microphone button or presses the assigned browser shortcut. The user can stop recording immediately with the visible control or shortcut. Users may turn Dictozy off from the popup, remap or remove the shortcut in Chrome, change the recording limit, or clear locally stored settings by removing the extension or clearing its extension data in Chrome.
+Recording begins only after the user clicks the microphone button or presses the assigned browser shortcut. The user can stop recording immediately with the visible control or shortcut. Users may turn Dictozy off from the popup, remap or remove the shortcut in Chrome, choose language formatting, change the recording limit, or clear locally stored settings by removing the extension or clearing its extension data in Chrome.
 
 ## Limited Use
 

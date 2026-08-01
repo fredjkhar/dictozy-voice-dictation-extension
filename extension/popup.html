@@ -30,8 +30,8 @@
 
       .popup-shell {
         display: grid;
-        gap: 14px;
-        padding: 16px;
+        gap: 10px;
+        padding: 14px;
       }
 
       .brand {
@@ -83,8 +83,8 @@
 
       .settings-panel {
         display: grid;
-        gap: 13px;
-        padding: 12px;
+        gap: 10px;
+        padding: 10px;
       }
 
       .toggle-row {
@@ -99,8 +99,8 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        min-height: 42px;
-        padding-top: 12px;
+        min-height: 40px;
+        padding-top: 10px;
         border-top: 1px solid #e5eaf0;
       }
 
@@ -183,6 +183,7 @@
 
       .switch:focus-visible,
       input:focus-visible,
+      select:focus-visible,
       button:focus-visible,
       summary:focus-visible {
         outline: 3px solid #38bdf8;
@@ -191,11 +192,12 @@
 
       form {
         display: grid;
-        gap: 10px;
+        gap: 8px;
       }
 
       input[type="number"],
-      input[type="url"] {
+      input[type="url"],
+      select {
         width: 100%;
         min-height: 36px;
         border: 1px solid #c5d0de;
@@ -206,6 +208,10 @@
         font-size: 13px;
         letter-spacing: 0;
         padding: 7px 9px;
+      }
+
+      select {
+        cursor: pointer;
       }
 
       button {
@@ -278,7 +284,7 @@
       }
 
       summary {
-        padding: 11px 12px;
+        padding: 9px 12px;
         color: #233244;
         cursor: pointer;
         font-size: 13px;
@@ -287,8 +293,8 @@
 
       .advanced-fields {
         display: grid;
-        gap: 10px;
-        padding: 0 12px 12px;
+        gap: 8px;
+        padding: 0 12px 10px;
       }
 
       .status {
@@ -360,6 +366,10 @@
         </div>
 
         <form id="settingsForm">
+          <label class="field-label">
+            <span class="field-title">Language formatting</span>
+            <select id="transcriptionLanguage"></select>
+          </label>
           <label class="field-label">
             <span class="field-title">Recording limit</span>
             <span class="field-help">1 to 30 seconds</span>

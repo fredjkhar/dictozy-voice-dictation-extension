@@ -114,6 +114,10 @@
           <input type="text" placeholder="Dictate into text">
         </label>
         <label>
+          <span>Postcard message near-miss</span>
+          <input type="text" name="postcardMessage" placeholder="This remains supported">
+        </label>
+        <label>
           <span>Search input</span>
           <input type="search" placeholder="Dictate a search">
         </label>
@@ -138,7 +142,7 @@
           <div contenteditable="true">Place cursor here and dictate.</div>
         </div>
         <div class="field-group">
-          <span>role textbox</span>
+          <span>Editable ARIA textbox</span>
           <div role="textbox" tabindex="0" contenteditable="true">Place cursor here and dictate.</div>
         </div>
         <div class="field-group">
@@ -173,6 +177,30 @@
           <span>Payment-like field</span>
           <input type="text" name="credit-card-number" autocomplete="cc-number" placeholder="No mic button">
         </label>
+        <label>
+          <span>Camel-case payment field</span>
+          <input type="text" name="cardNumber" placeholder="No mic button">
+        </label>
+        <label>
+          <span>Snake-case payment field</span>
+          <input type="text" id="card_number" placeholder="No mic button">
+        </label>
+        <label>
+          <span>Compact credit-card field</span>
+          <input type="text" name="creditCardNumber" placeholder="No mic button">
+        </label>
+        <label>
+          <span>Payment-card field</span>
+          <input type="text" id="paymentCard" placeholder="No mic button">
+        </label>
+        <label>
+          <span>Cardholder field</span>
+          <input type="text" aria-label="cardholderName" placeholder="No mic button">
+        </label>
+        <div class="field-group">
+          <span>Bare ARIA textbox</span>
+          <div role="textbox" tabindex="0">Not editable; no mic button</div>
+        </div>
         <label>
           <span>File</span>
           <input type="file">

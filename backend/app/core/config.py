@@ -20,7 +20,9 @@ def parse_bool_env(name: str, default: bool) -> bool:
     if normalized in {"0", "false", "no", "off"}:
         return False
 
-    return default
+    raise ValueError(
+        f"{name} must be one of: 1, true, yes, on, 0, false, no, off."
+    )
 
 
 def parse_int_env(name: str, default: int, *, min_value: int = 0) -> int:

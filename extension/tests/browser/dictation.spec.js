@@ -16,6 +16,7 @@ async function installChromeMocks(page) {
       backendUrl: "https://voice-dictation-extension.onrender.com/api/transcribe",
       extensionEnabled: true,
       recordingDurationMs: 10000,
+      transcriptionLanguage: "en",
     };
     let responseQueue = [];
 
@@ -142,6 +143,7 @@ async function installChromeMocks(page) {
           testState.requests.push({
             audioDataUrl: message.audioDataUrl,
             requestId: message.requestId,
+            transcriptionLanguage: readStorage().transcriptionLanguage,
           });
           const plan = responseQueue.shift() || {
             defer: false,
@@ -277,8 +279,13 @@ async function installChromeMocks(page) {
   });
 }
 
-async function loadContentScript(page) {
+async function loadContentScript(page, initialStorage = null) {
   await page.goto("/qa/manual-test-page.html");
+
+  if (initialStorage) {
+    await page.evaluate((values) => window.__dictozyTest.setStorage(values), initialStorage);
+  }
+
   await page.addStyleTag({ url: "/extension/content.css" });
   await page.addScriptTag({ url: "/extension/dom-utils.js" });
   await page.addScriptTag({ url: "/extension/dictation-lifecycle.js" });
@@ -326,6 +333,69 @@ test("shows the control only for supported fields", async ({ page }) => {
   await expect(page.locator(MIC_BUTTON)).toBeVisible();
 });
 
+test("excludes common payment metadata without blocking safe near-misses", async ({ page }) => {
+  await loadContentScript(page);
+  await focusFirstTextField(page);
+
+  const paymentSelectors = [
+    'input[autocomplete="cc-number"]',
+    'input[name="cardNumber"]',
+    "#card_number",
+    'input[name="creditCardNumber"]',
+    "#paymentCard",
+    'input[aria-label="cardholderName"]',
+  ];
+
+  for (const selector of paymentSelectors) {
+    await page.locator(selector).focus();
+    await expect(page.locator(MIC_BUTTON)).toBeHidden();
+    const shortcutResult = await invokeShortcut(page);
+    expect(shortcutResult.ok).toBe(false);
+  }
+
+  const safeNearMiss = page.locator('input[name="postcardMessage"]');
+  await safeNearMiss.focus();
+  await expect(page.locator(MIC_BUTTON)).toBeVisible();
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "Postcard note" });
+  });
+  await recordAndStop(page);
+  await expect(safeNearMiss).toHaveValue("Postcard note");
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(1);
+});
+
+test("supports editable ARIA textboxes and ignores bare role textboxes", async ({ page }) => {
+  await loadContentScript(page);
+  const editableAriaTextbox = page.locator('[role="textbox"][contenteditable="true"]');
+  await editableAriaTextbox.focus();
+  await expect(page.locator(MIC_BUTTON)).toBeVisible();
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "ARIA transcript" });
+  });
+  await recordAndStop(page);
+  await expect(editableAriaTextbox).toContainText("ARIA transcript");
+
+  const bareAriaTextbox = page.locator('[role="textbox"]:not([contenteditable])');
+  await bareAriaTextbox.focus();
+  await expect(page.locator(MIC_BUTTON)).toBeHidden();
+  const shortcutResult = await invokeShortcut(page);
+  expect(shortcutResult.ok).toBe(false);
+});
+
+test("preserves insertion into nested contenteditable fields", async ({ page }) => {
+  await loadContentScript(page);
+  const nestedEditor = page.locator('div[contenteditable="true"]', {
+    hasText: "Nested paragraph editor",
+  });
+  await nestedEditor.focus();
+  await expect(page.locator(MIC_BUTTON)).toBeVisible();
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "Nested transcript" });
+  });
+  await recordAndStop(page);
+  await expect(nestedEditor).toContainText("Nested transcript");
+});
+
 test("records only after a click, stops, and inserts a successful transcript", async ({ page }) => {
   await loadContentScript(page);
   const field = await focusFirstTextField(page);
@@ -341,6 +411,7 @@ test("records only after a click, stops, and inserts a successful transcript", a
   const request = await page.evaluate(() => window.__dictozyTest.requests[0]);
   expect(request.requestId).toMatch(/^[A-Za-z0-9_-]{8,80}$/);
   expect(request.audioDataUrl).toMatch(/^data:audio\/webm(?:;[^,]+)?;base64,/);
+  expect(request.transcriptionLanguage).toBe("en");
   await expect.poll(() => page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
 });
 
@@ -652,6 +723,7 @@ test("popup settings persist after reload", async ({ page }) => {
   await page.locator("#extensionEnabled").uncheck();
   await page.locator("#backendUrl").fill("http://localhost:9000/api/transcribe");
   await page.locator("#recordingDurationSeconds").fill("14");
+  await page.locator("#transcriptionLanguage").selectOption("fr");
   await page.locator("#saveSettings").click();
   await expect(page.locator("#status")).toHaveText("Dictozy is off.");
 
@@ -659,7 +731,30 @@ test("popup settings persist after reload", async ({ page }) => {
   await expect(page.locator("#extensionEnabled")).not.toBeChecked();
   await expect(page.locator("#backendUrl")).toHaveValue("http://localhost:9000/api/transcribe");
   await expect(page.locator("#recordingDurationSeconds")).toHaveValue("14");
+  await expect(page.locator("#transcriptionLanguage")).toHaveValue("fr");
   await expect(page.locator("#status")).toHaveText("Dictozy is off.");
+});
+
+test("popup defaults to English and persists Automatic formatting", async ({ page }) => {
+  await page.goto("/extension/popup.html");
+  await expect(page.locator("#transcriptionLanguage")).toHaveValue("en");
+
+  await page.locator("#transcriptionLanguage").selectOption("auto");
+  await page.locator("#saveSettings").click();
+  await page.reload();
+
+  await expect(page.locator("#transcriptionLanguage")).toHaveValue("auto");
+});
+
+test("recording requests carry the selected backend language", async ({ page }) => {
+  await loadContentScript(page, { transcriptionLanguage: "fr" });
+  const field = await focusFirstTextField(page);
+
+  await recordAndStop(page);
+  await expect(field).toHaveValue("Default transcript");
+
+  const request = await page.evaluate(() => window.__dictozyTest.requests[0]);
+  expect(request.transcriptionLanguage).toBe("fr");
 });
 
 test("popup shows assigned and unassigned shortcut states and opens Chrome settings", async ({ page }) => {

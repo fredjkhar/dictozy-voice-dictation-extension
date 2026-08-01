@@ -11,7 +11,7 @@ Ask for only the information needed to reproduce or route the issue:
 - Extension version from `chrome://extensions`.
 - Whether the extension was installed from the Chrome Web Store or loaded unpacked.
 - Website or app category where the issue occurred, if the user can share it.
-- Field type if known: input, textarea, contenteditable, or ARIA textbox.
+- Field type if known: input, textarea, contenteditable, or editable ARIA textbox.
 - What the user clicked and what happened next.
 - Safe screenshot of the UI state, if useful.
 - Request ID, if the UI/backend surfaced one or the maintainer can find it from timing.

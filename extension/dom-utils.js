@@ -1,8 +1,21 @@
 (() => {
   const SUPPORTED_INPUT_TYPES = new Set(["", "text", "search", "email", "url", "tel"]);
   const IGNORED_INPUT_TYPES = new Set(["password", "file", "checkbox", "radio", "hidden"]);
-  const PAYMENT_FIELD_PATTERN = /\b(cc-|cc_|card|credit|cvc|cvv|expiry|expiration|iban|payment)\b/i;
-  const EDITABLE_FIELD_SELECTOR = '[contenteditable]:not([contenteditable="false"]), [role="textbox"]';
+  const PAYMENT_AUTOCOMPLETE_PATTERN = /^(?:cc-.+|transaction-(?:amount|currency))$/i;
+  const PAYMENT_METADATA_TOKENS = new Set([
+    "card",
+    "cardholder",
+    "credit",
+    "csc",
+    "cvc",
+    "cvv",
+    "expiration",
+    "expiry",
+    "iban",
+    "payment",
+  ]);
+  const COMPACT_PAYMENT_PATTERN = /^(?:card(?:holder|name|number|type|expiry|expiration|csc|cvc|cvv)|cc(?:name|number|type|exp|expiry|csc|cvc|cvv)|creditcard|paymentcard|ibannumber)/;
+  const EDITABLE_FIELD_SELECTOR = '[contenteditable]:not([contenteditable="false"])';
 
   function getEditableField(target) {
     if (!(target instanceof Element)) {
@@ -17,8 +30,14 @@
   }
 
   function hasPaymentSignal(element) {
-    const values = [
-      element.getAttribute("autocomplete"),
+    const autocomplete = element.getAttribute("autocomplete") || "";
+    const autocompleteTokens = autocomplete.trim().split(/\s+/).filter(Boolean);
+
+    if (autocompleteTokens.some((token) => PAYMENT_AUTOCOMPLETE_PATTERN.test(token))) {
+      return true;
+    }
+
+    const metadataValues = [
       element.getAttribute("name"),
       element.getAttribute("id"),
       element.getAttribute("aria-label"),
@@ -26,7 +45,24 @@
       element.getAttribute("inputmode"),
     ];
 
-    return values.some((value) => value && PAYMENT_FIELD_PATTERN.test(value));
+    return metadataValues.some((value) => {
+      if (!value) {
+        return false;
+      }
+
+      const normalized = value
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+      const tokens = normalized.split(/\s+/).filter(Boolean);
+
+      if (tokens.some((token) => PAYMENT_METADATA_TOKENS.has(token))) {
+        return true;
+      }
+
+      return COMPACT_PAYMENT_PATTERN.test(tokens.join(""));
+    });
   }
 
   function isHidden(element) {

@@ -55,10 +55,17 @@ def test_transcribe_returns_provider_transcript(monkeypatch) -> None:
             signal=AudioSignal(duration_seconds=1.0, rms_dbfs=-20.0, peak_dbfs=-10.0),
         )
 
-    async def fake_transcribe(audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+    async def fake_transcribe(
+        audio_bytes: bytes,
+        *,
+        filename: str,
+        content_type: str,
+        language: str | None,
+    ) -> XAITranscriptionResult:
         assert audio_bytes == b"normalized wav bytes"
         assert filename == "recording.wav"
         assert content_type == "audio/wav"
+        assert language == "en"
         return XAITranscriptionResult(text="Mock transcript.")
 
     monkeypatch.setattr(transcribe, "normalize_audio_for_stt", fake_normalize)
@@ -74,8 +81,103 @@ def test_transcribe_returns_provider_transcript(monkeypatch) -> None:
     assert response.headers["x-request-id"]
 
 
+@pytest.mark.parametrize(
+    ("submitted_language", "expected_language"),
+    [
+        ("en", "en"),
+        (" FR ", "fr"),
+    ],
+)
+def test_transcribe_accepts_explicit_language_formatting(
+    monkeypatch,
+    submitted_language: str,
+    expected_language: str,
+) -> None:
+    received_language = None
+
+    async def fake_transcribe(
+        _audio_bytes: bytes,
+        *,
+        filename: str,
+        content_type: str,
+        language: str | None,
+    ) -> XAITranscriptionResult:
+        nonlocal received_language
+        received_language = language
+        return XAITranscriptionResult(text="Bonjour.")
+
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
+    monkeypatch.setattr(transcribe, "transcribe_with_xai", fake_transcribe)
+
+    response = client.post(
+        "/api/transcribe",
+        data={"language": submitted_language},
+        files={"file": ("recording.webm", b"fake audio bytes", "audio/webm")},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"transcript": "Bonjour."}
+    assert received_language == expected_language
+
+
+def test_transcribe_automatic_omits_provider_language(monkeypatch) -> None:
+    received_language = "not-called"
+
+    async def fake_transcribe(
+        _audio_bytes: bytes,
+        *,
+        filename: str,
+        content_type: str,
+        language: str | None,
+    ) -> XAITranscriptionResult:
+        nonlocal received_language
+        received_language = language
+        return XAITranscriptionResult(text="Automatic transcript.")
+
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
+    monkeypatch.setattr(transcribe, "transcribe_with_xai", fake_transcribe)
+
+    response = client.post(
+        "/api/transcribe",
+        data={"language": "auto"},
+        files={"file": ("recording.webm", b"fake audio bytes", "audio/webm")},
+    )
+
+    assert response.status_code == 200
+    assert received_language is None
+
+
+def test_transcribe_rejects_unsupported_language_before_provider(monkeypatch) -> None:
+    async def fake_transcribe(
+        _audio_bytes: bytes,
+        *,
+        filename: str,
+        content_type: str,
+        language: str | None,
+    ) -> XAITranscriptionResult:
+        raise AssertionError("xAI should not be called for an unsupported language")
+
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
+    monkeypatch.setattr(transcribe, "transcribe_with_xai", fake_transcribe)
+
+    response = client.post(
+        "/api/transcribe",
+        data={"language": "not-a-language"},
+        files={"file": ("recording.webm", b"fake audio bytes", "audio/webm")},
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Unsupported transcription language."}
+
+
 def test_transcribe_disabled_returns_safe_503(monkeypatch) -> None:
-    async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+    async def fake_transcribe(
+        _audio_bytes: bytes,
+        *,
+        filename: str,
+        content_type: str,
+        language: str | None,
+    ) -> XAITranscriptionResult:
         raise AssertionError("xAI should not be called when transcription is disabled")
 
     monkeypatch.setattr(transcribe, "settings", replace(transcribe.settings, transcription_enabled=False))
@@ -91,7 +193,13 @@ def test_transcribe_disabled_returns_safe_503(monkeypatch) -> None:
 
 
 def test_transcribe_rate_limit_returns_safe_429(monkeypatch) -> None:
-    async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+    async def fake_transcribe(
+        _audio_bytes: bytes,
+        *,
+        filename: str,
+        content_type: str,
+        language: str | None,
+    ) -> XAITranscriptionResult:
         return XAITranscriptionResult(text="Mock transcript.")
 
     monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
@@ -125,7 +233,13 @@ def test_transcribe_concurrency_limit_returns_safe_429(monkeypatch) -> None:
     release_first_request = threading.Event()
     first_result = {}
 
-    async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+    async def fake_transcribe(
+        _audio_bytes: bytes,
+        *,
+        filename: str,
+        content_type: str,
+        language: str | None,
+    ) -> XAITranscriptionResult:
         first_request_started.set()
         await asyncio.to_thread(release_first_request.wait, 5)
         return XAITranscriptionResult(text="Mock transcript.")
@@ -203,7 +317,13 @@ def test_transcribe_returns_safe_audio_processing_error(monkeypatch) -> None:
     def fake_normalize(_audio_bytes: bytes) -> NormalizedAudio:
         raise AudioNormalizationError("ffmpeg stderr should not reach the client")
 
-    async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+    async def fake_transcribe(
+        _audio_bytes: bytes,
+        *,
+        filename: str,
+        content_type: str,
+        language: str | None,
+    ) -> XAITranscriptionResult:
         raise AssertionError("xAI should not be called when audio normalization fails")
 
     monkeypatch.setattr(transcribe, "normalize_audio_for_stt", fake_normalize)
@@ -223,7 +343,13 @@ def test_transcribe_returns_safe_no_speech_error(monkeypatch) -> None:
     def fake_normalize(_audio_bytes: bytes) -> NormalizedAudio:
         raise AudioNoSpeechError("audio metrics should not reach the client")
 
-    async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+    async def fake_transcribe(
+        _audio_bytes: bytes,
+        *,
+        filename: str,
+        content_type: str,
+        language: str | None,
+    ) -> XAITranscriptionResult:
         raise AssertionError("xAI should not be called when no speech is detected")
 
     monkeypatch.setattr(transcribe, "normalize_audio_for_stt", fake_normalize)
@@ -240,7 +366,13 @@ def test_transcribe_returns_safe_no_speech_error(monkeypatch) -> None:
 
 
 def test_transcribe_returns_safe_empty_transcript_error(monkeypatch) -> None:
-    async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+    async def fake_transcribe(
+        _audio_bytes: bytes,
+        *,
+        filename: str,
+        content_type: str,
+        language: str | None,
+    ) -> XAITranscriptionResult:
         raise XAIEmptyTranscriptError("provider returned blank text")
 
     monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
@@ -257,7 +389,13 @@ def test_transcribe_returns_safe_empty_transcript_error(monkeypatch) -> None:
 
 
 def test_transcribe_returns_safe_provider_error(monkeypatch) -> None:
-    async def fake_transcribe(_audio_bytes: bytes, *, filename: str, content_type: str) -> XAITranscriptionResult:
+    async def fake_transcribe(
+        _audio_bytes: bytes,
+        *,
+        filename: str,
+        content_type: str,
+        language: str | None,
+    ) -> XAITranscriptionResult:
         raise XAIServiceError("upstream details should not reach the client")
 
     monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)

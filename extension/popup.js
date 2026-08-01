@@ -5,13 +5,20 @@ const DEFAULT_EXTENSION_ENABLED = true;
 const DEFAULT_RECORDING_DURATION_SECONDS = 10;
 const MIN_RECORDING_DURATION_SECONDS = 1;
 const MAX_RECORDING_DURATION_SECONDS = 30;
-const { DEFAULT_BACKEND_URL, validateBackendUrl } = globalThis.VoiceDictationConfig;
+const {
+  DEFAULT_BACKEND_URL,
+  DEFAULT_TRANSCRIPTION_LANGUAGE,
+  TRANSCRIPTION_LANGUAGES,
+  normalizeTranscriptionLanguage,
+  validateBackendUrl,
+} = globalThis.VoiceDictationConfig;
 
 const enabledToggle = document.querySelector("#extensionEnabled");
 const saveSettingsButton = document.querySelector("#saveSettings");
 const testBackendButton = document.querySelector("#testBackend");
 const backendUrlInput = document.querySelector("#backendUrl");
 const recordingDurationInput = document.querySelector("#recordingDurationSeconds");
+const transcriptionLanguageSelect = document.querySelector("#transcriptionLanguage");
 const manageShortcutButton = document.querySelector("#manageShortcut");
 const shortcutValue = document.querySelector("#shortcutValue");
 const statusText = document.querySelector("#status");
@@ -32,6 +39,19 @@ function normalizeRecordingDurationSeconds(value) {
     MAX_RECORDING_DURATION_SECONDS,
     Math.max(MIN_RECORDING_DURATION_SECONDS, Math.round(duration)),
   );
+}
+
+function populateLanguageOptions() {
+  const options = document.createDocumentFragment();
+
+  for (const { code, label } of TRANSCRIPTION_LANGUAGES) {
+    const option = document.createElement("option");
+    option.value = code;
+    option.textContent = label;
+    options.append(option);
+  }
+
+  transcriptionLanguageSelect.replaceChildren(options);
 }
 
 function getExtensionCommands() {
@@ -84,6 +104,7 @@ async function loadSettings() {
     backendUrl: DEFAULT_BACKEND_URL,
     extensionEnabled: DEFAULT_EXTENSION_ENABLED,
     recordingDurationMs: DEFAULT_RECORDING_DURATION_SECONDS * 1000,
+    transcriptionLanguage: DEFAULT_TRANSCRIPTION_LANGUAGE,
   });
 
   const backendUrl = validateBackendUrl(settings.backendUrl);
@@ -91,6 +112,7 @@ async function loadSettings() {
   enabledToggle.checked = settings.extensionEnabled !== false;
   backendUrlInput.value = backendUrl.ok ? backendUrl.url : DEFAULT_BACKEND_URL;
   recordingDurationInput.value = String(normalizeRecordingDurationSeconds(settings.recordingDurationMs / 1000));
+  transcriptionLanguageSelect.value = normalizeTranscriptionLanguage(settings.transcriptionLanguage);
   setStatus(enabledToggle.checked ? "Ready." : "Dictozy is off.", enabledToggle.checked ? "success" : "warning");
 }
 
@@ -104,15 +126,18 @@ async function saveSettings() {
   }
 
   const recordingDurationSeconds = normalizeRecordingDurationSeconds(recordingDurationInput.value);
+  const transcriptionLanguage = normalizeTranscriptionLanguage(transcriptionLanguageSelect.value);
 
   await chrome.storage.local.set({
     backendUrl: backendUrl.url,
     extensionEnabled: enabledToggle.checked,
     recordingDurationMs: recordingDurationSeconds * 1000,
+    transcriptionLanguage,
   });
 
   backendUrlInput.value = backendUrl.url;
   recordingDurationInput.value = String(recordingDurationSeconds);
+  transcriptionLanguageSelect.value = transcriptionLanguage;
   setStatus(enabledToggle.checked ? "Settings saved." : "Dictozy is off.", enabledToggle.checked ? "success" : "warning");
 }
 
@@ -153,5 +178,6 @@ enabledToggle.addEventListener("change", toggleEnabled);
 manageShortcutButton.addEventListener("click", openShortcutSettings);
 saveSettingsButton.addEventListener("click", saveSettings);
 testBackendButton.addEventListener("click", testBackend);
+populateLanguageOptions();
 loadSettings();
 loadShortcut();

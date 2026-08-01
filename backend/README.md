@@ -45,7 +45,7 @@ Set `XAI_API_KEY` in `.env` before using `/api/transcribe`.
 
 Optional hardening settings are included in `.env.example`:
 
-- `TRANSCRIPTION_ENABLED`: set to `false` to return a safe `503` from `/api/transcribe` without calling xAI.
+- `TRANSCRIPTION_ENABLED`: set to `false` to return a safe `503` from `/api/transcribe` without calling xAI. Invalid non-empty values stop backend startup instead of silently enabling transcription.
 - `TRANSCRIBE_MAX_CONCURRENT_REQUESTS`: in-process concurrent transcription guard. Set to `0` to disable.
 - `TRANSCRIBE_RATE_LIMIT_REQUESTS`: in-memory request count per rate window. Set to `0` to disable.
 - `TRANSCRIBE_RATE_LIMIT_WINDOW_SECONDS`: rate-limit window length.
@@ -71,8 +71,18 @@ Local transcription test with a short, non-sensitive audio file:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/transcribe \
+  -F "language=en" \
   -F "file=@sample.webm;type=audio/webm"
 ```
+
+The optional multipart `language` field controls written formatting:
+
+- If the field is missing, the backend defaults to `en` for compatibility with older extension versions.
+- `auto` tells the backend to omit both provider `language` and `format` parameters.
+- A supported explicit language sends its code with `format=true` to guide written formatting for numbers, currencies, and units.
+- An unsupported value returns a safe `400` response before xAI is called.
+
+Deploy the backward-compatible backend before distributing extension `0.1.6`. Verify one transcription from the published `0.1.5` extension, then test English, Automatic, and one explicit non-English language from the `0.1.6` package.
 
 Run backend tests:
 
@@ -111,4 +121,6 @@ python scripts/smoke_test.py https://YOUR_BACKEND_HOST --audio sample.webm
 - `502 Speech-to-text service failed.` means the backend reached xAI but xAI rejected or failed the request. Check backend logs for `xAI STT` warning lines.
 - `403` from xAI usually means the xAI team needs credits, licenses, or Speech-to-Text access.
 - `400 Unsupported audio file type.` means the uploaded file MIME type is not in the allowed audio list.
+- `400 Unsupported transcription language.` means the submitted language is outside the audited allowlist.
+- A startup error naming `TRANSCRIPTION_ENABLED` means the environment value is not a supported true or false spelling.
 - Never paste or commit the real `XAI_API_KEY`.

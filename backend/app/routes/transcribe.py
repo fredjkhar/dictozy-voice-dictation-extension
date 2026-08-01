@@ -1,10 +1,15 @@
 import asyncio
 
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile, status
 
 from app.core.config import settings
 from app.core.limits import InMemoryRateLimiter, InProcessConcurrencyLimiter, LimitExceeded
 from app.core.security import normalize_content_type, safe_audio_filename, validate_audio_upload
+from app.core.transcription_languages import (
+    DEFAULT_TRANSCRIPTION_LANGUAGE,
+    UnsupportedTranscriptionLanguageError,
+    normalize_transcription_language,
+)
 from app.schemas.transcription import TranscriptionResponse
 from app.services.audio_normalization import AudioNoSpeechError, AudioNormalizationError, normalize_audio_for_stt
 from app.services.xai_service import (
@@ -33,12 +38,24 @@ def get_rate_limit_key(request: Request) -> str:
 
 
 @router.post("/transcribe", response_model=TranscriptionResponse)
-async def transcribe_audio_route(request: Request, file: UploadFile = File(...)) -> TranscriptionResponse:
+async def transcribe_audio_route(
+    request: Request,
+    file: UploadFile = File(...),
+    language: str = Form(DEFAULT_TRANSCRIPTION_LANGUAGE),
+) -> TranscriptionResponse:
     if not settings.transcription_enabled:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Speech-to-text service is temporarily unavailable.",
         )
+
+    try:
+        normalized_language = normalize_transcription_language(language)
+    except UnsupportedTranscriptionLanguageError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported transcription language.",
+        ) from exc
 
     if not rate_limiter.allow(
         get_rate_limit_key(request),
@@ -59,6 +76,7 @@ async def transcribe_audio_route(request: Request, file: UploadFile = File(...))
                 normalized_audio.audio_bytes,
                 filename=safe_audio_filename(normalized_audio.filename),
                 content_type=normalize_content_type(normalized_audio.content_type) or "audio/wav",
+                language=normalized_language,
             )
     except LimitExceeded as exc:
         raise HTTPException(

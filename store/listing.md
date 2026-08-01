@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the Chrome Web Store Developer Dashboard for Dictozy `0.1.5`.
+Use this file as the source of truth when updating the Chrome Web Store Developer Dashboard for Dictozy `0.1.6`.
 
 ## Dashboard Product Details
 
@@ -44,6 +44,7 @@ Why it is useful
 - Start and stop recording from a clear on-page control.
 - Start, stop, or cancel dictation with a configurable browser shortcut.
 - Cancel a pending transcription and record again after a failure.
+- Choose Automatic or an explicit language to guide written formatting for numbers, currencies, and units.
 - Adjust the recording limit from the extension popup.
 - Turn Dictozy on or off whenever you do not want the page microphone control shown.
 
@@ -57,7 +58,9 @@ Privacy and control
 - Password, payment, hidden, disabled, readonly, file, checkbox, and radio fields are ignored.
 - Dictozy does not provide transcript history, advertising, sign-in accounts, payment features, or background recording.
 
-Supported fields include normal text inputs, search/email/URL/tel inputs, textareas, contenteditable fields, and ARIA textboxes. Dictozy is designed for short dictation clips, not long-form recording.
+Supported fields include normal text inputs, search/email/URL/tel inputs, textareas, contenteditable fields, and ARIA textboxes that are actually editable. Bare non-editable ARIA role elements are ignored. Dictozy is designed for short dictation clips, not long-form recording.
+
+Language formatting is a provider formatting hint, not a promise of improved speech recognition. English is selected by default. Automatic leaves provider language and formatting selection unset.
 
 What's new in 0.1.2
 
@@ -86,6 +89,12 @@ What's new in 0.1.5
 - Configurable browser shortcut for starting and stopping a recording or cancelling pending dictation.
 - The popup shows the current shortcut assignment and links to Chrome's shortcut settings.
 - Shortcut actions use the same supported-field, privacy, cancellation, and stale-focus protections as the visible page control.
+
+What's new in 0.1.6
+
+- New language-formatting setting with Automatic and 25 explicit language options.
+- English remains the default for consistent behavior.
+- Explicit choices guide written formatting for numbers, currencies, and units; Automatic leaves provider language and formatting selection unset.
 ```
 
 ## Visual Assets
@@ -99,7 +108,7 @@ Screenshots:
 - `store/assets/screenshot-dictation-1280x800.png`
   Caption: Dictate directly into supported text fields.
 - `store/assets/screenshot-settings-1280x800.png`
-  Caption: View your shortcut, keep Dictozy enabled, choose a recording limit, and check backend connectivity.
+  Caption: Choose language formatting, view your shortcut, set a recording limit, and check backend connectivity.
 
 Small promotional tile:
 
@@ -139,7 +148,7 @@ Dictozy lets users dictate short text into supported web fields by recording aud
 
 `storage`:
 
-Stores the enabled state, backend URL, and recording-duration preference locally in Chrome. No cloud synchronization is used by the extension.
+Stores the enabled state, backend URL, recording-duration preference, and language-formatting preference locally in Chrome. No cloud synchronization is used by the extension.
 
 Site access on HTTPS pages:
 
@@ -165,7 +174,8 @@ Data handled:
 
 - User-provided audio recorded after a visible click.
 - Returned transcript text.
-- Extension settings stored locally.
+- Extension settings stored locally, including the selected language-formatting preference.
+- The selected language code sent with a user-triggered audio request.
 - Focused field metadata inspected locally for compatibility and safety checks.
 
 Data not collected or transmitted by the extension:
@@ -188,9 +198,10 @@ Dashboard guidance:
 2. Open an HTTPS webpage containing a normal text input or textarea.
 3. Focus the field and confirm that the microphone icon button appears.
 4. Click the microphone icon or press the assigned browser shortcut, then allow microphone access.
-5. Speak a short phrase and click the stop icon, press the shortcut again, or wait for the recording limit.
-6. Confirm that the transcription status completes and text appears in the focused field.
-7. Open the popup, expand Advanced, and click Check Backend to verify the production backend health endpoint.
+5. Open the popup, confirm Language formatting defaults to English, and save Automatic or one explicit language for an additional test.
+6. Speak a short phrase and click the stop icon, press the shortcut again, or wait for the recording limit.
+7. Confirm that the transcription status completes and text appears in the focused field.
+8. Open the popup, expand Advanced, and click Check Backend to verify the production backend health endpoint.
 
 No test account or credentials are required. The production backend must have the submitted extension ID configured in CORS before review.
 
@@ -198,7 +209,7 @@ No test account or credentials are required. The production backend must have th
 
 Use the Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
 
-1. Package tab: upload `dist/dictozy-v0.1.5.zip` only after rebuilding it from the reviewed source.
+1. Package tab: upload `dist/dictozy-v0.1.6.zip` only after rebuilding it from the reviewed source.
 2. Store Listing tab: update the name, summary, detailed description, category, language, screenshots, promo tile, homepage URL, support URL, and privacy policy URL from this file.
 3. Privacy practices tab: update the single-purpose statement, data-use declarations, permission justifications, remote-code declaration, and privacy policy URL.
 4. Distribution tab: confirm visibility, regions, and any rollout settings before submission.

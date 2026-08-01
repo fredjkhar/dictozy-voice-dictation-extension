@@ -84,7 +84,7 @@ Support:
 - `input[type="tel"]`
 - `textarea`
 - `[contenteditable="true"]`
-- `[role="textbox"]`
+- editable ARIA textboxes, such as `[role="textbox"][contenteditable="true"]`
 
 Ignore:
 
@@ -96,6 +96,7 @@ Ignore:
 - readonly fields
 - disabled fields
 - payment fields
+- bare, non-editable `[role="textbox"]` elements
 
 ## Development Process
 

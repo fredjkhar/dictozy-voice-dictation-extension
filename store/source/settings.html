@@ -56,14 +56,14 @@
 
       .popup {
         position: absolute;
-        top: 28px;
+        top: 8px;
         right: 108px;
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         width: 320px;
-        gap: 14px;
+        gap: 10px;
         overflow: hidden;
-        padding: 16px;
+        padding: 14px;
         border: 1px solid #d8e0ea;
         border-radius: 8px;
         background: #f7f9fb;
@@ -120,8 +120,8 @@
 
       .settings-panel {
         display: grid;
-        gap: 13px;
-        padding: 12px;
+        gap: 10px;
+        padding: 10px;
       }
 
       .toggle-row {
@@ -133,11 +133,11 @@
 
       .shortcut-row {
         display: flex;
-        min-height: 42px;
+        min-height: 40px;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding-top: 12px;
+        padding-top: 10px;
         border-top: 1px solid #e5eaf0;
       }
 
@@ -200,7 +200,7 @@
       .form {
         display: grid;
         min-width: 0;
-        gap: 10px;
+        gap: 8px;
       }
 
       .input {
@@ -218,6 +218,23 @@
         padding: 8px 9px;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      .select-value {
+        position: relative;
+        padding-right: 34px;
+      }
+
+      .select-value::after {
+        position: absolute;
+        top: 50%;
+        right: 11px;
+        width: 7px;
+        height: 7px;
+        border-right: 2px solid #64748b;
+        border-bottom: 2px solid #64748b;
+        content: "";
+        transform: translateY(-70%) rotate(45deg);
       }
 
       .primary-button,
@@ -270,7 +287,7 @@
       }
 
       .advanced summary {
-        padding: 11px 12px;
+        padding: 9px 12px;
         color: #233244;
         font-size: 13px;
         font-weight: 720;
@@ -279,8 +296,8 @@
       .advanced-fields {
         display: grid;
         min-width: 0;
-        gap: 10px;
-        padding: 0 12px 12px;
+        gap: 8px;
+        padding: 0 12px 10px;
       }
 
       .status {
@@ -319,7 +336,7 @@
       <section class="page">
         <div class="eyebrow">Settings</div>
         <h1>Keep dictation ready and under your control.</h1>
-        <p>Dictozy stores its enabled state, backend URL, and recording limit locally in Chrome. The xAI API key stays entirely on the backend.</p>
+        <p>Dictozy stores its enabled state, language formatting, backend URL, and recording limit locally in Chrome. The xAI API key stays entirely on the backend.</p>
         <div class="sample-fields">
           <div class="sample-field">Name</div>
           <div class="sample-field">Write a short message...</div>
@@ -368,6 +385,10 @@
             </div>
 
             <div class="form">
+              <div class="field-label">
+                <span class="field-title">Language formatting</span>
+                <div class="input select-value">English</div>
+              </div>
               <div class="field-label">
                 <span class="field-title">Recording limit</span>
                 <span class="field-help">1 to 30 seconds</span>

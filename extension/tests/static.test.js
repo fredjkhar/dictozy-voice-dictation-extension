@@ -4,17 +4,18 @@ const path = require("node:path");
 const test = require("node:test");
 
 const extensionDir = path.join(__dirname, "..");
+const rootDir = path.join(extensionDir, "..");
 
 function readExtensionFile(name) {
   return fs.readFileSync(path.join(extensionDir, name), "utf8");
 }
 
-test("manifest is prepared for Dictozy 0.1.5 without new permissions", () => {
+test("manifest is prepared for Dictozy 0.1.6 without new permissions", () => {
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
 
   assert.equal(manifest.name, "Dictozy: Voice Dictation");
   assert.equal(manifest.short_name, "Dictozy");
-  assert.equal(manifest.version, "0.1.5");
+  assert.equal(manifest.version, "0.1.6");
   assert.deepEqual(manifest.permissions, ["storage"]);
   assert.deepEqual(manifest.host_permissions, [
     "http://127.0.0.1/*",
@@ -37,6 +38,16 @@ test("manifest is prepared for Dictozy 0.1.5 without new permissions", () => {
   });
 });
 
+test("extension and Node package versions stay aligned", () => {
+  const manifest = JSON.parse(readExtensionFile("manifest.json"));
+  const packageJson = JSON.parse(fs.readFileSync(path.join(rootDir, "package.json"), "utf8"));
+  const packageLock = JSON.parse(fs.readFileSync(path.join(rootDir, "package-lock.json"), "utf8"));
+
+  assert.equal(packageJson.version, manifest.version);
+  assert.equal(packageLock.version, manifest.version);
+  assert.equal(packageLock.packages[""].version, manifest.version);
+});
+
 test("production popup no longer exposes fake text controls", () => {
   const popupHtml = readExtensionFile("popup.html");
   const popupJs = readExtensionFile("popup.js");
@@ -47,6 +58,8 @@ test("production popup no longer exposes fake text controls", () => {
   assert.match(popupHtml, /Advanced Backend/);
   assert.match(popupHtml, /brand-mark/);
   assert.match(popupHtml, /shortcutValue/);
+  assert.match(popupHtml, /transcriptionLanguage/);
+  assert.match(popupHtml, /Language formatting/);
   assert.match(popupJs, /chrome\.commands\.getAll/);
   assert.match(popupHtml, /data-tone="neutral"/);
 });

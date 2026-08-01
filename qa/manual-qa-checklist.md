@@ -11,18 +11,28 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 - `POST /api/transcribe` rejects non-audio files with `400`.
 - `POST /api/transcribe` rejects empty audio files with `400`.
 - With a valid `XAI_API_KEY`, a short real audio file returns a transcript.
+- A request that omits `language` defaults to English for compatibility with `0.1.5` clients.
+- A request with `language=auto` succeeds without sending provider language or formatting parameters.
+- Each supported explicit language code succeeds and is sent to xAI with formatting enabled.
+- An unsupported language value returns a safe `400` without calling xAI.
 - Without `XAI_API_KEY`, the endpoint returns a safe `503` message.
+- Missing or blank `TRANSCRIPTION_ENABLED` uses the documented default; valid false values disable transcription, and malformed non-empty values stop startup clearly.
 - Backend logs may include upstream xAI status details, but API responses must not expose secrets.
 
 ## Extension
 
 - The unpacked extension loads without errors in `chrome://extensions`.
 - Popup settings persist after closing and reopening the popup.
-- The popup shows `Dictozy` branding and version `0.1.5` in `chrome://extensions`.
+- The popup shows `Dictozy` branding and version `0.1.6` in `chrome://extensions`.
 - The popup displays the current `toggle-dictation` shortcut or `Not assigned`.
 - The popup keyboard icon opens `chrome://extensions/shortcuts`.
 - The suggested shortcut is `Ctrl+Shift+Y`, or `Command+Shift+Y` on macOS, when Chrome can assign it without a conflict.
 - Remapping or removing the command in Chrome is reflected after reopening the popup.
+- Language formatting defaults to English on a fresh installation.
+- Automatic and all 25 explicit language options appear in the native language selector.
+- Saving Automatic or an explicit language persists the selection after reopening the popup.
+- Automatic is sent to the backend as `auto`; explicit selections are sent as their supported language code.
+- Missing or invalid stored values safely fall back to English.
 - Turning Dictozy off hides the page microphone button and prevents recording from starting.
 - Turning Dictozy back on restores microphone behavior on supported fields.
 - Backend URL defaults to `https://voice-dictation-extension.onrender.com/api/transcribe`.
@@ -31,7 +41,10 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 - Advanced Check Backend reports success when the configured backend `/health` endpoint returns `{"status":"ok"}`.
 - Recording limit defaults to 10 seconds and clamps to the allowed range.
 - The microphone icon button appears on supported fields only.
+- Editable ARIA textboxes, such as `[role="textbox"][contenteditable="true"]`, are supported; bare non-editable ARIA textboxes are ignored.
 - The microphone icon button does not appear on password, payment, hidden, readonly, disabled, checkbox, radio, or file inputs.
+- Payment exclusions cover standard `cc-*` autocomplete values and common camel-case, snake-case, kebab-case, and compact card identifiers.
+- Safe near-misses such as `postcardMessage` remain supported.
 - Clicking the microphone icon requests microphone permission only after the user clicks.
 - With a supported focused field, the assigned shortcut requests microphone permission as an explicit user action.
 - While recording, pressing the shortcut stops the current recording.
@@ -76,12 +89,14 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - Install Dictozy from the Chrome Web Store.
 - Confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- Confirm version `0.1.5` after the keyboard-control release is installed.
+- Confirm version `0.1.6` after the language-formatting release is installed.
+- Confirm English is selected by default, then save and smoke-test Automatic and one explicit non-English language.
 - Run a short dictation on a supported HTTPS text field.
 - Confirm recording starts only after clicking the visible microphone button or pressing the assigned browser shortcut.
 - Confirm the shortcut stops recording and cancels pending transcription without late insertion.
 - Confirm transcript insertion and focus behavior.
 - Confirm unsupported and sensitive fields are ignored.
+- Confirm editable ARIA textboxes work while bare non-editable ARIA textboxes remain ignored.
 - Confirm extension network traffic goes only to `https://voice-dictation-extension.onrender.com`, never directly to xAI.
 
 ## Local Test Page

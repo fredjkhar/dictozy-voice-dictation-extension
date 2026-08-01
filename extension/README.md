@@ -6,9 +6,11 @@ The extension uses Manifest V3 with plain JavaScript, content scripts for page i
 
 ## Current State
 
-Dictozy detects supported fields, shows a microphone button beside the active field, and records a short audio clip after an explicit microphone-button click or assigned browser shortcut. The clip is sent to the configured FastAPI backend and the returned transcript is inserted into the active field. The shortcut and visible control share the same start, stop, cancellation, retry, and stale-operation protections. The extension does not call xAI directly.
+Dictozy detects supported fields, shows a microphone button beside the active field, and records a short audio clip after an explicit microphone-button click or assigned browser shortcut. The clip and selected language-formatting code are sent to the configured FastAPI backend, and the returned transcript is inserted into the active field. The shortcut and visible control share the same start, stop, cancellation, retry, and stale-operation protections. The extension does not call xAI directly.
 
 `dictation-lifecycle.js` owns privacy-safe request IDs, stale-operation rejection, cancellation signals, and conservative local microphone-signal inspection. `content.js` remains responsible for page fields, the visible control, recording, insertion, and accessible status UI. Runtime code has no third-party JavaScript dependencies.
+
+Supported fields include normal text inputs, textareas, contenteditable elements, and ARIA textboxes that are actually editable, such as `[role="textbox"][contenteditable="true"]`. A bare `role="textbox"` does not provide a standard writable editing mechanism and is ignored.
 
 ## Icons
 
@@ -30,6 +32,7 @@ The popup stores local settings with `chrome.storage.local`:
 
 - Enabled state: defaults to on. When off, the page microphone button is hidden and recording cannot start.
 - Keyboard shortcut: the `toggle-dictation` command suggests `Ctrl+Shift+Y` by default and `Command+Shift+Y` on macOS. Chrome may leave it unassigned after a conflict; the popup shows the current assignment and opens `chrome://extensions/shortcuts` for remapping.
+- Language formatting: defaults to English. Automatic asks the backend to omit provider language and formatting parameters; an explicit choice sends its language code so xAI can guide written formatting for numbers, currencies, and units. It is not a guarantee of improved speech recognition.
 - Backend URL: defaults to `https://voice-dictation-extension.onrender.com/api/transcribe`.
 - Recording limit: defaults to 10 seconds and is clamped between 1 and 30 seconds.
 - Check Backend: available under Advanced and checks the corresponding `/health` endpoint without recording or uploading audio.
@@ -71,7 +74,7 @@ Extension setup:
 2. Open `chrome://extensions`.
 3. Enable Developer mode.
 4. Load or reload this `extension/` folder as an unpacked extension.
-5. Open the extension popup and confirm Dictozy is enabled, then confirm the backend URL under Advanced and the recording limit.
+5. Open the extension popup and confirm Dictozy is enabled, then confirm English language formatting, the backend URL under Advanced, and the recording limit.
 6. Open or reload a normal web page with a text field. For local QA, use `http://127.0.0.1:8080/qa/manual-test-page.html`.
 7. Focus a supported field such as a text input or textarea.
 8. Confirm a small microphone icon button appears beside the field.
@@ -89,7 +92,11 @@ Extension setup:
 20. Turn Dictozy back on, refocus a supported field, and confirm both the microphone button and shortcut are usable.
 21. Open the popup, confirm the displayed shortcut matches `chrome://extensions/shortcuts`, remap it, reopen the popup, and confirm the new assignment appears.
 22. Remove the assignment, reopen the popup, and confirm it shows `Not assigned`.
-23. Repeat the start, stop, cancel, and successful insertion flow with the visible click controls.
+23. Select Automatic language formatting, save, reopen the popup, and confirm the choice persists.
+24. Select an explicit language, save, dictate a short phrase containing a number or unit, and confirm the request succeeds. Treat the resulting punctuation and number formatting as provider-dependent.
+25. Confirm common payment fields, including camel-case and snake-case card identifiers, never show the microphone control and ignore the shortcut.
+26. Confirm an editable ARIA textbox accepts a transcript while a bare non-editable ARIA textbox is ignored.
+27. Repeat the start, stop, cancel, and successful insertion flow with the visible click controls.
 
 For structured QA, use the checklist and local test page in `../qa/`.
 

@@ -1,14 +1,14 @@
 # Extension Permission Audit
 
-Audit date: July 25, 2026
+Audit date: July 26, 2026
 
-This audit explains why Dictozy `0.1.5` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
+This audit explains why Dictozy `0.1.6` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
 
 ## API Permissions
 
 `storage`: retained.
 
-Required to save the enabled state, backend URL, and recording-duration preference in `chrome.storage.local`.
+Required to save the enabled state, backend URL, recording-duration preference, and language-formatting preference in `chrome.storage.local`.
 
 `activeTab`: removed.
 

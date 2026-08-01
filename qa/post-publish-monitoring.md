@@ -1,6 +1,6 @@
 # Post-Publish Monitoring
 
-Use this checklist after a Chrome Web Store release is live. It is written for Dictozy `0.1.5` and the published extension ID:
+Use this checklist after a Chrome Web Store release is live. It is written for Dictozy `0.1.6` and the published extension ID:
 
 ```text
 folpeencabfejhjokmldikaelonphmma
@@ -29,7 +29,7 @@ Use the Chrome Web Store-installed extension, not the unpacked development exten
 
 1. Install Dictozy from the Chrome Web Store.
 2. Open `chrome://extensions` and confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm the installed version is `0.1.5` after the keyboard-control release is installed.
+3. Confirm the installed version is `0.1.6` after the language-formatting release is installed.
 4. Open an HTTPS page with a normal text input or textarea.
 5. Focus a supported field and confirm the visible microphone button appears.
 6. Click the microphone button.
@@ -44,7 +44,8 @@ Use the Chrome Web Store-installed extension, not the unpacked development exten
 15. With a supported field focused, use the assigned shortcut to start and stop one recording.
 16. Cancel one pending transcription with the shortcut and confirm a late result is not inserted.
 17. Confirm the shortcut does nothing while Dictozy is disabled or an excluded field is focused.
-18. Inspect extension network activity and confirm requests go only to `https://voice-dictation-extension.onrender.com`, never to an `x.ai` host.
+18. Confirm English is selected by default, then save and complete one request with Automatic and one explicit non-English language.
+19. Inspect extension network activity and confirm requests go only to `https://voice-dictation-extension.onrender.com`, never to an `x.ai` host.
 
 ## Chrome Web Store Listing Check
 

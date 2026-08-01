@@ -30,16 +30,19 @@ async def transcribe_audio(
     *,
     filename: str,
     content_type: str,
+    language: str | None,
 ) -> XAITranscriptionResult:
     if not settings.xai_api_key:
         raise XAIConfigurationError("XAI_API_KEY is not configured.")
 
     endpoint = f"{settings.xai_api_base_url.rstrip('/')}/v1/stt"
     headers = {"Authorization": f"Bearer {settings.xai_api_key}"}
-    data = {
-        "format": "true",
-        "language": "en",
-    }
+    data = {}
+
+    if language is not None:
+        data["language"] = language
+        data["format"] = "true"
+
     files = {
         "file": (filename or "recording.webm", audio_bytes, content_type or "audio/webm"),
     }

@@ -8,7 +8,7 @@ This guide prepares the FastAPI backend for deployment. It does not cover a spec
 - `XAI_API_BASE_URL`: defaults to `https://api.x.ai`.
 - `APP_ENV`: set to `production` in deployed environments.
 - `BACKEND_CORS_ORIGINS`: comma-separated origins allowed to call the backend.
-- `TRANSCRIPTION_ENABLED`: set to `true` for normal operation. Set to `false` as the global emergency cutoff.
+- `TRANSCRIPTION_ENABLED`: set to `true` for normal operation. Set to `false` as the global emergency cutoff. Invalid non-empty values stop startup with a configuration error.
 - `TRANSCRIBE_MAX_CONCURRENT_REQUESTS`: maximum in-process `/api/transcribe` requests allowed at once. Set to `0` to disable the guard.
 - `TRANSCRIBE_RATE_LIMIT_REQUESTS`: maximum `/api/transcribe` requests per in-memory rate-limit window. Set to `0` to disable the guard.
 - `TRANSCRIBE_RATE_LIMIT_WINDOW_SECONDS`: rate-limit window length.
@@ -85,12 +85,24 @@ Expected response:
 After the backend is deployed:
 
 1. Open the extension popup.
-2. Set Backend URL to the deployed HTTPS endpoint ending in `/api/transcribe`.
-3. Save settings.
-4. Expand Advanced, click Check Backend, and confirm `Backend is reachable.`
-5. Reload the test page and run a short dictation test.
+2. Choose the language-formatting preference to test. English is the default.
+3. Set Backend URL to the deployed HTTPS endpoint ending in `/api/transcribe`.
+4. Save settings.
+5. Expand Advanced, click Check Backend, and confirm `Backend is reachable.`
+6. Reload the test page and run a short dictation test.
 
 The extension must call only your backend. It must never call xAI directly.
+
+## Language Compatibility And Rollout
+
+`/api/transcribe` accepts an optional multipart `language` form field. Supported values are `auto`, `ar`, `cs`, `da`, `nl`, `en`, `fil`, `fr`, `de`, `hi`, `id`, `it`, `ja`, `ko`, `mk`, `ms`, `fa`, `pl`, `pt`, `ro`, `ru`, `es`, `sv`, `th`, `tr`, and `vi`.
+
+- A missing field defaults to `en`, preserving the behavior of `0.1.5` and older clients.
+- `auto` tells the backend to omit both `language` and `format` from the xAI request.
+- An explicit supported code is sent to xAI with `format=true` to guide written formatting for numbers, currencies, and units. It does not guarantee better speech recognition.
+- Unsupported values return a safe `400` response before xAI is called.
+
+Deploy the compatible backend before distributing the `0.1.6` extension. After deployment, verify `/health`, run one transcription from the published `0.1.5` extension, and then test the `0.1.6` package with English, Automatic, and one explicit non-English language. This order preserves service for clients that do not send the new field.
 
 ## Deployment Smoke Test
 

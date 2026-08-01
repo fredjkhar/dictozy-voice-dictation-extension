@@ -62,11 +62,8 @@ class FakeElement {
   }
 
   matches(selector) {
-    if (selector === '[contenteditable]:not([contenteditable="false"]), [role="textbox"]') {
-      return (
-        (this.attributes.contenteditable !== undefined && this.attributes.contenteditable !== "false") ||
-        this.attributes.role === "textbox"
-      );
+    if (selector === '[contenteditable]:not([contenteditable="false"])') {
+      return this.attributes.contenteditable !== undefined && this.attributes.contenteditable !== "false";
     }
 
     return false;
@@ -130,9 +127,12 @@ test("detects supported editable fields", () => {
   contentEditable.isContentEditable = true;
   assert.equal(dom.isSupportedField(contentEditable), true);
 
-  const roleTextbox = new FakeElement({ role: "textbox" });
+  const roleTextbox = new FakeElement({ contenteditable: "true", role: "textbox" });
   roleTextbox.isContentEditable = true;
   assert.equal(dom.isSupportedField(roleTextbox), true);
+
+  const bareRoleTextbox = new FakeElement({ role: "textbox" });
+  assert.equal(dom.isSupportedField(bareRoleTextbox), false);
 });
 
 test("rejects excluded and sensitive fields", () => {
@@ -150,8 +150,26 @@ test("rejects excluded and sensitive fields", () => {
   readonly.readOnly = true;
   assert.equal(dom.isSupportedField(readonly), false);
 
-  const payment = new FakeInput("text", { autocomplete: "cc-number", name: "credit-card-number" });
-  assert.equal(dom.isSupportedField(payment), false);
+  const paymentFields = [
+    { autocomplete: "cc-number" },
+    { autocomplete: "section-checkout billing cc-exp" },
+    { autocomplete: "cc-csc" },
+    { name: "cardNumber" },
+    { id: "card_number" },
+    { name: "creditCardNumber" },
+    { id: "paymentCard" },
+    { "aria-label": "cardholderName" },
+    { placeholder: "Card number" },
+    { name: "creditcardnumber" },
+  ];
+
+  for (const attributes of paymentFields) {
+    assert.equal(dom.isSupportedField(new FakeInput("text", attributes)), false);
+  }
+
+  for (const attributes of [{ name: "postcardMessage" }, { id: "discardReason" }]) {
+    assert.equal(dom.isSupportedField(new FakeInput("text", attributes)), true);
+  }
 
   const hiddenByStyle = new FakeInput("text");
   hiddenByStyle.style.display = "none";

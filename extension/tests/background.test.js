@@ -15,6 +15,7 @@ function createBackground({
   fetchImpl = async () => {
     throw new Error("Unexpected fetch");
   },
+  storageValues = {},
   tabMessageError = null,
   tabs = [],
   useFakeTimers = false,
@@ -51,7 +52,10 @@ function createBackground({
       },
       storage: {
         local: {
-          get: async (defaults) => defaults,
+          get: async (defaults) => ({
+            ...defaults,
+            ...storageValues,
+          }),
         },
       },
       tabs: {
@@ -163,9 +167,13 @@ test("background safely ignores missing, restricted, and unrelated command targe
 
 test("background sends and returns the request ID header", async () => {
   let receivedHeaders = null;
+  let receivedLanguage = null;
+  let multipartFields = [];
   const background = createBackground({
     fetchImpl: async (_url, options) => {
       receivedHeaders = options.headers;
+      receivedLanguage = options.body.get("language");
+      multipartFields = [...options.body.keys()];
       return new Response(JSON.stringify({ transcript: "Hello from Dictozy" }), {
         headers: {
           "Content-Type": "application/json",
@@ -183,9 +191,40 @@ test("background sends and returns the request ID header", async () => {
   });
 
   assert.equal(receivedHeaders["X-Request-ID"], "client-request-1234");
+  assert.equal(receivedLanguage, "en");
+  assert.deepEqual(multipartFields, ["language", "file"]);
   assert.equal(result.ok, true);
   assert.equal(result.requestId, "server-request-1234");
   assert.equal(result.transcript, "Hello from Dictozy");
+});
+
+test("background sends explicit and automatic language values only to the backend", async () => {
+  async function getSubmittedLanguage(transcriptionLanguage) {
+    let submittedLanguage = null;
+    const background = createBackground({
+      fetchImpl: async (_url, options) => {
+        submittedLanguage = options.body.get("language");
+        return new Response(JSON.stringify({ transcript: "Language transcript" }), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        });
+      },
+      storageValues: { transcriptionLanguage },
+    });
+
+    const result = await background.dispatch({
+      audioDataUrl: AUDIO_DATA_URL,
+      requestId: `language-${transcriptionLanguage}-1234`,
+      type: TRANSCRIBE_MESSAGE,
+    });
+
+    assert.equal(result.ok, true);
+    return submittedLanguage;
+  }
+
+  assert.equal(await getSubmittedLanguage("fr"), "fr");
+  assert.equal(await getSubmittedLanguage("auto"), "auto");
+  assert.equal(await getSubmittedLanguage("unsupported"), "en");
 });
 
 test("provider failures remain safe and do not expose upstream details", async () => {

@@ -26,11 +26,12 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.4` is the completed reliability and error-recovery update. Version `0.1.5` is prepared as a focused keyboard-control release; the public Chrome Web Store may still show an earlier version until the update is reviewed and published.
+Version `0.1.5` is the completed and published keyboard-control release. Version `0.1.6` is prepared as a focused language-formatting release; the public Chrome Web Store will continue to show `0.1.5` until the update is reviewed and published.
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Recording starts only after an explicit microphone-button click or assigned browser shortcut.
 - A configurable browser shortcut starts, stops, or cancels dictation through the same lifecycle as the visible page control.
+- A popup language-formatting preference offers Automatic plus 25 explicit languages. English is the default.
 - Popup includes an enabled/disabled toggle for Dictozy.
 - Extension sends audio to the configured FastAPI backend.
 - Backend calls xAI Speech-to-Text.
@@ -44,7 +45,7 @@ Version `0.1.4` is the completed reliability and error-recovery update. Version 
 - Production endpoint validation and deployment smoke tests are available.
 - Chrome Web Store copy, screenshots, promo tile, icon, and release notes are available under `store/`.
 - Post-publish monitoring and support triage checklists are available under `qa/`.
-- The `0.1.5` package keeps the current Dictozy icons consistent across the toolbar, popup, and Chrome extensions page.
+- The `0.1.6` package keeps the current Dictozy icons consistent across the toolbar, popup, and Chrome extensions page.
 
 ## Local Development
 
@@ -82,7 +83,7 @@ Extension setup:
 3. Click Load unpacked.
 4. Select the `extension/` folder.
 5. Reload any test page after loading or reloading the extension.
-6. Open the extension popup to enable/disable Dictozy, view or manage the keyboard shortcut, adjust the recording limit, or open Advanced backend settings if needed.
+6. Open the extension popup to enable/disable Dictozy, view or manage the keyboard shortcut, choose language formatting, adjust the recording limit, or open Advanced backend settings if needed.
 
 QA page:
 
