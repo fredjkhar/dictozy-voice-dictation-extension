@@ -8,7 +8,7 @@
 
 The deterministic HTML sources live in `../source/`. Re-render them at their exact viewport sizes after changing listing visuals.
 
-For Dictozy `0.1.6`, these assets show the production popup, English language formatting, current shortcut assignment, Dictozy branding, 10-second default recording limit, microphone/stop icon controls, and no development-only text controls. Retry, cancellation, and transient error states are verified in manual QA rather than represented as permanent screenshot states.
+For Dictozy `0.1.7`, these unchanged assets still match the production popup and recording UI. They show English language formatting, the current shortcut assignment, Dictozy branding, the 10-second default recording limit, microphone/stop icon controls, and no development-only text controls. Field-compatibility behavior, retry, cancellation, and transient error states are verified in QA rather than represented as permanent screenshot states.
 
 ## Rendering
 

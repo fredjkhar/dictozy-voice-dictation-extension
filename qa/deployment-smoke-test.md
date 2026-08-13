@@ -61,7 +61,7 @@ For the published production path:
 
 1. Install Dictozy from the Chrome Web Store.
 2. Confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm version `0.1.6` after the language-formatting release is installed.
+3. Confirm version `0.1.7` after the field-compatibility release is installed.
 4. Run the same supported-field recording and insertion checks.
 5. Confirm the popup displays the assigned shortcut or `Not assigned`, and that the keyboard icon opens Chrome's shortcut settings.
 6. Confirm the assigned shortcut starts and stops one recording and cancels one pending transcription.
@@ -69,14 +69,14 @@ For the published production path:
 8. Confirm production network traffic goes only to `https://voice-dictation-extension.onrender.com`, never directly to xAI.
 9. Confirm Render logs include request ID, status, and latency for the smoke test without audio or transcript content.
 
-## Backend-First Compatibility Check
+## Backend Compatibility Check
 
-Deploy the `0.1.6`-compatible backend before submitting the `0.1.6` extension:
+Version `0.1.7` does not change the backend contract:
 
-1. Confirm `/health` after the backend deployment.
-2. Use the published `0.1.5` extension, which omits the new form field, and confirm one transcription still succeeds with the backend's English default.
-3. Load the `0.1.6` package and test English, Automatic, and one explicit non-English language.
-4. Confirm unsupported language values return a safe `400` in backend tests and never reach xAI.
+1. Confirm production `/health` before extension testing.
+2. Use the published `0.1.6` extension and confirm one transcription still succeeds.
+3. Load the `0.1.7` package and test English, Automatic, and one explicit non-English language.
+4. Confirm extension traffic still goes only to the configured Dictozy backend.
 
 ## Failure Checks
 

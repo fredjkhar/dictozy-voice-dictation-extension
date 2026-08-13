@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the Chrome Web Store Developer Dashboard for Dictozy `0.1.6`.
+Use this file as the source of truth when updating the Chrome Web Store Developer Dashboard for Dictozy `0.1.7`.
 
 ## Dashboard Product Details
 
@@ -44,6 +44,7 @@ Why it is useful
 - Start and stop recording from a clear on-page control.
 - Start, stop, or cancel dictation with a configurable browser shortcut.
 - Cancel a pending transcription and record again after a failure.
+- Insert into more modern controlled forms and rich-text fields while preserving the intended selection.
 - Choose Automatic or an explicit language to guide written formatting for numbers, currencies, and units.
 - Adjust the recording limit from the extension popup.
 - Turn Dictozy on or off whenever you do not want the page microphone control shown.
@@ -95,6 +96,13 @@ What's new in 0.1.6
 - New language-formatting setting with Automatic and 25 explicit language options.
 - English remains the default for consistent behavior.
 - Explicit choices guide written formatting for numbers, currencies, and units; Automatic leaves provider language and formatting selection unset.
+
+What's new in 0.1.7
+
+- More reliable insertion in modern controlled inputs and textareas.
+- Improved caret and selection handling in contenteditable fields, with transcripts always inserted as plain text.
+- Safer handling when a page replaces, removes, hides, or disables the original field during transcription.
+- Better support for fields created dynamically after a page loads.
 ```
 
 ## Visual Assets
@@ -209,7 +217,7 @@ No test account or credentials are required. The production backend must have th
 
 Use the Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
 
-1. Package tab: upload `dist/dictozy-v0.1.6.zip` only after rebuilding it from the reviewed source.
+1. Package tab: upload `dist/dictozy-v0.1.7.zip` only after rebuilding it from the reviewed source.
 2. Store Listing tab: update the name, summary, detailed description, category, language, screenshots, promo tile, homepage URL, support URL, and privacy policy URL from this file.
 3. Privacy practices tab: update the single-purpose statement, data-use declarations, permission justifications, remote-code declaration, and privacy policy URL.
 4. Distribution tab: confirm visibility, regions, and any rollout settings before submission.

@@ -17,6 +17,7 @@ class FakeElement {
   constructor(attributes = {}) {
     this.attributes = { ...attributes };
     this.children = [];
+    this.cancelBeforeInput = false;
     this.disabled = false;
     this.dispatchedEvents = [];
     this.hidden = false;
@@ -54,7 +55,7 @@ class FakeElement {
 
   dispatchEvent(event) {
     this.dispatchedEvents.push(event);
-    return true;
+    return !(event.type === "beforeinput" && this.cancelBeforeInput);
   }
 
   getAttribute(name) {
@@ -66,6 +67,10 @@ class FakeElement {
       return this.attributes.contenteditable !== undefined && this.attributes.contenteditable !== "false";
     }
 
+    if (selector === '[contenteditable="false"]') {
+      return this.attributes.contenteditable === "false";
+    }
+
     return false;
   }
 }
@@ -74,9 +79,17 @@ class FakeInput extends FakeElement {
   constructor(type = "text", attributes = {}) {
     super(attributes);
     this.type = type;
-    this.value = "";
+    this._value = "";
     this.selectionStart = 0;
     this.selectionEnd = 0;
+  }
+
+  get value() {
+    return this._value;
+  }
+
+  set value(value) {
+    this._value = String(value);
   }
 
   setSelectionRange(start, end) {
@@ -187,6 +200,12 @@ test("finds the nearest editable field", () => {
   editor.append(child);
 
   assert.equal(dom.getEditableField(child), editor);
+
+  const blockedRegion = new FakeElement({ contenteditable: "false" });
+  const blockedChild = new FakeElement();
+  editor.append(blockedRegion);
+  blockedRegion.append(blockedChild);
+  assert.equal(dom.getEditableField(blockedChild), null);
 });
 
 test("inserts text into form fields and dispatches input events", () => {
@@ -196,13 +215,63 @@ test("inserts text into form fields and dispatches input events", () => {
   input.selectionStart = 5;
   input.selectionEnd = 5;
 
-  dom.insertIntoFormField(input, "world");
+  assert.equal(dom.insertIntoFormField(input, "world"), true);
 
   assert.equal(input.value, "Hello world");
   assert.equal(input.selectionStart, 11);
   assert.deepEqual(input.dispatchedEvents.map((event) => event.type), ["beforeinput", "input", "change"]);
   assert.equal(input.dispatchedEvents[0].data, " world");
   assert.equal(input.dispatchedEvents[1].data, " world");
+});
+
+test("uses the native field setter and dispatches each editing event once", () => {
+  const dom = loadDomUtils();
+  const input = new FakeInput("text");
+  let pageSetterCalls = 0;
+
+  Object.defineProperty(input, "value", {
+    configurable: true,
+    get() {
+      return this._value;
+    },
+    set(value) {
+      pageSetterCalls += 1;
+      this._value = `page:${value}`;
+    },
+  });
+
+  assert.equal(dom.insertIntoFormField(input, "controlled"), true);
+  assert.equal(input.value, "controlled");
+  assert.equal(pageSetterCalls, 0);
+  assert.deepEqual(input.dispatchedEvents.map(({ type }) => type), ["beforeinput", "input", "change"]);
+});
+
+test("does not insert when beforeinput is cancelled", () => {
+  const dom = loadDomUtils();
+  const input = new FakeInput("text");
+  input.value = "Keep this";
+  input.cancelBeforeInput = true;
+
+  assert.equal(dom.insertIntoFormField(input, "blocked"), false);
+  assert.equal(input.value, "Keep this");
+  assert.deepEqual(input.dispatchedEvents.map(({ type }) => type), ["beforeinput"]);
+});
+
+test("falls back safely when an input type has no selection API", () => {
+  const dom = loadDomUtils();
+  const email = new FakeInput("email");
+  Object.defineProperty(email, "selectionStart", {
+    configurable: true,
+    get() {
+      throw new Error("selection unavailable");
+    },
+  });
+  email.setSelectionRange = () => {
+    throw new Error("selection unavailable");
+  };
+
+  assert.equal(dom.insertIntoFormField(email, "name@example.com"), true);
+  assert.equal(email.value, "name@example.com");
 });
 
 test("replaces selected text in textareas", () => {

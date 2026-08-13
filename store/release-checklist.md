@@ -8,8 +8,8 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 - [ ] Run `node --test extension/tests/*.test.js`.
 - [ ] Run `npm ci` and `npm run test:browser`; confirm all mocked Chromium workflows pass without contacting production.
 - [ ] Run `python3 scripts/package_extension.py` from the repository root.
-- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.6.zip` and contains `manifest.json` at its root.
-- [ ] Confirm the immutable published package `dist/dictozy-v0.1.5.zip` still has SHA-256 `d4b76496760dac5cb0bd5cb7a13c6215907931b05dd46245a1adbe53c39801ce`.
+- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.7.zip` and contains `manifest.json` at its root.
+- [ ] Confirm the immutable published package `dist/dictozy-v0.1.6.zip` still has SHA-256 `3f920c050f862df77926ecf9b7ed7576a54b525fdae1699cee31706fb3d56626`.
 - [ ] Load the generated ZIP contents as an unpacked extension and repeat the manual QA checklist.
 - [ ] Confirm no source maps, environment files, raw audio, test fixtures, or unrelated repository files are included.
 - [ ] Confirm all executable JavaScript is packaged locally and no remote code is used.
@@ -34,7 +34,7 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 - [ ] Review `assets/screenshot-dictation-1280x800.png` and `assets/screenshot-settings-1280x800.png`; regenerate only if the screenshots no longer match the shipped UI.
 - [ ] Confirm screenshots show Dictozy branding, microphone/stop icon controls, the language-formatting selector, the 10-second default, and no development-only controls.
 - [ ] Review the required `assets/promo-small-440x280.png` tile at full size.
-- [ ] Confirm visual assets accurately represent the `0.1.6` extension UI, including the popup shortcut row and language-formatting selector, before opening a Web Store draft.
+- [ ] Confirm the unchanged visual assets still accurately represent the `0.1.7` popup and recording UI before opening a Web Store draft.
 - [ ] Add other assets only when they accurately represent the shipped extension.
 - [ ] Do not claim real-time streaming, offline transcription, grammar correction, accounts, or other unimplemented features.
 - [ ] Set Homepage and Support URLs to the public GitHub repository and issue tracker.
@@ -42,7 +42,7 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 ## Developer Dashboard Update
 
 - [ ] Open the existing Chrome Web Store item for extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Package tab: upload only the reviewed `dist/dictozy-v0.1.6.zip`.
+- [ ] Package tab: upload only the reviewed `dist/dictozy-v0.1.7.zip`.
 - [ ] Store Listing tab: update name, summary, detailed description, category, language, screenshots, promo tile, homepage URL, support URL, and privacy policy URL.
 - [ ] Privacy practices tab: update data-use declarations, permission justifications, remote-code declaration, and Limited Use certifications.
 - [ ] Distribution tab: confirm visibility, regions, and rollout settings.
@@ -83,20 +83,17 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 7. Confirm the final-ID build can call `/health` and `/api/transcribe`.
 8. Remove the unpacked extension origin after development access is no longer needed.
 
-## Backend-First Deployment
+## Backend Compatibility
 
-- [ ] Deploy the backend that accepts the optional `language` form field before distributing `0.1.6`.
-- [ ] Confirm production `/health` remains healthy after deployment.
-- [ ] Run one real transcription from the published `0.1.5` extension and confirm the omitted field defaults to English.
-- [ ] Load the `0.1.6` package and confirm English, Automatic, and one explicit non-English language all complete successfully.
-- [ ] Confirm Automatic omits xAI `language` and `format`; confirm an explicit language sends its supported code with `format=true`.
-- [ ] Confirm unsupported language values return a safe `400` before xAI is called.
-- [ ] Confirm malformed non-empty `TRANSCRIPTION_ENABLED` values fail backend startup instead of silently enabling transcription.
+- [ ] Confirm no backend code or production configuration change is required for `0.1.7`.
+- [ ] Confirm production `/health` remains healthy.
+- [ ] Run one real transcription from the published `0.1.6` extension before testing the `0.1.7` package.
+- [ ] Load the `0.1.7` package and confirm English, Automatic, and one explicit non-English language still complete successfully.
 
 ## Final QA Before Submission
 
 - [ ] Open `https://voice-dictation-extension.onrender.com/health` and confirm the production backend returns `{"status":"ok"}`.
-- [ ] Load the `0.1.6` unpacked extension in real Chrome and confirm there are no errors in `chrome://extensions`.
+- [ ] Load the `0.1.7` unpacked extension in real Chrome and confirm there are no errors in `chrome://extensions`.
 - [ ] Test a normal text input, textarea, contenteditable field, and editable ARIA textbox.
 - [ ] Confirm a bare non-editable ARIA textbox is ignored.
 - [ ] Confirm camel-case, snake-case, kebab-case, compact, and standard `cc-*` payment fields are ignored while safe near-misses remain supported.
@@ -110,6 +107,11 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 - [ ] Verify the shortcut does nothing when Dictozy is disabled or an unsupported or sensitive field is focused.
 - [ ] Verify the visible click controls still start, stop, cancel, retry, and insert successfully.
 - [ ] Verify a successful Render transcription inserts text and restores field focus.
+- [ ] Replace selections in a normal input, textarea, and contenteditable field; confirm surrounding text remains and the caret follows the transcript.
+- [ ] Confirm the controlled input and textarea fixtures retain text and emit one editing-event sequence.
+- [ ] Add a supported field after page load and confirm only one microphone control appears.
+- [ ] Replace, remove, hide, disable, or make readonly the original target during transcription; confirm no late insertion and a safe field-unavailable message.
+- [ ] Confirm transcript markup is inserted as plain text in contenteditable fields.
 - [ ] Verify backend failure and timeout states enter a persistent retry state with a short support reference.
 - [ ] Verify the transcription cancel icon returns to idle and a late response is not inserted.
 - [ ] Verify retry starts a completely new recording rather than reusing failed audio.
@@ -125,7 +127,7 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 
 - [ ] Confirm the public listing is visible and shows the intended name, icon, screenshots, promotional tile, support link, homepage link, and privacy policy link.
 - [ ] Install the Chrome Web Store version and confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Confirm version `0.1.6`.
+- [ ] Confirm version `0.1.7`.
 - [ ] Run the Store-installed smoke test in [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 - [ ] Confirm Render CORS includes `chrome-extension://folpeencabfejhjokmldikaelonphmma`.
 - [ ] Review Render logs for request IDs, status, latency, `429`, `502`, `503`, and safe logging.

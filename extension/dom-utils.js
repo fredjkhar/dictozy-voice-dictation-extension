@@ -26,7 +26,14 @@
       return target;
     }
 
-    return target.closest(EDITABLE_FIELD_SELECTOR);
+    const field = target.closest(EDITABLE_FIELD_SELECTOR);
+    const blockedRegion = target.closest('[contenteditable="false"]');
+
+    if (blockedRegion && field?.contains(blockedRegion)) {
+      return null;
+    }
+
+    return field;
   }
 
   function hasPaymentSignal(element) {
@@ -66,7 +73,11 @@
   }
 
   function isHidden(element) {
-    if (element.hidden) {
+    if (
+      element.hidden ||
+      element.closest?.("[hidden]") ||
+      element.closest?.('[aria-hidden="true"]')
+    ) {
       return true;
     }
 
@@ -75,7 +86,11 @@
     }
 
     const style = window.getComputedStyle(element);
-    return style.display === "none" || style.visibility === "hidden";
+    if (style.display === "none" || style.visibility === "hidden") {
+      return true;
+    }
+
+    return typeof element.getClientRects === "function" && element.getClientRects().length === 0;
   }
 
   function isConnected(element) {
@@ -124,7 +139,9 @@
   }
 
   function setNativeFieldValue(element, value) {
-    const prototype = Object.getPrototypeOf(element);
+    const prototype = element instanceof HTMLTextAreaElement
+      ? HTMLTextAreaElement.prototype
+      : HTMLInputElement.prototype;
     const descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
 
     if (descriptor?.set) {
@@ -135,25 +152,53 @@
     element.value = value;
   }
 
+  function getFormFieldSelection(element) {
+    try {
+      const fallback = element.value.length;
+      return {
+        end: element.selectionEnd ?? fallback,
+        start: element.selectionStart ?? fallback,
+      };
+    } catch (_error) {
+      return {
+        end: element.value.length,
+        start: element.value.length,
+      };
+    }
+  }
+
+  function setFormFieldSelection(element, position) {
+    try {
+      element.setSelectionRange(position, position);
+    } catch (_error) {
+      // Some supported input types, including email, do not expose a text selection API.
+    }
+  }
+
   function insertIntoFormField(element, text) {
-    const start = element.selectionStart ?? element.value.length;
-    const end = element.selectionEnd ?? element.value.length;
+    const { end, start } = getFormFieldSelection(element);
     const before = element.value.slice(0, start);
     const after = element.value.slice(end);
     const separator = before && !/\s$/.test(before) ? " " : "";
     const nextText = `${separator}${text}`;
     const nextPosition = start + nextText.length;
 
-    element.dispatchEvent(new InputEvent("beforeinput", {
+    const beforeInputEvent = new InputEvent("beforeinput", {
       bubbles: true,
       cancelable: true,
       composed: true,
       data: nextText,
       inputType: "insertText",
-    }));
+    });
+
+    if (!element.dispatchEvent(beforeInputEvent)) {
+      return false;
+    }
+
     setNativeFieldValue(element, `${before}${nextText}${after}`);
-    element.setSelectionRange(nextPosition, nextPosition);
+    setFormFieldSelection(element, nextPosition);
     dispatchInputEvents(element, nextText);
+    return true;
   }
 
   globalThis.DictozyDom = Object.freeze({

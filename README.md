@@ -26,7 +26,7 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.5` is the completed and published keyboard-control release. Version `0.1.6` is prepared as a focused language-formatting release; the public Chrome Web Store will continue to show `0.1.5` until the update is reviewed and published.
+Version `0.1.6` is the published language-formatting release. Version `0.1.7` is prepared as a focused field-compatibility and insertion-reliability update; the public Chrome Web Store will continue to show `0.1.6` until the update is reviewed and published.
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Recording starts only after an explicit microphone-button click or assigned browser shortcut.
@@ -36,6 +36,8 @@ Version `0.1.5` is the completed and published keyboard-control release. Version
 - Extension sends audio to the configured FastAPI backend.
 - Backend calls xAI Speech-to-Text.
 - Transcript is inserted back into the focused field.
+- Controlled inputs receive updates through native setters and standard editing events, while contenteditable transcripts are inserted as plain text at the saved selection.
+- Dynamically added fields work through delegated focus handling, and detached or newly unsupported targets are never given a late transcript.
 - xAI API key stays backend-only in `.env`.
 - Pending transcription can be cancelled from the on-page control without inserting a late result.
 - Failures remain visible with a fresh-recording retry state and a short support reference.
@@ -45,7 +47,7 @@ Version `0.1.5` is the completed and published keyboard-control release. Version
 - Production endpoint validation and deployment smoke tests are available.
 - Chrome Web Store copy, screenshots, promo tile, icon, and release notes are available under `store/`.
 - Post-publish monitoring and support triage checklists are available under `qa/`.
-- The `0.1.6` package keeps the current Dictozy icons consistent across the toolbar, popup, and Chrome extensions page.
+- The `0.1.7` package keeps the current Dictozy icons consistent across the toolbar, popup, and Chrome extensions page.
 
 ## Local Development
 

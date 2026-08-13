@@ -329,7 +329,7 @@ test("shows the control only for supported fields", async ({ page }) => {
   await page.locator('input[autocomplete="cc-number"]').focus();
   await expect(page.locator(MIC_BUTTON)).toBeHidden();
 
-  await page.locator("textarea").focus();
+  await page.locator("#plainTextarea").focus();
   await expect(page.locator(MIC_BUTTON)).toBeVisible();
 });
 
@@ -384,16 +384,257 @@ test("supports editable ARIA textboxes and ignores bare role textboxes", async (
 
 test("preserves insertion into nested contenteditable fields", async ({ page }) => {
   await loadContentScript(page);
-  const nestedEditor = page.locator('div[contenteditable="true"]', {
-    hasText: "Nested paragraph editor",
-  });
+  const nestedEditor = page.locator("#nestedEditor");
   await nestedEditor.focus();
+  await page.evaluate(() => {
+    window.__nestedEvents = [];
+    const editor = document.querySelector("#nestedEditor");
+    const textNode = editor.querySelector("p").firstChild;
+    const range = document.createRange();
+    range.setStart(textNode, textNode.length);
+    range.collapse(true);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    for (const eventType of ["beforeinput", "input", "change"]) {
+      editor.addEventListener(eventType, () => window.__nestedEvents.push(eventType));
+    }
+  });
   await expect(page.locator(MIC_BUTTON)).toBeVisible();
   await page.evaluate(() => {
     window.__dictozyTest.queueResponse({ ok: true, transcript: "Nested transcript" });
   });
   await recordAndStop(page);
   await expect(nestedEditor).toContainText("Nested transcript");
+  await expect.poll(() => page.evaluate(() => window.__nestedEvents)).toEqual([
+    "beforeinput",
+    "input",
+    "change",
+  ]);
+  expect(await nestedEditor.textContent()).toMatch(/Nested transcript(?!.*Nested transcript)/);
+});
+
+test("preserves input text, replaces only the selection, and restores the caret", async ({ page }) => {
+  await loadContentScript(page);
+  const field = page.locator("#plainTextInput");
+  await field.fill("Hello old text");
+  await field.focus();
+  await page.evaluate(() => {
+    const input = document.querySelector("#plainTextInput");
+    input.setSelectionRange(6, 9);
+    window.__formInsertionEvents = [];
+    for (const eventType of ["beforeinput", "input", "change"]) {
+      input.addEventListener(eventType, () => window.__formInsertionEvents.push(eventType));
+    }
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "new" });
+  });
+
+  await recordAndStop(page);
+
+  await expect(field).toHaveValue("Hello new text");
+  expect(await field.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([9, 9]);
+  expect(await field.evaluate((input) => document.activeElement === input)).toBe(true);
+  expect(await page.evaluate(() => window.__formInsertionEvents)).toEqual([
+    "beforeinput",
+    "input",
+    "change",
+  ]);
+});
+
+test("appends to a textarea and places the caret after the transcript", async ({ page }) => {
+  await loadContentScript(page);
+  const field = page.locator("#plainTextarea");
+  await field.fill("Existing text");
+  await field.focus();
+  await field.evaluate((textarea) => textarea.setSelectionRange(textarea.value.length, textarea.value.length));
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "continued" });
+  });
+
+  await recordAndStop(page);
+
+  await expect(field).toHaveValue("Existing text continued");
+  expect(await field.evaluate((textarea) => textarea.selectionStart)).toBe(23);
+});
+
+test("updates a framework-like controlled input through native events after rerender", async ({ page }) => {
+  await loadContentScript(page);
+  const field = page.locator("#controlledInput");
+  await field.evaluate((input) => {
+    const nativeDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+    nativeDescriptor.set.call(input, "Controlled");
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  });
+  await page.evaluate(() => {
+    const input = document.querySelector("#controlledInput");
+    const nativeDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+    window.__controlledPageSetterCalls = 0;
+    window.__controlledInsertionEvents = [];
+
+    Object.defineProperty(input, "value", {
+      configurable: true,
+      get() {
+        return nativeDescriptor.get.call(this);
+      },
+      set(value) {
+        window.__controlledPageSetterCalls += 1;
+        nativeDescriptor.set.call(this, value);
+      },
+    });
+
+    for (const eventType of ["beforeinput", "input", "change"]) {
+      input.addEventListener(eventType, () => window.__controlledInsertionEvents.push(eventType));
+    }
+
+    input.addEventListener("input", () => {
+      const replacement = input.cloneNode(true);
+      nativeDescriptor.set.call(replacement, input.value);
+      input.replaceWith(replacement);
+      replacement.focus();
+      replacement.setSelectionRange(replacement.value.length, replacement.value.length);
+    }, { once: true });
+
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "update" });
+  });
+
+  await recordAndStop(page);
+
+  await expect(page.locator("#controlledInput")).toHaveValue("Controlled update");
+  expect(await page.evaluate(() => window.__controlledPageSetterCalls)).toBe(0);
+  expect(await page.evaluate(() => window.__controlledInsertionEvents)).toEqual([
+    "beforeinput",
+    "input",
+    "change",
+  ]);
+  await expect(page.locator(MIC_BUTTON)).toHaveCount(1);
+});
+
+test("inserts plain text at a contenteditable caret exactly once", async ({ page }) => {
+  await loadContentScript(page);
+  const editor = page.locator("#plainEditor");
+  await editor.evaluate((element) => {
+    element.textContent = "Hello world";
+    element.focus();
+    const range = document.createRange();
+    range.setStart(element.firstChild, 5);
+    range.collapse(true);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    window.__richInsertionEvents = [];
+    for (const eventType of ["beforeinput", "input", "change"]) {
+      element.addEventListener(eventType, () => window.__richInsertionEvents.push(eventType));
+    }
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "dictated" });
+  });
+
+  await recordAndStop(page);
+
+  await expect(editor).toHaveText("Hello dictated world");
+  expect(await page.evaluate(() => window.__richInsertionEvents)).toEqual([
+    "beforeinput",
+    "input",
+    "change",
+  ]);
+  expect(await editor.evaluate((element) => {
+    const selection = window.getSelection();
+    const preceding = document.createRange();
+    preceding.selectNodeContents(element);
+    preceding.setEnd(selection.anchorNode, selection.anchorOffset);
+    return preceding.toString();
+  })).toBe("Hello dictated");
+});
+
+test("replaces a contenteditable selection with plain text", async ({ page }) => {
+  await loadContentScript(page);
+  const editor = page.locator("#plainEditor");
+  await editor.evaluate((element) => {
+    element.textContent = "Hello old text";
+    element.focus();
+    const range = document.createRange();
+    range.setStart(element.firstChild, 6);
+    range.setEnd(element.firstChild, 9);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "<strong>new</strong>" });
+  });
+
+  await recordAndStop(page);
+
+  await expect(editor).toHaveText("Hello <strong>new</strong> text");
+  await expect(editor.locator("strong")).toHaveCount(0);
+});
+
+test("supports fields created after the content script loads without duplicate controls", async ({ page }) => {
+  await loadContentScript(page);
+  await page.locator("#addDynamicField").click();
+  const field = page.locator("#dynamicTextInput");
+  await field.focus();
+  await expect(page.locator(MIC_BUTTON)).toBeVisible();
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "Dynamic transcript" });
+  });
+
+  await recordAndStop(page);
+
+  await expect(field).toHaveValue("Dynamic transcript");
+  await expect(page.locator(MIC_BUTTON)).toHaveCount(1);
+});
+
+test("cancels safely when a transcription field is replaced", async ({ page }) => {
+  await loadContentScript(page);
+  await page.locator("#addDynamicField").click();
+  const field = page.locator("#dynamicTextInput");
+  await field.focus();
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({}, { defer: true });
+  });
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+
+  await page.locator("#replaceDynamicField").click();
+
+  await expect(page.locator("#dynamicTextInput")).toHaveValue("");
+  await expect(page.locator(MIC_BUTTON)).toBeHidden();
+  await expect(page.locator(STATUS_MESSAGE)).toContainText("The original field is no longer available.");
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.cancellations.length)).toBe(1);
+});
+
+test("cancels safely when the active field becomes readonly", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({}, { defer: true });
+  });
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+
+  await field.evaluate((input) => {
+    input.readOnly = true;
+  });
+
+  await expect(field).toHaveValue("");
+  await expect(page.locator(MIC_BUTTON)).toBeHidden();
+  await expect(page.locator(STATUS_MESSAGE)).toContainText("The original field is no longer available.");
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.cancellations.length)).toBe(1);
+});
+
+test("shows a safe error when a page cancels transcript insertion", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await field.evaluate((input) => {
+    input.addEventListener("beforeinput", (event) => event.preventDefault(), { once: true });
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "Blocked transcript" });
+  });
+
+  await recordAndStop(page);
+
+  await expect(field).toHaveValue("");
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "error");
+  await expect(page.locator(STATUS_MESSAGE)).toContainText("Could not insert the transcript.");
+  await expect(page.locator(STATUS_MESSAGE)).not.toContainText("Blocked transcript");
 });
 
 test("records only after a click, stops, and inserts a successful transcript", async ({ page }) => {

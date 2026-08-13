@@ -72,6 +72,23 @@
         resize: vertical;
       }
 
+      button {
+        min-height: 36px;
+        padding: 7px 11px;
+        border: 1px solid #94a3b8;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #0f172a;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      output {
+        min-height: 20px;
+        color: #475569;
+        font-size: 12px;
+      }
+
       [contenteditable="true"],
       [role="textbox"] {
         min-height: 86px;
@@ -111,7 +128,7 @@
       <div class="grid">
         <label>
           <span>Text input</span>
-          <input type="text" placeholder="Dictate into text">
+          <input id="plainTextInput" type="text" placeholder="Dictate into text">
         </label>
         <label>
           <span>Postcard message near-miss</span>
@@ -135,25 +152,51 @@
         </label>
         <label>
           <span>Textarea</span>
-          <textarea placeholder="Dictate multiple lines"></textarea>
+          <textarea id="plainTextarea" placeholder="Dictate multiple lines"></textarea>
         </label>
         <div class="field-group">
           <span>contenteditable</span>
-          <div contenteditable="true">Place cursor here and dictate.</div>
+          <div id="plainEditor" contenteditable="true">Place cursor here and dictate.</div>
         </div>
         <div class="field-group">
           <span>Editable ARIA textbox</span>
-          <div role="textbox" tabindex="0" contenteditable="true">Place cursor here and dictate.</div>
+          <div id="ariaEditor" role="textbox" tabindex="0" contenteditable="true">Place cursor here and dictate.</div>
         </div>
         <div class="field-group">
           <span>Nested contenteditable</span>
-          <div contenteditable="true">
+          <div id="nestedEditor" contenteditable="true">
             <p>Nested paragraph editor. Place cursor here and dictate.</p>
           </div>
         </div>
         <div class="field-group">
           <span>Shadow DOM text input</span>
           <shadow-text-input></shadow-text-input>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Controlled And Dynamic Fields</h2>
+      <p>Use these fixtures to verify framework-style updates, fields added after page load, and field replacement.</p>
+      <div class="grid">
+        <label>
+          <span>Controlled text input</span>
+          <input id="controlledInput" type="text" value="Existing controlled text">
+          <output id="controlledInputState">Waiting for input</output>
+        </label>
+        <label>
+          <span>Controlled textarea</span>
+          <textarea id="controlledTextarea">Existing controlled textarea</textarea>
+          <output id="controlledTextareaState">Waiting for input</output>
+        </label>
+        <div class="field-group">
+          <span>Dynamic field controls</span>
+          <div>
+            <button id="addDynamicField" type="button">Add field</button>
+            <button id="replaceDynamicField" type="button">Replace field</button>
+          </div>
+          <div id="dynamicFieldHost"></div>
+          <output id="dynamicFieldState">No dynamic field</output>
         </div>
       </div>
     </section>
@@ -238,6 +281,47 @@
 
       document.addEventListener("input", writeLog, true);
       document.addEventListener("change", writeLog, true);
+
+      function trackControlledField(fieldId, outputId) {
+        const field = document.querySelector(`#${fieldId}`);
+        const output = document.querySelector(`#${outputId}`);
+        let inputCount = 0;
+        let changeCount = 0;
+
+        field.addEventListener("input", () => {
+          inputCount += 1;
+          output.textContent = `State: ${field.value} | input: ${inputCount} | change: ${changeCount}`;
+        });
+        field.addEventListener("change", () => {
+          changeCount += 1;
+          output.textContent = `State: ${field.value} | input: ${inputCount} | change: ${changeCount}`;
+        });
+      }
+
+      trackControlledField("controlledInput", "controlledInputState");
+      trackControlledField("controlledTextarea", "controlledTextareaState");
+
+      const dynamicFieldHost = document.querySelector("#dynamicFieldHost");
+      const dynamicFieldState = document.querySelector("#dynamicFieldState");
+
+      function createDynamicField() {
+        const field = document.createElement("input");
+        field.id = "dynamicTextInput";
+        field.type = "text";
+        field.placeholder = "Dynamically created text field";
+        return field;
+      }
+
+      document.querySelector("#addDynamicField").addEventListener("click", () => {
+        dynamicFieldHost.replaceChildren(createDynamicField());
+        dynamicFieldState.textContent = "Dynamic field added";
+      });
+
+      document.querySelector("#replaceDynamicField").addEventListener("click", () => {
+        const previousField = dynamicFieldHost.querySelector("input");
+        dynamicFieldHost.replaceChildren(createDynamicField());
+        dynamicFieldState.textContent = previousField ? "Dynamic field replaced" : "Dynamic field added";
+      });
 
       customElements.define("shadow-text-input", class extends HTMLElement {
         connectedCallback() {

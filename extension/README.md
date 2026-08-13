@@ -12,6 +12,8 @@ Dictozy detects supported fields, shows a microphone button beside the active fi
 
 Supported fields include normal text inputs, textareas, contenteditable elements, and ARIA textboxes that are actually editable, such as `[role="textbox"][contenteditable="true"]`. A bare `role="textbox"` does not provide a standard writable editing mechanism and is ignored.
 
+Form values are updated through native input and textarea setters followed by one standard editing-event sequence. Contenteditable transcripts are inserted as plain text at the current saved selection. Delegated focus handling supports fields created after page load, while a lightweight observer checks only fields Dictozy is actively tracking so detached, hidden, readonly, disabled, or otherwise unsupported targets cannot receive late text.
+
 ## Icons
 
 The extension includes PNG icons at `16`, `32`, `48`, and `128` pixels under `icons/`. They are referenced by `manifest.json` for Chrome extension surfaces.
@@ -96,7 +98,11 @@ Extension setup:
 24. Select an explicit language, save, dictate a short phrase containing a number or unit, and confirm the request succeeds. Treat the resulting punctuation and number formatting as provider-dependent.
 25. Confirm common payment fields, including camel-case and snake-case card identifiers, never show the microphone control and ignore the shortcut.
 26. Confirm an editable ARIA textbox accepts a transcript while a bare non-editable ARIA textbox is ignored.
-27. Repeat the start, stop, cancel, and successful insertion flow with the visible click controls.
+27. On the local QA page, replace selected text in the normal input, textarea, and contenteditable fixtures; confirm only the selection changes and the caret follows the transcript.
+28. Test the controlled input and textarea fixtures; confirm each keeps the transcript and reports one `input` and one `change` event.
+29. Add a dynamic field after page load and confirm it receives one microphone control and one transcript.
+30. During a pending transcription, replace the dynamic field or make the target readonly; confirm no transcript is inserted and a safe field-unavailable message appears.
+31. Repeat the start, stop, cancel, and successful insertion flow with the visible click controls.
 
 For structured QA, use the checklist and local test page in `../qa/`.
 
@@ -111,3 +117,4 @@ For structured QA, use the checklist and local test page in `../qa/`.
 - If transcription fails, check the FastAPI terminal logs first. The extension intentionally shows safe, generic error messages.
 - If a custom backend fails, verify the URL is local HTTP or HTTPS and points directly to `/api/transcribe`.
 - If Check Backend fails, open the deployed `/health` URL directly and check the hosting provider logs, TLS certificate, and CORS configuration.
+- Canvas-based editors and custom widgets without a standard writable DOM input or contenteditable surface remain unsupported.

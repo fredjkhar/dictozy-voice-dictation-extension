@@ -1,6 +1,6 @@
 # Post-Publish Monitoring
 
-Use this checklist after a Chrome Web Store release is live. It is written for Dictozy `0.1.6` and the published extension ID:
+Use this checklist after a Chrome Web Store release is live. It is written for Dictozy `0.1.7` and the published extension ID:
 
 ```text
 folpeencabfejhjokmldikaelonphmma
@@ -29,7 +29,7 @@ Use the Chrome Web Store-installed extension, not the unpacked development exten
 
 1. Install Dictozy from the Chrome Web Store.
 2. Open `chrome://extensions` and confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm the installed version is `0.1.6` after the language-formatting release is installed.
+3. Confirm the installed version is `0.1.7` after the field-compatibility release is installed.
 4. Open an HTTPS page with a normal text input or textarea.
 5. Focus a supported field and confirm the visible microphone button appears.
 6. Click the microphone button.

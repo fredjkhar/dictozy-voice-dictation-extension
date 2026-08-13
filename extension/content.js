@@ -104,6 +104,7 @@
   let statusBubble = null;
   let statusMessageElement = null;
   let statusDismissButton = null;
+  let statusIsStandalone = false;
   let mediaRecorder = null;
   let recordingStream = null;
   let recordingSignalMonitor = null;
@@ -211,26 +212,32 @@
     return statusBubble;
   }
 
-  function hideMicButton() {
+  function hideMicButton({ forceStatus = false } = {}) {
     if (micButton) {
       micButton.hidden = true;
     }
 
-    if (statusBubble) {
+    if (statusBubble && (forceStatus || !statusIsStandalone)) {
       statusBubble.hidden = true;
     }
   }
 
-  function setStatusMessage(message, { dismissible = false } = {}) {
+  function setStatusMessage(message, { dismissible = false, standalone = false } = {}) {
     const bubble = getStatusBubble();
+    statusIsStandalone = standalone;
     statusMessageElement.textContent = message;
     statusDismissButton.hidden = !dismissible;
     bubble.hidden = false;
 
-    if (micButton && !micButton.hidden) {
+    if (standalone) {
+      bubble.style.top = "16px";
+      bubble.style.right = "16px";
+      bubble.style.left = "auto";
+    } else if (micButton && !micButton.hidden) {
       const buttonRect = micButton.getBoundingClientRect();
       bubble.style.top = `${Math.round(buttonRect.bottom + 6)}px`;
       bubble.style.left = `${Math.round(buttonRect.left)}px`;
+      bubble.style.right = "auto";
     }
   }
 
@@ -259,6 +266,7 @@
       return;
     }
 
+    statusIsStandalone = false;
     if (statusBubble) {
       statusBubble.hidden = true;
     }
@@ -280,11 +288,31 @@
     updateMicButton();
   }
 
+  function showStandaloneErrorState(message, requestId = "") {
+    clearTransientStateTimeout();
+    setMicButtonState("error", addRequestReference(message, requestId), { dismissible: true });
+    micButton.hidden = true;
+    setStatusMessage(addRequestReference(message, requestId), {
+      dismissible: true,
+      standalone: true,
+    });
+  }
+
+  function showFieldFailureState(message, requestId = "") {
+    if (getFocusedSupportedField()) {
+      showErrorState(message, requestId);
+      return;
+    }
+
+    showStandaloneErrorState(message, requestId);
+  }
+
   function dismissErrorState() {
     if (currentMicButtonState !== "error") {
       return;
     }
 
+    statusIsStandalone = false;
     setMicButtonState("idle");
     updateMicButton();
   }
@@ -300,6 +328,33 @@
 
   function getFocusedSupportedField() {
     return getUsableField(getCurrentEditableField());
+  }
+
+  function reconcileTrackedFields(mutations = []) {
+    const onlyDictozyMutations = mutations.length > 0 && mutations.every(({ target }) => (
+      target === micButton ||
+      target === statusBubble ||
+      micButton?.contains(target) ||
+      statusBubble?.contains(target)
+    ));
+
+    if (!extensionEnabled || onlyDictozyMutations) {
+      return;
+    }
+
+    const operationTarget = recordingTargetField || transcriptionTargetField;
+    if (operationTarget && !getUsableField(operationTarget)) {
+      cancelActiveWork();
+      clearActiveField();
+      hideMicButton({ forceStatus: true });
+      showStandaloneErrorState("The original field is no longer available. Record again in a supported field.");
+      return;
+    }
+
+    if (activeField && !getUsableField(activeField)) {
+      clearActiveField();
+      hideMicButton();
+    }
   }
 
   function updateMicButton() {
@@ -336,8 +391,10 @@
     button.hidden = false;
 
     if (statusBubble && !statusBubble.hidden) {
+      statusIsStandalone = false;
       statusBubble.style.top = `${Math.round(top + buttonSize + 6)}px`;
       statusBubble.style.left = `${Math.round(left)}px`;
+      statusBubble.style.right = "auto";
     }
   }
 
@@ -418,19 +475,32 @@
     return range;
   }
 
+  function getTextBeforeRange(element, range) {
+    const precedingRange = range.cloneRange();
+    precedingRange.selectNodeContents(element);
+
+    try {
+      precedingRange.setEnd(range.startContainer, range.startOffset);
+      return precedingRange.toString();
+    } catch (_error) {
+      return "";
+    }
+  }
+
   function insertIntoRichTextField(element, text) {
     element.focus();
 
     const selection = window.getSelection();
     if (!selection) {
-      return;
+      return false;
     }
 
     selection.removeAllRanges();
     selection.addRange(getRichTextInsertionRange(element));
 
     const range = selection.getRangeAt(0);
-    const prefix = range.collapsed && range.startOffset > 0 ? " " : "";
+    const textBeforeRange = getTextBeforeRange(element, range);
+    const prefix = range.collapsed && textBeforeRange && !/\s$/.test(textBeforeRange) ? " " : "";
     const insertedText = `${prefix}${text}`;
     const beforeInputEvent = new InputEvent("beforeinput", {
       bubbles: true,
@@ -441,21 +511,10 @@
     });
 
     if (!element.dispatchEvent(beforeInputEvent)) {
-      return;
+      return false;
     }
 
-    if (document.queryCommandSupported?.("insertText")) {
-      selection.removeAllRanges();
-      selection.addRange(range);
-
-      if (document.execCommand("insertText", false, insertedText)) {
-        rememberTextRange();
-        dispatchInputEvents(element, insertedText);
-        return;
-      }
-    }
-
-    const textNode = document.createTextNode(`${prefix}${text}`);
+    const textNode = document.createTextNode(insertedText);
 
     range.deleteContents();
     range.insertNode(textNode);
@@ -466,6 +525,7 @@
     selection.addRange(range);
     activeTextRange = range.cloneRange();
     dispatchInputEvents(element, insertedText);
+    return true;
   }
 
   function getTranscriptTargetField(expectedField) {
@@ -495,10 +555,22 @@
     activeField = field;
     field.focus();
 
-    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
-      insertIntoFormField(field, text);
-    } else {
-      insertIntoRichTextField(field, text);
+    try {
+      const inserted = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement
+        ? insertIntoFormField(field, text)
+        : insertIntoRichTextField(field, text);
+
+      if (!inserted) {
+        return {
+          ok: false,
+          message: "Could not insert the transcript. Record again in a supported field.",
+        };
+      }
+    } catch (_error) {
+      return {
+        ok: false,
+        message: "Could not insert the transcript. Record again in a supported field.",
+      };
     }
 
     return {
@@ -913,7 +985,7 @@
 
       if (!targetField) {
         recordingBlob = null;
-        showErrorState("Focus moved before transcription. Record again in a supported field.");
+        showFieldFailureState("Focus moved before transcription. Record again in a supported field.");
         return;
       }
 
@@ -949,7 +1021,7 @@
 
       const insertion = insertTranscript(result.transcript, expectedField);
       if (!insertion.ok) {
-        showErrorState(insertion.message, result.requestId || operation.requestId);
+        showFieldFailureState(insertion.message, result.requestId || operation.requestId);
         return;
       }
 
@@ -985,7 +1057,7 @@
 
     if (!extensionEnabled) {
       clearActiveField();
-      hideMicButton();
+      hideMicButton({ forceStatus: true });
       return;
     }
 
@@ -1003,7 +1075,7 @@
       clearTransientStateTimeout();
       cancelActiveWork();
       clearActiveField();
-      hideMicButton();
+      hideMicButton({ forceStatus: true });
       return;
     }
 
@@ -1037,6 +1109,31 @@
   window.addEventListener("resize", updateMicButton);
   chrome.runtime.onMessage.addListener(handleRuntimeMessage);
   chrome.storage.onChanged.addListener(handleStorageChanges);
+
+  const fieldObserver = new MutationObserver(reconcileTrackedFields);
+  fieldObserver.observe(document.documentElement, {
+    attributeFilter: [
+      "aria-disabled",
+      "aria-hidden",
+      "aria-label",
+      "aria-readonly",
+      "autocomplete",
+      "class",
+      "contenteditable",
+      "disabled",
+      "hidden",
+      "id",
+      "inputmode",
+      "name",
+      "placeholder",
+      "readonly",
+      "style",
+      "type",
+    ],
+    attributes: true,
+    childList: true,
+    subtree: true,
+  });
 
   loadExtensionState();
 })();
