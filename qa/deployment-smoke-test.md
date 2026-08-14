@@ -56,26 +56,30 @@ For local or staging backend checks:
 12. Repeat the start, stop, and successful insertion flow with the assigned browser shortcut.
 13. Save Automatic and one explicit non-English language in turn; confirm each request succeeds and the selection persists.
 14. Cancel one pending transcription with the shortcut and confirm no late result is inserted.
+15. Disable the current site during recording and during pending transcription; confirm extension-side work stops and no late result is inserted.
+16. Re-enable the site, refocus a supported field, and confirm dictation works again.
+17. Inspect the transcription request and confirm it contains no origin, URL, hostname, site preference, page content, or field metadata.
 
 For the published production path:
 
 1. Install Dictozy from the Chrome Web Store.
 2. Confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm version `0.1.7` after the field-compatibility release is installed.
+3. Confirm version `0.1.8` after the per-site controls release is installed.
 4. Run the same supported-field recording and insertion checks.
 5. Confirm the popup displays the assigned shortcut or `Not assigned`, and that the keyboard icon opens Chrome's shortcut settings.
 6. Confirm the assigned shortcut starts and stops one recording and cancels one pending transcription.
 7. Confirm English is the default, then complete one request using Automatic and one explicit non-English language.
 8. Confirm production network traffic goes only to `https://voice-dictation-extension.onrender.com`, never directly to xAI.
 9. Confirm Render logs include request ID, status, and latency for the smoke test without audio or transcript content.
+10. Confirm the current-site control persists an explicit disabled preference, remains independent from the global toggle, and is unavailable on restricted Chrome pages.
 
 ## Backend Compatibility Check
 
-Version `0.1.7` does not change the backend contract:
+Version `0.1.8` does not change the backend contract:
 
 1. Confirm production `/health` before extension testing.
-2. Use the published `0.1.6` extension and confirm one transcription still succeeds.
-3. Load the `0.1.7` package and test English, Automatic, and one explicit non-English language.
+2. Use the published `0.1.7` extension and confirm one transcription still succeeds.
+3. Load the `0.1.8` package and test English, Automatic, and one explicit non-English language.
 4. Confirm extension traffic still goes only to the configured Dictozy backend.
 
 ## Failure Checks
@@ -89,6 +93,9 @@ Version `0.1.7` does not change the backend contract:
 - A retry records a fresh clip and does not reuse failed audio.
 - Repeated shortcut presses do not overlap recording or transcription work.
 - The shortcut does nothing while Dictozy is disabled or an unsupported or sensitive field is focused.
+- The shortcut and click control do nothing when the current site is disabled.
+- Disabling a site during active work stops tracks, cancels pending extension requests, and prevents late insertion.
+- Site settings are never included in backend traffic.
 - Backend responses do not expose provider credentials or raw upstream error bodies.
 - Unsupported language values return a safe `400` and do not expose provider details.
 

@@ -73,6 +73,7 @@ Response:
 Microphone button does not appear:
 
 - Confirm Dictozy is enabled in the popup.
+- Confirm `Enable on this site` is on. On restricted Chrome pages, explain that current-site controls and content scripts are intentionally unavailable.
 - Reload the page after installing or updating the extension.
 - Confirm the field is supported and not password, payment, hidden, disabled, readonly, file, checkbox, or radio.
 - Confirm the page is HTTPS or local development.

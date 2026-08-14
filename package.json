@@ -1,6 +1,6 @@
 {
   "name": "dictozy-voice-dictation-extension",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": true,
   "scripts": {
     "test": "node --test extension/tests/*.test.js",

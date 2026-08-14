@@ -26,13 +26,14 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.6` is the published language-formatting release. Version `0.1.7` is prepared as a focused field-compatibility and insertion-reliability update; the public Chrome Web Store will continue to show `0.1.6` until the update is reviewed and published.
+Version `0.1.7` is the published field-compatibility release. Version `0.1.8` is prepared as a privacy-first per-site controls update; the public Chrome Web Store will continue to show `0.1.7` until the update is reviewed and published.
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Recording starts only after an explicit microphone-button click or assigned browser shortcut.
 - A configurable browser shortcut starts, stops, or cancels dictation through the same lifecycle as the visible page control.
 - A popup language-formatting preference offers Automatic plus 25 explicit languages. English is the default.
-- Popup includes an enabled/disabled toggle for Dictozy.
+- The popup includes a global master toggle plus an exact-origin control for the current supported site.
+- Only sites the user explicitly disables are retained in local extension storage; site preferences are never sent to the backend.
 - Extension sends audio to the configured FastAPI backend.
 - Backend calls xAI Speech-to-Text.
 - Transcript is inserted back into the focused field.
@@ -47,7 +48,7 @@ Version `0.1.6` is the published language-formatting release. Version `0.1.7` is
 - Production endpoint validation and deployment smoke tests are available.
 - Chrome Web Store copy, screenshots, promo tile, icon, and release notes are available under `store/`.
 - Post-publish monitoring and support triage checklists are available under `qa/`.
-- The `0.1.7` package keeps the current Dictozy icons consistent across the toolbar, popup, and Chrome extensions page.
+- The `0.1.8` package keeps the current Dictozy icons consistent across the toolbar, popup, and Chrome extensions page.
 
 ## Local Development
 
@@ -85,7 +86,7 @@ Extension setup:
 3. Click Load unpacked.
 4. Select the `extension/` folder.
 5. Reload any test page after loading or reloading the extension.
-6. Open the extension popup to enable/disable Dictozy, view or manage the keyboard shortcut, choose language formatting, adjust the recording limit, or open Advanced backend settings if needed.
+6. Open the extension popup to use the global or current-site control, view or manage the keyboard shortcut, choose language formatting, adjust the recording limit, or open Advanced backend settings if needed.
 
 QA page:
 
@@ -118,6 +119,7 @@ python3 -m json.tool extension/manifest.json >/dev/null
 node --check extension/content.js
 node --check extension/dom-utils.js
 node --check extension/dictation-lifecycle.js
+node --check extension/site-preferences.js
 node --check extension/background.js
 node --check extension/popup.js
 node --check extension/config.js
@@ -152,6 +154,7 @@ python3 scripts/validate_store_assets.py
 - Error includes `Reference`: include that short reference when reporting the failure; do not include private transcript or field content.
 - No microphone signal detected: confirm Chrome is using the intended input and that the input is not muted, then record again.
 - Microphone button does not appear: reload the page after loading the extension and focus a supported non-sensitive field.
+- Microphone button does not appear on one site: confirm both the global Dictozy toggle and `Enable on this site` are on. Restricted Chrome pages do not support the current-site control.
 - Keyboard shortcut does not work: open the popup and check whether it shows `Not assigned`. Use its keyboard icon to open `chrome://extensions/shortcuts`, then assign or remap the command.
 - Backend URL does not work: use the production Render endpoint or local HTTP on `127.0.0.1` or `localhost`. Other remote hosts and xAI URLs are rejected.
 

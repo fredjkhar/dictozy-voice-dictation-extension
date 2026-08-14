@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Dictozy: Voice Dictation",
   "short_name": "Dictozy",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Dictate short text into supported web fields with a visible microphone button and secure backend transcription.",
   "icons": {
     "16": "icons/icon-16.png",
@@ -44,7 +44,7 @@
         "http://localhost/*",
         "https://*/*"
       ],
-      "js": ["dom-utils.js", "dictation-lifecycle.js", "content.js"],
+      "js": ["dom-utils.js", "dictation-lifecycle.js", "site-preferences.js", "content.js"],
       "css": ["content.css"]
     }
   ]

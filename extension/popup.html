@@ -104,6 +104,22 @@
         border-top: 1px solid #e5eaf0;
       }
 
+      .site-row,
+      .site-unavailable {
+        padding-top: 10px;
+        border-top: 1px solid #e5eaf0;
+      }
+
+      .site-row[hidden] {
+        display: none;
+      }
+
+      .site-unavailable {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
       .shortcut-copy {
         display: grid;
         gap: 5px;
@@ -179,6 +195,11 @@
 
       .switch:checked::before {
         transform: translateX(18px);
+      }
+
+      .switch:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
       }
 
       .switch:focus-visible,
@@ -297,6 +318,10 @@
         padding: 0 12px 10px;
       }
 
+      .reset-button {
+        margin-top: 2px;
+      }
+
       .status {
         min-height: 18px;
         color: #36516f;
@@ -332,11 +357,21 @@
       <section class="settings-panel" aria-label="Dictozy settings">
         <label class="toggle-row">
           <span class="toggle-copy">
-            <span class="toggle-title">Dictation</span>
-            <span class="toggle-description">Show the microphone on supported fields.</span>
+            <span class="toggle-title">Dictozy</span>
+            <span class="toggle-description">Master control for all supported sites.</span>
           </span>
           <input id="extensionEnabled" class="switch" type="checkbox" role="switch">
         </label>
+
+        <label id="siteToggleRow" class="toggle-row site-row" hidden>
+          <span class="toggle-copy">
+            <span class="toggle-title">Enable on this site</span>
+            <span id="siteDescription" class="toggle-description"></span>
+          </span>
+          <input id="siteEnabled" class="switch" type="checkbox" role="switch">
+        </label>
+
+        <p id="siteUnavailable" class="site-unavailable">Checking the current page...</p>
 
         <div class="shortcut-row">
           <span class="shortcut-copy">
@@ -387,12 +422,14 @@
             <input id="backendUrl" type="url" autocomplete="off" spellcheck="false">
           </label>
           <button id="testBackend" class="secondary-button" type="button">Check Backend</button>
+          <button id="resetSitePreferences" class="secondary-button reset-button" type="button">Reset Site Preferences</button>
         </div>
       </details>
 
       <p id="status" class="status" data-tone="neutral" aria-live="polite"></p>
     </main>
     <script src="config.js"></script>
+    <script src="site-preferences.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

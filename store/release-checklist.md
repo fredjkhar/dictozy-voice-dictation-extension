@@ -8,8 +8,8 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 - [ ] Run `node --test extension/tests/*.test.js`.
 - [ ] Run `npm ci` and `npm run test:browser`; confirm all mocked Chromium workflows pass without contacting production.
 - [ ] Run `python3 scripts/package_extension.py` from the repository root.
-- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.7.zip` and contains `manifest.json` at its root.
-- [ ] Confirm the immutable published package `dist/dictozy-v0.1.6.zip` still has SHA-256 `3f920c050f862df77926ecf9b7ed7576a54b525fdae1699cee31706fb3d56626`.
+- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.8.zip` and contains `manifest.json` at its root.
+- [ ] Confirm the immutable published package `dist/dictozy-v0.1.7.zip` still has SHA-256 `a573bd146642b7aacb0b494f2e9644b3c85d260295968ec4fa3680d3795debed`.
 - [ ] Load the generated ZIP contents as an unpacked extension and repeat the manual QA checklist.
 - [ ] Confirm no source maps, environment files, raw audio, test fixtures, or unrelated repository files are included.
 - [ ] Confirm all executable JavaScript is packaged locally and no remote code is used.
@@ -22,6 +22,7 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 - [ ] `activeTab`, `tabs`, microphone manifest permission, and broad backend `https://*/*` host access are absent.
 - [ ] The `toggle-dictation` command is declared without adding an API permission.
 - [ ] Password and payment fields remain excluded.
+- [ ] Per-site controls add no API or host permissions and use only local storage plus messaging to the already-injected content script.
 
 ## Listing
 
@@ -32,9 +33,9 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 - [ ] Review the product landing page in `../site/index.html`; if it is published at a stable HTTPS URL, use it as the Homepage URL.
 - [ ] Upload the existing 128x128 store icon.
 - [ ] Review `assets/screenshot-dictation-1280x800.png` and `assets/screenshot-settings-1280x800.png`; regenerate only if the screenshots no longer match the shipped UI.
-- [ ] Confirm screenshots show Dictozy branding, microphone/stop icon controls, the language-formatting selector, the 10-second default, and no development-only controls.
+- [ ] Confirm screenshots show Dictozy branding, global and current-site controls, microphone/stop icon controls, the language-formatting selector, the 10-second default, and no development-only controls.
 - [ ] Review the required `assets/promo-small-440x280.png` tile at full size.
-- [ ] Confirm the unchanged visual assets still accurately represent the `0.1.7` popup and recording UI before opening a Web Store draft.
+- [ ] Confirm the regenerated settings screenshot and unchanged remaining visual assets accurately represent the `0.1.8` popup and recording UI before opening a Web Store draft.
 - [ ] Add other assets only when they accurately represent the shipped extension.
 - [ ] Do not claim real-time streaming, offline transcription, grammar correction, accounts, or other unimplemented features.
 - [ ] Set Homepage and Support URLs to the public GitHub repository and issue tracker.
@@ -42,7 +43,7 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 ## Developer Dashboard Update
 
 - [ ] Open the existing Chrome Web Store item for extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Package tab: upload only the reviewed `dist/dictozy-v0.1.7.zip`.
+- [ ] Package tab: upload only the reviewed `dist/dictozy-v0.1.8.zip`.
 - [ ] Store Listing tab: update name, summary, detailed description, category, language, screenshots, promo tile, homepage URL, support URL, and privacy policy URL.
 - [ ] Privacy practices tab: update data-use declarations, permission justifications, remote-code declaration, and Limited Use certifications.
 - [ ] Distribution tab: confirm visibility, regions, and rollout settings.
@@ -85,15 +86,15 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 
 ## Backend Compatibility
 
-- [ ] Confirm no backend code or production configuration change is required for `0.1.7`.
+- [ ] Confirm no backend code or production configuration change is required for `0.1.8`.
 - [ ] Confirm production `/health` remains healthy.
-- [ ] Run one real transcription from the published `0.1.6` extension before testing the `0.1.7` package.
-- [ ] Load the `0.1.7` package and confirm English, Automatic, and one explicit non-English language still complete successfully.
+- [ ] Run one real transcription from the published `0.1.7` extension before testing the `0.1.8` package.
+- [ ] Load the `0.1.8` package and confirm English, Automatic, and one explicit non-English language still complete successfully.
 
 ## Final QA Before Submission
 
 - [ ] Open `https://voice-dictation-extension.onrender.com/health` and confirm the production backend returns `{"status":"ok"}`.
-- [ ] Load the `0.1.7` unpacked extension in real Chrome and confirm there are no errors in `chrome://extensions`.
+- [ ] Load the `0.1.8` unpacked extension in real Chrome and confirm there are no errors in `chrome://extensions`.
 - [ ] Test a normal text input, textarea, contenteditable field, and editable ARIA textbox.
 - [ ] Confirm a bare non-editable ARIA textbox is ignored.
 - [ ] Confirm camel-case, snake-case, kebab-case, compact, and standard `cc-*` payment fields are ignored while safe near-misses remain supported.
@@ -117,6 +118,13 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 - [ ] Verify retry starts a completely new recording rather than reusing failed audio.
 - [ ] Verify clearly silent input shows a safe microphone-signal message where local inspection is available.
 - [ ] Verify the Dictozy enabled toggle cancels active work, hides the page control, and restores an enabled control when turned back on.
+- [ ] Verify supported sites are enabled by default and disabling one exact origin does not alter the global toggle or another origin.
+- [ ] Verify paths, queries, and hashes share one preference while subdomains and ports remain independent.
+- [ ] Disable the current site during microphone access, recording, and transcription; confirm tracks stop, requests are cancelled where practical, uploads are prevented when possible, and no late transcript is inserted.
+- [ ] Verify the shortcut and click control cannot start dictation while the current site is disabled.
+- [ ] Re-enable the current site, refocus a supported field, and confirm dictation returns.
+- [ ] Reset site preferences and confirm the backend URL, recording limit, language, global enabled state, and keyboard shortcut remain unchanged.
+- [ ] Open the popup on `chrome://extensions`, the Chrome Web Store, and another restricted page; confirm the current-site control is safely unavailable and global settings remain usable.
 - [ ] Move focus before a response completes and confirm no transcript is inserted into either the old or new field.
 - [ ] Inspect extension network activity and confirm audio goes only to the configured FastAPI backend.
 - [ ] Confirm the xAI key is absent from the ZIP, repository status, browser storage, and browser network requests.
@@ -127,7 +135,7 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 
 - [ ] Confirm the public listing is visible and shows the intended name, icon, screenshots, promotional tile, support link, homepage link, and privacy policy link.
 - [ ] Install the Chrome Web Store version and confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Confirm version `0.1.7`.
+- [ ] Confirm version `0.1.8`.
 - [ ] Run the Store-installed smoke test in [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 - [ ] Confirm Render CORS includes `chrome-extension://folpeencabfejhjokmldikaelonphmma`.
 - [ ] Review Render logs for request IDs, status, latency, `429`, `502`, `503`, and safe logging.

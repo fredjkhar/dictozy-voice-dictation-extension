@@ -23,7 +23,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - The unpacked extension loads without errors in `chrome://extensions`.
 - Popup settings persist after closing and reopening the popup.
-- The popup shows `Dictozy` branding and version `0.1.7` in `chrome://extensions`.
+- The popup shows `Dictozy` branding and version `0.1.8` in `chrome://extensions`.
 - The popup displays the current `toggle-dictation` shortcut or `Not assigned`.
 - The popup keyboard icon opens `chrome://extensions/shortcuts`.
 - The suggested shortcut is `Ctrl+Shift+Y`, or `Command+Shift+Y` on macOS, when Chrome can assign it without a conflict.
@@ -35,6 +35,15 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 - Missing or invalid stored values safely fall back to English.
 - Turning Dictozy off hides the page microphone button and prevents recording from starting.
 - Turning Dictozy back on restores microphone behavior on supported fields.
+- Supported sites are enabled by default when the global master toggle is on.
+- Disabling the current site stores only its exact origin and does not change the global enabled state.
+- Paths, queries, and fragments share one origin preference; subdomains, schemes, and ports remain separate.
+- Disabling the current site during microphone access, recording, or transcription stops extension-side work and prevents upload or late insertion as appropriate.
+- The shortcut and a stale click control cannot start dictation while the current site is disabled.
+- Re-enabling the current site restores normal behavior after a supported field is focused.
+- Reset Site Preferences removes only explicitly disabled origins and preserves the backend URL, recording limit, language formatting, global enabled state, and keyboard shortcut.
+- Malformed or duplicate stored origin values do not break the popup or content script.
+- On restricted Chrome pages, the current-site control is unavailable while the global toggle and other popup settings remain usable.
 - Backend URL defaults to `https://voice-dictation-extension.onrender.com/api/transcribe`.
 - Backend URL rejects unapproved remote hosts, xAI URLs, and paths that do not end in `/api/transcribe`.
 - Backend URL rejects embedded credentials, query strings, and fragments.
@@ -84,6 +93,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 - Canvas-based editors and custom widgets without a standard writable DOM field are unsupported.
 - Record actual results before claiming named-site compatibility; where practical, test Gmail compose, Outlook Web compose, a controlled form, and a contenteditable chat or note editor.
 - xAI API keys never appear in extension files, browser console output, or network calls from the page.
+- Site preferences, origins, URLs, hostnames, page content, and field metadata never appear in backend transcription requests.
 
 ## Store Presentation
 
@@ -96,13 +106,16 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - Install Dictozy from the Chrome Web Store.
 - Confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- Confirm version `0.1.7` after the field-compatibility release is installed.
+- Confirm version `0.1.8` after the per-site controls release is installed.
 - Confirm English is selected by default, then save and smoke-test Automatic and one explicit non-English language.
 - Run a short dictation on a supported HTTPS text field.
 - Confirm recording starts only after clicking the visible microphone button or pressing the assigned browser shortcut.
 - Confirm the shortcut stops recording and cancels pending transcription without late insertion.
 - Confirm transcript insertion and focus behavior.
 - Confirm unsupported and sensitive fields are ignored.
+- Confirm the global/site precedence matrix: global on + site on works; global on + site off is disabled; global off always disables dictation.
+- Disable and re-enable the current site, confirm persistence after reload, then reset site preferences and confirm unrelated settings remain.
+- Open the popup on a restricted Chrome page and confirm the safe unavailable state.
 - Confirm editable ARIA textboxes work while bare non-editable ARIA textboxes remain ignored.
 - Confirm extension network traffic goes only to `https://voice-dictation-extension.onrender.com`, never directly to xAI.
 

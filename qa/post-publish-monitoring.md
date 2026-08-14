@@ -1,6 +1,6 @@
 # Post-Publish Monitoring
 
-Use this checklist after a Chrome Web Store release is live. It is written for Dictozy `0.1.7` and the published extension ID:
+Use this checklist after a Chrome Web Store release is live. It is written for Dictozy `0.1.8` and the published extension ID:
 
 ```text
 folpeencabfejhjokmldikaelonphmma
@@ -29,7 +29,7 @@ Use the Chrome Web Store-installed extension, not the unpacked development exten
 
 1. Install Dictozy from the Chrome Web Store.
 2. Open `chrome://extensions` and confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm the installed version is `0.1.7` after the field-compatibility release is installed.
+3. Confirm the installed version is `0.1.8` after the per-site controls release is installed.
 4. Open an HTTPS page with a normal text input or textarea.
 5. Focus a supported field and confirm the visible microphone button appears.
 6. Click the microphone button.
@@ -45,7 +45,10 @@ Use the Chrome Web Store-installed extension, not the unpacked development exten
 16. Cancel one pending transcription with the shortcut and confirm a late result is not inserted.
 17. Confirm the shortcut does nothing while Dictozy is disabled or an excluded field is focused.
 18. Confirm English is selected by default, then save and complete one request with Automatic and one explicit non-English language.
-19. Inspect extension network activity and confirm requests go only to `https://voice-dictation-extension.onrender.com`, never to an `x.ai` host.
+19. Disable the current site and confirm the microphone control disappears, the shortcut is ignored, and the preference persists after reload.
+20. Re-enable the site and confirm dictation returns; then reset site preferences and confirm unrelated settings remain.
+21. Open the popup on a restricted Chrome page and confirm the current-site control is unavailable while the global toggle remains usable.
+22. Inspect extension network activity and confirm requests go only to `https://voice-dictation-extension.onrender.com`, never to an `x.ai` host, and contain no origin or site preference.
 
 ## Chrome Web Store Listing Check
 

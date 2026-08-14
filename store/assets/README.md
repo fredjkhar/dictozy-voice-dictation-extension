@@ -3,12 +3,12 @@
 ## Final Files
 
 - `screenshot-dictation-1280x800.png`: supported field with the actual stop icon recording state and safe sample text.
-- `screenshot-settings-1280x800.png`: popup settings with English language formatting, the current keyboard shortcut, production backend URL, 10-second limit, and successful health check.
+- `screenshot-settings-1280x800.png`: popup settings with global and current-site controls, English language formatting, the current keyboard shortcut, 10-second limit, and the collapsed Advanced section.
 - `promo-small-440x280.png`: small promotional tile.
 
 The deterministic HTML sources live in `../source/`. Re-render them at their exact viewport sizes after changing listing visuals.
 
-For Dictozy `0.1.7`, these unchanged assets still match the production popup and recording UI. They show English language formatting, the current shortcut assignment, Dictozy branding, the 10-second default recording limit, microphone/stop icon controls, and no development-only text controls. Field-compatibility behavior, retry, cancellation, and transient error states are verified in QA rather than represented as permanent screenshot states.
+For Dictozy `0.1.8`, the settings screenshot is regenerated to show the new exact-origin control truthfully. The assets show Dictozy branding, the global and current-site toggles, English language formatting, the current shortcut assignment, the 10-second default recording limit, microphone/stop icon controls, and no development-only text controls. Cancellation and transient error states are verified in QA rather than represented as permanent screenshot states.
 
 ## Rendering
 

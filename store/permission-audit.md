@@ -1,18 +1,18 @@
 # Extension Permission Audit
 
-Audit date: August 12, 2026
+Audit date: August 13, 2026
 
-This audit explains why Dictozy `0.1.7` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
+This audit explains why Dictozy `0.1.8` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
 
 ## API Permissions
 
 `storage`: retained.
 
-Required to save the enabled state, backend URL, recording-duration preference, and language-formatting preference in `chrome.storage.local`.
+Required to save the enabled state, backend URL, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables in `chrome.storage.local`. Site preferences are not synchronized or sent to the backend.
 
 `activeTab`: removed.
 
-The popup can query the active tab and message an already-injected content script without this permission. Keeping it would not enable a required capability.
+The popup can query the active tab ID and message an already-injected content script without this permission. The content script returns only the page's normalized HTTP/HTTPS origin so the popup can apply a local current-site preference; the popup does not inspect the full tab URL.
 
 No `tabs`, `scripting`, `identity`, `notifications`, `cookies`, clipboard, downloads, history, geolocation, or manifest microphone permission is requested.
 
@@ -47,7 +47,7 @@ Content scripts run on:
 
 Remote HTTP webpages were removed from the content-script scope because microphone recording requires a secure context and the production feature targets HTTPS pages.
 
-HTTPS page access remains broad because the extension's single purpose is to detect supported fields, display a visible microphone control, and insert the returned transcript on websites selected by the user. Reducing this to a fixed website list would prevent the core cross-site dictation behavior. The content script excludes sensitive and unsupported fields and does not send page URLs, existing field contents, or surrounding page content to the backend.
+HTTPS page access remains broad because the extension's single purpose is to detect supported fields, display a visible microphone control, and insert the returned transcript on websites selected by the user. Reducing this to a fixed website list would prevent the core cross-site dictation behavior. Users can disable any exact origin from the popup. The content script excludes sensitive and unsupported fields and does not send origins, page URLs, site preferences, existing field contents, or surrounding page content to the backend.
 
 ## Microphone Access
 
@@ -55,4 +55,4 @@ No manifest microphone permission is requested. Microphone access is initiated t
 
 ## Remote Code
 
-No remote code is loaded or executed. The popup scripts, content scripts, lifecycle helper, service worker, and shared configuration are all packaged in the extension ZIP. Backend responses contain health data, errors, or transcript text only.
+No remote code is loaded or executed. The popup scripts, content scripts, lifecycle helper, site-preference helper, service worker, and shared configuration are all packaged in the extension ZIP. Backend responses contain health data, errors, or transcript text only.

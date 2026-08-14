@@ -124,6 +124,11 @@
     <p>Use this page to verify which fields show the extension microphone button and receive transcripts.</p>
 
     <section class="panel">
+      <h2>Exact-Origin Site Control</h2>
+      <p>Current origin: <strong id="currentOrigin"></strong>. Open this page through both <code>127.0.0.1</code> and <code>localhost</code> to verify that site preferences remain independent. Paths, queries, and hashes on the same origin must share one preference.</p>
+    </section>
+
+    <section class="panel">
       <h2>Supported Fields</h2>
       <div class="grid">
         <label>
@@ -268,6 +273,7 @@
 
     <script>
       const eventLog = document.querySelector("#eventLog");
+      document.querySelector("#currentOrigin").textContent = window.location.origin;
 
       function writeLog(event) {
         const target = event.target;

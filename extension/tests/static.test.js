@@ -10,12 +10,12 @@ function readExtensionFile(name) {
   return fs.readFileSync(path.join(extensionDir, name), "utf8");
 }
 
-test("manifest is prepared for Dictozy 0.1.7 without new permissions", () => {
+test("manifest is prepared for Dictozy 0.1.8 without new permissions", () => {
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
 
   assert.equal(manifest.name, "Dictozy: Voice Dictation");
   assert.equal(manifest.short_name, "Dictozy");
-  assert.equal(manifest.version, "0.1.7");
+  assert.equal(manifest.version, "0.1.8");
   assert.deepEqual(manifest.permissions, ["storage"]);
   assert.deepEqual(manifest.host_permissions, [
     "http://127.0.0.1/*",
@@ -25,6 +25,7 @@ test("manifest is prepared for Dictozy 0.1.7 without new permissions", () => {
   assert.deepEqual(manifest.content_scripts[0].js, [
     "dom-utils.js",
     "dictation-lifecycle.js",
+    "site-preferences.js",
     "content.js",
   ]);
   assert.deepEqual(manifest.commands, {
@@ -55,6 +56,9 @@ test("production popup no longer exposes fake text controls", () => {
   assert.equal(/Insert Test Text|fake dictation|VOICE_DICTATION_INSERT_FAKE_TEXT/i.test(popupHtml), false);
   assert.equal(/Insert Test Text|fake dictation|VOICE_DICTATION_INSERT_FAKE_TEXT/i.test(popupJs), false);
   assert.match(popupHtml, /extensionEnabled/);
+  assert.match(popupHtml, /siteEnabled/);
+  assert.match(popupHtml, /Enable on this site/);
+  assert.match(popupHtml, /Reset Site Preferences/);
   assert.match(popupHtml, /Advanced Backend/);
   assert.match(popupHtml, /brand-mark/);
   assert.match(popupHtml, /shortcutValue/);
@@ -71,6 +75,23 @@ test("content script honors enabled storage and has no fake text message path", 
   assert.match(content, /extensionEnabled/);
   assert.match(content, /chrome\.storage\.onChanged/);
   assert.match(content, /VOICE_DICTATION_TOGGLE/);
+  assert.match(content, /DISABLED_ORIGINS_STORAGE_KEY/);
+  assert.match(content, /VOICE_DICTATION_GET_SITE_CONTEXT/);
+});
+
+test("per-site controls remain local and add no provider or page data to transcription", () => {
+  const background = readExtensionFile("background.js");
+  const content = readExtensionFile("content.js");
+  const popup = readExtensionFile("popup.js");
+  const preferences = readExtensionFile("site-preferences.js");
+  const extensionRuntime = `${background}\n${content}\n${popup}\n${preferences}`;
+
+  assert.match(preferences, /disabledSiteOrigins/);
+  assert.match(popup, /chrome\.storage\.local/);
+  assert.equal(/origin\s*[:,]\s*currentOrigin/.test(content), true);
+  assert.equal(/TRANSCRIBE_AUDIO_MESSAGE[\s\S]{0,500}(origin|hostname|url)\s*:/.test(content), false);
+  assert.equal(extensionRuntime.includes("api.x.ai"), false);
+  assert.equal(extensionRuntime.includes("XAI_API_KEY"), false);
 });
 
 test("page recording control uses icon states instead of text-only labels", () => {

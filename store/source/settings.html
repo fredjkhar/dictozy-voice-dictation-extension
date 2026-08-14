@@ -141,6 +141,11 @@
         border-top: 1px solid #e5eaf0;
       }
 
+      .site-row {
+        padding-top: 10px;
+        border-top: 1px solid #e5eaf0;
+      }
+
       .shortcut-copy {
         display: grid;
         min-width: 0;
@@ -336,13 +341,13 @@
       <section class="page">
         <div class="eyebrow">Settings</div>
         <h1>Keep dictation ready and under your control.</h1>
-        <p>Dictozy stores its enabled state, language formatting, backend URL, and recording limit locally in Chrome. The xAI API key stays entirely on the backend.</p>
+        <p>Keep Dictozy available everywhere or disable it for one exact website origin. Site preferences stay in Chrome and never travel with your audio.</p>
         <div class="sample-fields">
           <div class="sample-field">Name</div>
           <div class="sample-field">Write a short message...</div>
           <div class="sample-field">Search</div>
         </div>
-        <div class="callout">The backend check verifies connectivity without recording or uploading audio.</div>
+        <div class="callout">Only origins you explicitly disable are stored. Paths on the same website share one preference.</div>
         <aside class="popup" aria-label="Dictozy popup preview">
           <header class="brand">
             <span class="brand-mark" aria-hidden="true">
@@ -357,8 +362,16 @@
           <section class="settings-panel">
             <div class="toggle-row">
               <span class="toggle-copy">
-                <span class="toggle-title">Dictation</span>
-                <span class="toggle-description">Show the microphone on supported fields.</span>
+                <span class="toggle-title">Dictozy</span>
+                <span class="toggle-description">Master control for all supported sites.</span>
+              </span>
+              <span class="switch" aria-hidden="true"></span>
+            </div>
+
+            <div class="toggle-row site-row">
+              <span class="toggle-copy">
+                <span class="toggle-title">Enable on this site</span>
+                <span class="toggle-description">example.com - Stored only when disabled.</span>
               </span>
               <span class="switch" aria-hidden="true"></span>
             </div>
@@ -398,7 +411,7 @@
             </div>
           </section>
 
-          <details class="advanced" open>
+          <details class="advanced">
             <summary>Advanced Backend</summary>
             <div class="advanced-fields">
               <div class="field-label">
@@ -406,10 +419,11 @@
                 <div class="input">https://voice-dictation-extension.onrender.com/api/transcribe</div>
               </div>
               <div class="secondary-button">Check Backend</div>
+              <div class="secondary-button">Reset Site Preferences</div>
             </div>
           </details>
 
-          <p class="status">Backend is reachable.</p>
+          <p class="status">Ready.</p>
         </aside>
       </section>
     </main>

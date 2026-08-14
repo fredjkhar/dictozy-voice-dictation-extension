@@ -2,6 +2,7 @@
   const TRANSCRIBE_AUDIO_MESSAGE = "VOICE_DICTATION_TRANSCRIBE_AUDIO";
   const CANCEL_TRANSCRIPTION_MESSAGE = "VOICE_DICTATION_CANCEL_TRANSCRIPTION";
   const TOGGLE_DICTATION_MESSAGE = "VOICE_DICTATION_TOGGLE";
+  const GET_SITE_CONTEXT_MESSAGE = "VOICE_DICTATION_GET_SITE_CONTEXT";
   const DEFAULT_EXTENSION_ENABLED = true;
   const BUTTON_EDGE_OFFSET = 8;
   const DEFAULT_RECORDING_DURATION_MS = 10000;
@@ -97,6 +98,11 @@
     createRequestId,
     createRequestLifecycle,
   } = globalThis.DictozyLifecycle;
+  const {
+    DISABLED_ORIGINS_STORAGE_KEY,
+    isOriginDisabled,
+    normalizeOrigin,
+  } = globalThis.DictozySitePreferences;
 
   let activeField = null;
   let activeTextRange = null;
@@ -114,10 +120,17 @@
   let transientStateTimeoutId = null;
   let recordingChunks = [];
   let extensionEnabled = DEFAULT_EXTENSION_ENABLED;
+  let siteEnabled = false;
+  let settingsLoaded = false;
   let recordingCanceled = false;
   let currentMicButtonState = "idle";
   let transcriptionTargetField = null;
   const requestLifecycle = createRequestLifecycle();
+  const currentOrigin = normalizeOrigin(window.location.origin);
+
+  function isDictationEnabled() {
+    return settingsLoaded && extensionEnabled && siteEnabled;
+  }
 
   function getEditableFieldFromEvent(event) {
     const path = typeof event.composedPath === "function" ? event.composedPath() : [];
@@ -258,7 +271,7 @@
     button.classList.toggle("voice-dictation-mic-button--transcribing", state === "transcribing");
     button.classList.toggle("voice-dictation-mic-button--success", state === "success");
     button.classList.toggle("voice-dictation-mic-button--error", state === "error");
-    button.disabled = state === "requesting" || state === "processing" || !extensionEnabled;
+    button.disabled = state === "requesting" || state === "processing" || !isDictationEnabled();
     setMicButtonVisual(button, state);
 
     if (message || visual.status) {
@@ -338,7 +351,7 @@
       statusBubble?.contains(target)
     ));
 
-    if (!extensionEnabled || onlyDictozyMutations) {
+    if (!isDictationEnabled() || onlyDictozyMutations) {
       return;
     }
 
@@ -358,7 +371,7 @@
   }
 
   function updateMicButton() {
-    if (!extensionEnabled) {
+    if (!isDictationEnabled()) {
       hideMicButton();
       return;
     }
@@ -403,7 +416,7 @@
       return;
     }
 
-    if (!extensionEnabled) {
+    if (!isDictationEnabled()) {
       clearActiveField();
       hideMicButton();
       return;
@@ -649,7 +662,7 @@
     sendCancellationToBackground(operation.requestId);
     setMicButtonState("idle");
 
-    if (announce && extensionEnabled) {
+    if (announce && isDictationEnabled()) {
       flashMicButtonState("idle", "Transcription cancelled");
     }
   }
@@ -660,7 +673,7 @@
   }
 
   async function handleDictationToggle() {
-    if (!extensionEnabled) {
+    if (!isDictationEnabled()) {
       return {
         action: "ignored",
         ok: false,
@@ -740,7 +753,7 @@
   }
 
   async function startRecording() {
-    if (!extensionEnabled) {
+    if (!isDictationEnabled()) {
       hideMicButton();
       return;
     }
@@ -771,13 +784,13 @@
     try {
       const recordingDurationMs = await getRecordingDurationMs();
 
-      if (!extensionEnabled || attempt !== recordingAttempt) {
+      if (!isDictationEnabled() || attempt !== recordingAttempt) {
         return;
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      if (!extensionEnabled || attempt !== recordingAttempt) {
+      if (!isDictationEnabled() || attempt !== recordingAttempt) {
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
@@ -809,7 +822,7 @@
     } catch (_error) {
       clearRecordingResources();
 
-      if (extensionEnabled && attempt === recordingAttempt) {
+      if (isDictationEnabled() && attempt === recordingAttempt) {
         recordingTargetField = null;
         showErrorState("Microphone access failed. Check Chrome microphone access and try again.");
       }
@@ -952,7 +965,7 @@
     let recordingBlob = null;
 
     try {
-      if (recordingCanceled || !extensionEnabled) {
+      if (recordingCanceled || !isDictationEnabled()) {
         clearRecordingResources();
         updateMicButton();
         return;
@@ -1004,7 +1017,7 @@
       const expectedField = transcriptionTargetField;
       transcriptionTargetField = null;
 
-      if (!extensionEnabled) {
+      if (!isDictationEnabled()) {
         updateMicButton();
         return;
       }
@@ -1040,6 +1053,12 @@
       }
 
       transcriptionTargetField = null;
+
+      if (!isDictationEnabled()) {
+        updateMicButton();
+        return;
+      }
+
       showErrorState("Transcription failed.", operation?.requestId || "");
     }
   }
@@ -1047,15 +1066,23 @@
   async function loadExtensionState() {
     try {
       const settings = await chrome.storage.local.get({
+        [DISABLED_ORIGINS_STORAGE_KEY]: [],
         extensionEnabled: DEFAULT_EXTENSION_ENABLED,
       });
 
       extensionEnabled = settings.extensionEnabled !== false;
+      siteEnabled = Boolean(currentOrigin) && !isOriginDisabled(
+        settings[DISABLED_ORIGINS_STORAGE_KEY],
+        currentOrigin,
+      );
     } catch (_error) {
       extensionEnabled = DEFAULT_EXTENSION_ENABLED;
+      siteEnabled = Boolean(currentOrigin);
     }
 
-    if (!extensionEnabled) {
+    settingsLoaded = true;
+
+    if (!isDictationEnabled()) {
       clearActiveField();
       hideMicButton({ forceStatus: true });
       return;
@@ -1065,13 +1092,33 @@
   }
 
   function handleStorageChanges(changes, areaName) {
-    if (areaName !== "local" || !changes.extensionEnabled) {
+    if (
+      areaName !== "local" ||
+      (!changes.extensionEnabled && !changes[DISABLED_ORIGINS_STORAGE_KEY])
+    ) {
       return;
     }
 
-    extensionEnabled = changes.extensionEnabled.newValue !== false;
+    const wasEnabled = isDictationEnabled();
 
-    if (!extensionEnabled) {
+    if (changes.extensionEnabled) {
+      extensionEnabled = changes.extensionEnabled.newValue !== false;
+    }
+
+    if (changes[DISABLED_ORIGINS_STORAGE_KEY]) {
+      siteEnabled = Boolean(currentOrigin) && !isOriginDisabled(
+        changes[DISABLED_ORIGINS_STORAGE_KEY].newValue,
+        currentOrigin,
+      );
+    }
+
+    const enabled = isDictationEnabled();
+
+    if (enabled === wasEnabled) {
+      return;
+    }
+
+    if (!enabled) {
       clearTransientStateTimeout();
       cancelActiveWork();
       clearActiveField();
@@ -1084,6 +1131,11 @@
   }
 
   function handleRuntimeMessage(message, _sender, sendResponse) {
+    if (message?.type === GET_SITE_CONTEXT_MESSAGE) {
+      sendResponse(currentOrigin ? { ok: true, origin: currentOrigin } : { ok: false });
+      return false;
+    }
+
     if (message?.type !== TOGGLE_DICTATION_MESSAGE) {
       return false;
     }

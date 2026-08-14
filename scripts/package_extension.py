@@ -26,7 +26,7 @@ EXPECTED_CONTENT_MATCHES = {
     "http://localhost/*",
     "https://*/*",
 }
-EXPECTED_CONTENT_SCRIPTS = ["dom-utils.js", "dictation-lifecycle.js", "content.js"]
+EXPECTED_CONTENT_SCRIPTS = ["dom-utils.js", "dictation-lifecycle.js", "site-preferences.js", "content.js"]
 EXPECTED_COMMANDS = {
     "toggle-dictation": {
         "suggested_key": {
@@ -41,6 +41,7 @@ PACKAGE_FILES = (
     "config.js",
     "dom-utils.js",
     "dictation-lifecycle.js",
+    "site-preferences.js",
     "content.js",
     "content.css",
     "background.js",

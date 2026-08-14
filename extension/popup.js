@@ -1,4 +1,5 @@
 const TEST_BACKEND_MESSAGE = "VOICE_DICTATION_TEST_BACKEND";
+const GET_SITE_CONTEXT_MESSAGE = "VOICE_DICTATION_GET_SITE_CONTEXT";
 const TOGGLE_DICTATION_COMMAND = "toggle-dictation";
 const SHORTCUT_SETTINGS_URL = "chrome://extensions/shortcuts";
 const DEFAULT_EXTENSION_ENABLED = true;
@@ -12,16 +13,28 @@ const {
   normalizeTranscriptionLanguage,
   validateBackendUrl,
 } = globalThis.VoiceDictationConfig;
+const {
+  DISABLED_ORIGINS_STORAGE_KEY,
+  normalizeDisabledOrigins,
+  normalizeOrigin,
+  setOriginEnabled,
+} = globalThis.DictozySitePreferences;
 
 const enabledToggle = document.querySelector("#extensionEnabled");
+const siteToggle = document.querySelector("#siteEnabled");
+const siteToggleRow = document.querySelector("#siteToggleRow");
+const siteDescription = document.querySelector("#siteDescription");
+const siteUnavailable = document.querySelector("#siteUnavailable");
 const saveSettingsButton = document.querySelector("#saveSettings");
 const testBackendButton = document.querySelector("#testBackend");
+const resetSitePreferencesButton = document.querySelector("#resetSitePreferences");
 const backendUrlInput = document.querySelector("#backendUrl");
 const recordingDurationInput = document.querySelector("#recordingDurationSeconds");
 const transcriptionLanguageSelect = document.querySelector("#transcriptionLanguage");
 const manageShortcutButton = document.querySelector("#manageShortcut");
 const shortcutValue = document.querySelector("#shortcutValue");
 const statusText = document.querySelector("#status");
+let currentSiteOrigin = null;
 
 function setStatus(message, tone = "neutral") {
   statusText.textContent = message;
@@ -52,6 +65,83 @@ function populateLanguageOptions() {
   }
 
   transcriptionLanguageSelect.replaceChildren(options);
+}
+
+function updateSiteDescription() {
+  if (!currentSiteOrigin) {
+    return;
+  }
+
+  const siteLabel = new URL(currentSiteOrigin).host;
+  if (!enabledToggle.checked) {
+    siteDescription.textContent = `${siteLabel} - Master control is off.`;
+    return;
+  }
+
+  siteDescription.textContent = siteToggle.checked
+    ? `${siteLabel} - Stored only when disabled.`
+    : `${siteLabel} - Disabled locally.`;
+}
+
+function showSiteUnavailable() {
+  currentSiteOrigin = null;
+  siteToggleRow.hidden = true;
+  siteUnavailable.textContent = "Current-site control is unavailable on this page.";
+  siteUnavailable.hidden = false;
+}
+
+async function getCurrentSiteContext() {
+  const tabs = await chrome.tabs.query({
+    active: true,
+    lastFocusedWindow: true,
+  });
+  const tabId = tabs[0]?.id;
+
+  if (!Number.isInteger(tabId)) {
+    return null;
+  }
+
+  const response = await chrome.tabs.sendMessage(tabId, {
+    type: GET_SITE_CONTEXT_MESSAGE,
+  });
+  const origin = response?.ok ? normalizeOrigin(response.origin) : null;
+
+  return origin ? { origin } : null;
+}
+
+async function loadCurrentSite() {
+  try {
+    const context = await getCurrentSiteContext();
+
+    if (!context) {
+      showSiteUnavailable();
+      return;
+    }
+
+    const stored = await chrome.storage.local.get({
+      [DISABLED_ORIGINS_STORAGE_KEY]: [],
+    });
+    const disabledOrigins = normalizeDisabledOrigins(stored[DISABLED_ORIGINS_STORAGE_KEY]);
+
+    currentSiteOrigin = context.origin;
+    siteToggle.checked = !disabledOrigins.includes(currentSiteOrigin);
+    siteToggleRow.hidden = false;
+    siteUnavailable.hidden = true;
+    updateSiteDescription();
+  } catch (_error) {
+    showSiteUnavailable();
+  }
+}
+
+async function storeDisabledOrigins(origins) {
+  if (origins.length === 0) {
+    await chrome.storage.local.remove(DISABLED_ORIGINS_STORAGE_KEY);
+    return;
+  }
+
+  await chrome.storage.local.set({
+    [DISABLED_ORIGINS_STORAGE_KEY]: origins,
+  });
 }
 
 function getExtensionCommands() {
@@ -113,6 +203,7 @@ async function loadSettings() {
   backendUrlInput.value = backendUrl.ok ? backendUrl.url : DEFAULT_BACKEND_URL;
   recordingDurationInput.value = String(normalizeRecordingDurationSeconds(settings.recordingDurationMs / 1000));
   transcriptionLanguageSelect.value = normalizeTranscriptionLanguage(settings.transcriptionLanguage);
+  updateSiteDescription();
   setStatus(enabledToggle.checked ? "Ready." : "Dictozy is off.", enabledToggle.checked ? "success" : "warning");
 }
 
@@ -145,7 +236,64 @@ async function toggleEnabled() {
   await chrome.storage.local.set({
     extensionEnabled: enabledToggle.checked,
   });
+  updateSiteDescription();
   setStatus(enabledToggle.checked ? "Dictozy is on." : "Dictozy is off.", enabledToggle.checked ? "success" : "warning");
+}
+
+async function toggleSiteEnabled() {
+  if (!currentSiteOrigin) {
+    showSiteUnavailable();
+    return;
+  }
+
+  siteToggle.disabled = true;
+
+  try {
+    const stored = await chrome.storage.local.get({
+      [DISABLED_ORIGINS_STORAGE_KEY]: [],
+    });
+    const update = setOriginEnabled(
+      stored[DISABLED_ORIGINS_STORAGE_KEY],
+      currentSiteOrigin,
+      siteToggle.checked,
+    );
+
+    if (update.limitReached) {
+      siteToggle.checked = true;
+      updateSiteDescription();
+      setStatus("Site preference limit reached. Reset saved site preferences and try again.", "error");
+      return;
+    }
+
+    await storeDisabledOrigins(update.origins);
+    updateSiteDescription();
+    setStatus(siteToggle.checked ? "Dictozy is enabled on this site." : "Dictozy is disabled on this site.", siteToggle.checked ? "success" : "warning");
+  } catch (_error) {
+    siteToggle.checked = !siteToggle.checked;
+    updateSiteDescription();
+    setStatus("Could not update this site preference.", "error");
+  } finally {
+    siteToggle.disabled = false;
+  }
+}
+
+async function resetSitePreferences() {
+  resetSitePreferencesButton.disabled = true;
+
+  try {
+    await chrome.storage.local.remove(DISABLED_ORIGINS_STORAGE_KEY);
+
+    if (currentSiteOrigin) {
+      siteToggle.checked = true;
+      updateSiteDescription();
+    }
+
+    setStatus("Site preferences reset.", "success");
+  } catch (_error) {
+    setStatus("Could not reset site preferences.", "error");
+  } finally {
+    resetSitePreferencesButton.disabled = false;
+  }
 }
 
 async function testBackend() {
@@ -175,9 +323,12 @@ async function testBackend() {
 }
 
 enabledToggle.addEventListener("change", toggleEnabled);
+siteToggle.addEventListener("change", toggleSiteEnabled);
 manageShortcutButton.addEventListener("click", openShortcutSettings);
 saveSettingsButton.addEventListener("click", saveSettings);
 testBackendButton.addEventListener("click", testBackend);
+resetSitePreferencesButton.addEventListener("click", resetSitePreferences);
 populateLanguageOptions();
 loadSettings();
 loadShortcut();
+loadCurrentSite();
