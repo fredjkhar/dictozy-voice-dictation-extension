@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fredjkhar.github.io/dictozy-voice-dictation-extension/sitemap.xml

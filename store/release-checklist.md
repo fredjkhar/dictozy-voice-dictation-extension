@@ -1,6 +1,6 @@
 # Chrome Web Store Release Checklist
 
-This checklist prepares a draft upload. It does not authorize submission or publication. For live-release monitoring after publication, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
+Dictozy `0.1.8` is published. The package sections below preserve its release-readiness record. The Phase 31 discovery update changes Store metadata and the optional landing page only; it does not authorize submission, publication, or a new extension package. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 
 ## Package
 
@@ -43,12 +43,13 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 ## Developer Dashboard Update
 
 - [ ] Open the existing Chrome Web Store item for extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Package tab: upload only the reviewed `dist/dictozy-v0.1.8.zip`.
-- [ ] Store Listing tab: update name, summary, detailed description, category, language, screenshots, promo tile, homepage URL, support URL, and privacy policy URL.
-- [ ] Privacy practices tab: update data-use declarations, permission justifications, remote-code declaration, and Limited Use certifications.
+- [ ] Do not upload a package for the Phase 31 metadata-only update.
+- [ ] Store Listing tab: replace the summary and detailed description with the optimized copy in `listing.md`.
+- [ ] Keep the dictation screenshot first, use the revised captions, and retain the accurate `0.1.8` icon, screenshots, and promo tile.
+- [ ] Keep the repository Homepage URL until the planned landing page returns `200`; then use its verified canonical HTTPS URL.
+- [ ] Privacy practices tab: review data-use declarations, permission justifications, remote-code declaration, and Limited Use certifications for consistency; extension behavior and data handling did not change.
 - [ ] Distribution tab: confirm visibility, regions, and rollout settings.
-- [ ] Use deferred publishing if approval should not publish automatically.
-- [ ] Do not submit for review until the user explicitly approves submission.
+- [ ] Do not submit the metadata update for review until the user explicitly approves submission.
 
 ## Privacy
 
@@ -61,40 +62,32 @@ This checklist prepares a draft upload. It does not authorize submission or publ
 - [ ] Review every selected data category in the Chrome Web Store privacy declaration; remove `Location` if it is selected because Dictozy does not access geolocation or intentionally process location data.
 - [ ] Confirm the privacy policy, dashboard declarations, listing copy, and actual extension behavior agree.
 
-## Production CORS And Final Extension ID
+## Production CORS And Published Extension ID
 
-The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as a new draft item. That ID may differ from the unpacked development extension ID.
+The published extension ID is fixed:
 
-1. Upload the validated ZIP as a draft, but do not submit it for review.
-2. Copy the assigned extension ID from the Developer Dashboard.
-3. In Render, set:
+```text
+folpeencabfejhjokmldikaelonphmma
+```
 
-   ```text
-   BACKEND_CORS_ORIGINS=chrome-extension://FINAL_EXTENSION_ID
-   ```
+In Render, retain:
 
-4. During pre-release testing, both IDs may be listed as comma-separated origins:
+```text
+BACKEND_CORS_ORIGINS=chrome-extension://folpeencabfejhjokmldikaelonphmma
+```
 
-   ```text
-   BACKEND_CORS_ORIGINS=chrome-extension://FINAL_EXTENSION_ID,chrome-extension://UNPACKED_EXTENSION_ID
-   ```
-
-5. Do not include a trailing slash on either origin.
-6. Redeploy Render and confirm `/health` remains healthy.
-7. Confirm the final-ID build can call `/health` and `/api/transcribe`.
-8. Remove the unpacked extension origin after development access is no longer needed.
+Do not include a trailing slash. A temporary unpacked-extension origin may be added for local testing, then removed when testing is complete. Phase 31 does not require a Render or CORS change.
 
 ## Backend Compatibility
 
 - [ ] Confirm no backend code or production configuration change is required for `0.1.8`.
 - [ ] Confirm production `/health` remains healthy.
-- [ ] Run one real transcription from the published `0.1.7` extension before testing the `0.1.8` package.
-- [ ] Load the `0.1.8` package and confirm English, Automatic, and one explicit non-English language still complete successfully.
+- [ ] Run one real transcription from the Store-installed `0.1.8` extension before submitting a listing-only metadata update.
 
 ## Final QA Before Submission
 
 - [ ] Open `https://voice-dictation-extension.onrender.com/health` and confirm the production backend returns `{"status":"ok"}`.
-- [ ] Load the `0.1.8` unpacked extension in real Chrome and confirm there are no errors in `chrome://extensions`.
+- [ ] Confirm the Store-installed `0.1.8` extension has no errors in `chrome://extensions`.
 - [ ] Test a normal text input, textarea, contenteditable field, and editable ARIA textbox.
 - [ ] Confirm a bare non-editable ARIA textbox is ignored.
 - [ ] Confirm camel-case, snake-case, kebab-case, compact, and standard `cc-*` payment fields are ignored while safe near-misses remain supported.
@@ -128,8 +121,7 @@ The Chrome Web Store assigns the final extension ID when the ZIP is uploaded as 
 - [ ] Move focus before a response completes and confirm no transcript is inserted into either the old or new field.
 - [ ] Inspect extension network activity and confirm audio goes only to the configured FastAPI backend.
 - [ ] Confirm the xAI key is absent from the ZIP, repository status, browser storage, and browser network requests.
-- [ ] Keep the Developer Dashboard item in draft until a separate submission phase is explicitly approved.
-- [ ] Do not submit for review or publish until the user explicitly approves the submission step.
+- [ ] Keep the metadata changes in draft until the user explicitly approves submission.
 
 ## After Publication
 

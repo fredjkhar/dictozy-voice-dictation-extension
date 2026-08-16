@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the Chrome Web Store Developer Dashboard for Dictozy `0.1.8`.
+Use this file as the source of truth when updating the existing Chrome Web Store listing for published Dictozy `0.1.8`. Phase 31 changes listing metadata only; it does not require a new extension package or version.
 
 ## Dashboard Product Details
 
@@ -25,124 +25,89 @@ English
 Short description:
 
 ```text
-Dictate short text into web fields with a visible mic button and secure transcription backend.
+Voice typing for Chrome: dictate short text into web fields with a visible mic and secure speech-to-text transcription.
 ```
 
-The short description is 91 characters. Chrome's current guidance says the item summary should be 132 characters or less.
+The short description is 119 characters. Chrome Web Store item summaries must be 132 characters or less.
 
 ## Detailed Description
 
 ```text
-Dictozy lets you speak short text into supported web fields without leaving the page.
+Use your voice to write short messages, notes, searches, and form entries directly in Chrome.
 
-Focus a text field, use the visible microphone button or your assigned browser shortcut, speak, and stop recording. Dictozy sends the recording to its secure backend for speech-to-text transcription, then inserts the returned text into the field you were using.
+Dictozy adds voice dictation to supported text fields. Focus a field, click the visible microphone button or use your assigned browser shortcut, speak, and stop recording. Dictozy sends the clip over HTTPS to its backend for speech-to-text transcription, then inserts the returned text where you were writing.
 
-Why it is useful
+What you can do
 
-- Write short messages, notes, searches, and form entries with your voice.
-- Keep your hands on the current page instead of switching to another dictation tool.
-- Start and stop recording from a clear on-page control.
+- Use voice typing in normal text inputs, textareas, and supported rich-text fields.
+- Start and stop recording from a clear microphone control beside the field.
 - Start, stop, or cancel dictation with a configurable browser shortcut.
 - Cancel a pending transcription and record again after a failure.
-- Insert into more modern controlled forms and rich-text fields while preserving the intended selection.
-- Choose Automatic or an explicit language to guide written formatting for numbers, currencies, and units.
+- Preserve the intended caret or selection in supported modern forms.
+- Choose Automatic or one of 25 explicit language-formatting options.
 - Adjust the recording limit from the extension popup.
-- Turn Dictozy on or off whenever you do not want the page microphone control shown.
-- Disable Dictozy on one website while keeping it available on other supported sites.
+- Turn the extension off globally or disable it only for the current website.
 
 Privacy and control
 
-- Recording starts only after you click the visible microphone button or press the assigned browser shortcut.
+- Recording begins only after you click the microphone button or use the assigned shortcut.
 - You can stop recording immediately.
-- Audio is sent over HTTPS to the Dictozy FastAPI backend for transcription.
+- Audio is sent to the Dictozy backend only for transcription.
 - The backend calls xAI Speech-to-Text; the extension never calls xAI directly.
-- The xAI API key stays on the backend and is never included in the extension.
+- The xAI API key remains on the backend and is never included in the extension.
 - Password, payment, hidden, disabled, readonly, file, checkbox, and radio fields are ignored.
 - Sites are enabled by default. Only exact origins you explicitly disable are stored locally, and those preferences are never sent to the backend.
-- Dictozy does not provide transcript history, advertising, sign-in accounts, payment features, or background recording.
+- The extension does not provide transcript history, advertising, sign-in accounts, payments, or background recording.
 
-Supported fields include normal text inputs, search/email/URL/tel inputs, textareas, contenteditable fields, and ARIA textboxes that are actually editable. Bare non-editable ARIA role elements are ignored. Dictozy is designed for short dictation clips, not long-form recording.
+Supported fields include text, search, email, URL, and telephone inputs; textareas; contenteditable fields; and ARIA textboxes that are actually editable. Bare non-editable ARIA textbox roles are ignored.
 
-Language formatting is a provider formatting hint, not a promise of improved speech recognition. English is selected by default. Automatic leaves provider language and formatting selection unset.
-
-What's new in 0.1.2
-
-- New Dictozy name and icon.
-- Cleaner popup with a production-ready settings layout.
-- Microphone and stop icons for the page recording control.
-- Enabled/disabled toggle in the popup.
-- 10-second default recording limit.
-- Improved supported-field detection and safer stale-field behavior.
-- Updated Chrome Web Store screenshots and promotional tile.
-
-What's new in 0.1.3
-
-- Patch release to ensure the new Dictozy logo is bundled consistently in the extension toolbar, popup, and Chrome extensions page.
-
-What's new in 0.1.4
-
-- Clear retry and transcription-cancel controls.
-- Persistent, more actionable error messages with short support references.
-- Improved handling for clearly silent or missing microphone input.
-- Stronger protection against late responses and focus changes.
-- Expanded automated reliability tests in Chromium.
-
-What's new in 0.1.5
-
-- Configurable browser shortcut for starting and stopping a recording or cancelling pending dictation.
-- The popup shows the current shortcut assignment and links to Chrome's shortcut settings.
-- Shortcut actions use the same supported-field, privacy, cancellation, and stale-focus protections as the visible page control.
-
-What's new in 0.1.6
-
-- New language-formatting setting with Automatic and 25 explicit language options.
-- English remains the default for consistent behavior.
-- Explicit choices guide written formatting for numbers, currencies, and units; Automatic leaves provider language and formatting selection unset.
-
-What's new in 0.1.7
-
-- More reliable insertion in modern controlled inputs and textareas.
-- Improved caret and selection handling in contenteditable fields, with transcripts always inserted as plain text.
-- Safer handling when a page replaces, removes, hides, or disables the original field during transcription.
-- Better support for fields created dynamically after a page loads.
+The product is designed for short dictation clips rather than long-form recording. Language formatting is a provider formatting hint, not a promise of improved recognition. English is selected by default, while Automatic leaves provider language and formatting selection unset.
 
 What's new in 0.1.8
 
-- New current-site toggle with the global Dictozy switch retained as the master control.
-- Exact-origin preferences let you disable Dictozy on one site without affecting others.
-- Only explicitly disabled origins are stored locally; site preferences are never sent to Dictozy's backend.
-- Disabling a site during recording or transcription cancels extension-side work and prevents late insertion.
-- Reset all site preferences without changing unrelated settings.
+- Control the extension globally or for the current website.
+- Disable one exact origin without affecting other sites.
+- Keep disabled-site preferences in local extension storage only.
+- Cancel extension-side work and prevent late insertion when a site is disabled.
+- Reset site preferences without changing unrelated settings.
 ```
 
+Historical release notes are preserved in [changelog.md](changelog.md), not repeated in the sales description.
+
 ## Visual Assets
+
+Recommended order:
+
+1. `assets/screenshot-dictation-1280x800.png`
+   Caption: `Use voice typing directly in supported Chrome text fields.`
+2. `assets/screenshot-settings-1280x800.png`
+   Caption: `Control Dictozy globally or for the current site, then adjust language, shortcut, and recording settings.`
 
 Store icon:
 
 - `extension/icons/icon-128.png`
 
-Screenshots:
-
-- `store/assets/screenshot-dictation-1280x800.png`
-  Caption: Dictate directly into supported text fields.
-- `store/assets/screenshot-settings-1280x800.png`
-  Caption: Control Dictozy globally or for the current site, then adjust language, shortcut, and recording settings.
-
 Small promotional tile:
 
-- `store/assets/promo-small-440x280.png`
+- `assets/promo-small-440x280.png`
 
-Do not upload assets that show unreleased features or development-only controls.
+The current assets accurately represent published `0.1.8`; Phase 31 does not regenerate them.
 
 ## Dashboard Links
 
-Homepage URL:
+Homepage URL before the landing page is deployed:
 
 ```text
 https://github.com/fredjkhar/dictozy-voice-dictation-extension
 ```
 
-If the static landing page in `site/` is published through GitHub Pages later, replace the homepage URL with that public HTTPS page.
+Homepage URL after GitHub Pages is enabled and verified:
+
+```text
+https://fredjkhar.github.io/dictozy-voice-dictation-extension/
+```
+
+Do not use the planned GitHub Pages URL in the Dashboard while it returns `404`.
 
 Support URL:
 
@@ -156,29 +121,37 @@ Privacy policy URL:
 https://github.com/fredjkhar/dictozy-voice-dictation-extension/blob/main/PRIVACY.md
 ```
 
-Use a stable public HTTPS URL for the Privacy Policy field before submission.
-
 ## Single Purpose
 
+```text
 Dictozy lets users dictate short text into supported web fields by recording audio only after an explicit microphone-button click or assigned browser shortcut, sending that audio to a backend speech-to-text service, and inserting the returned transcript into the selected field.
+```
 
 ## Permission Justifications
 
 `storage`:
 
+```text
 Stores the enabled state, backend URL, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables locally in Chrome. No cloud synchronization is used by the extension.
+```
 
 Site access on HTTPS pages:
 
+```text
 Required to detect when the user focuses a supported text field, display the microphone control beside that field, insert the transcript back into that same field, and enforce the user's local exact-origin preference. The extension does not collect browsing history, transmit page URLs, or send existing field contents or surrounding page content.
+```
 
 Localhost page access:
 
+```text
 Supports local manual QA and development with the repository's test page.
+```
 
 Backend host access:
 
-Allows the Manifest V3 service worker to send user-triggered audio to `https://voice-dictation-extension.onrender.com` and to local FastAPI instances during development. The extension never calls an xAI host directly.
+```text
+Allows the Manifest V3 service worker to send user-triggered audio to https://voice-dictation-extension.onrender.com and to local FastAPI instances during development. The extension never calls an xAI host directly.
+```
 
 `activeTab` is intentionally not requested because declarative content scripts already provide the page access required by the feature.
 
@@ -186,11 +159,13 @@ Allows the Manifest V3 service worker to send user-triggered audio to `https://v
 
 Remote code:
 
+```text
 No. All JavaScript executed by the extension is packaged in the extension ZIP. Network responses are treated as data, not executable code.
+```
 
 Data handled:
 
-- User-provided audio recorded after a visible click.
+- User-provided audio recorded after a visible click or assigned shortcut.
 - Returned transcript text.
 - Extension settings stored locally, including the selected language-formatting preference.
 - Exact origins the user explicitly disables, stored only in local extension storage.
@@ -205,41 +180,54 @@ Data not collected or transmitted by the extension:
 - Password or payment-field contents.
 - Advertising identifiers or analytics identifiers.
 
-Dashboard guidance:
+Dashboard selections require manual review rather than copy/paste:
 
 - Do not select a declaration claiming that the extension handles no user data.
-- Declare the dashboard categories that cover user-provided audio, transcripts, personal communications, user-generated content, and form data as presented by the current dashboard.
-- Certify that data is used only for the extension's disclosed single purpose, is not sold, is not used for advertising or lending, and is transferred only as needed to provide transcription.
-- Enter the public HTTPS URL for `PRIVACY.md` in the designated Privacy Policy field.
+- Declare the current Dashboard categories that cover user-provided audio, transcripts, personal communications, user-generated content, and form data.
+- Certify that data is used only for the disclosed single purpose, is not sold, is not used for advertising or lending, and is transferred only as needed to provide transcription.
+- Keep the privacy policy URL and Limited Use certifications current.
 
 ## Reviewer Test Instructions
 
-1. Install the submitted ZIP.
-2. Open an HTTPS webpage containing a normal text input or textarea.
-3. Focus the field and confirm that the microphone icon button appears.
+```text
+1. Install Dictozy from the Chrome Web Store.
+2. Open an HTTPS page containing a normal text input or textarea.
+3. Focus the field and confirm that the microphone icon appears.
 4. Click the microphone icon or press the assigned browser shortcut, then allow microphone access.
-5. Open the popup, confirm the global and current-site toggles are on, then confirm Language formatting defaults to English and save Automatic or one explicit language for an additional test.
-6. Speak a short phrase and click the stop icon, press the shortcut again, or wait for the recording limit.
-7. Confirm that the transcription status completes and text appears in the focused field.
-8. Turn off `Enable on this site`, refocus the field, and confirm the microphone control stays hidden and the shortcut is ignored.
+5. Speak a short phrase and stop recording with the stop icon, the shortcut, or the recording limit.
+6. Confirm the transcription completes and text appears in the focused field.
+7. Open the popup and confirm the global and current-site controls are enabled.
+8. Turn off Enable on this site, refocus the field, and confirm the microphone control stays hidden and the shortcut is ignored.
 9. Re-enable the site and confirm the microphone control returns after refocusing the field.
-10. Expand Advanced, click Check Backend to verify the production backend health endpoint, then use Reset Site Preferences and confirm other settings remain.
+10. Expand Advanced, use Check Backend, then reset site preferences and confirm unrelated settings remain unchanged.
 
-No test account or credentials are required. The production backend must have the submitted extension ID configured in CORS before review.
+No test account or credentials are required.
+```
 
-## Developer Dashboard Update Checklist
+## Phase 31 Dashboard Update
 
-Use the Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
+Use the existing Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
 
-1. Package tab: upload `dist/dictozy-v0.1.8.zip` only after rebuilding it from the reviewed source.
-2. Store Listing tab: update the name, summary, detailed description, category, language, screenshots, promo tile, homepage URL, support URL, and privacy policy URL from this file.
-3. Privacy practices tab: update the single-purpose statement, data-use declarations, permission justifications, remote-code declaration, and privacy policy URL.
-4. Distribution tab: confirm visibility, regions, and any rollout settings before submission.
-5. Submit for review only after the user explicitly approves submission.
-6. Use deferred publishing if approval should not automatically publish the update.
+Fields to change:
 
-Official references:
+1. Store Listing: replace the summary and detailed description with the copy above.
+2. Store Listing: use the revised screenshot captions and keep the dictation screenshot first.
+3. Homepage: keep the repository URL until the landing page is live, then replace it with the verified GitHub Pages URL.
+4. Privacy practices: review the existing selections for consistency; behavior and data handling did not change.
 
-- Chrome Store Listing tab: <https://developer.chrome.com/docs/webstore/cws-dashboard-listing>
-- Chrome Privacy practices tab: <https://developer.chrome.com/docs/webstore/cws-dashboard-privacy>
-- Updating an existing item: <https://developer.chrome.com/docs/webstore/update>
+Fields and assets that remain unchanged:
+
+- Extension name, category, and language.
+- Published `0.1.8` package and permissions.
+- Store icon, both screenshot files, and promotional tile.
+- Support and privacy policy URLs.
+- Distribution settings unless the publisher intentionally changes them.
+
+Do not upload a new package, change the version, or submit the metadata update until the user explicitly approves it.
+
+## Official References
+
+- [Creating a great listing page](https://developer.chrome.com/docs/webstore/best-listing)
+- [Chrome Web Store discovery](https://developer.chrome.com/docs/webstore/discovery)
+- [Listing requirements](https://developer.chrome.com/docs/webstore/program-policies/listing-requirements)
+- [Spam policy FAQ](https://developer.chrome.com/docs/webstore/program-policies/spam-faq)

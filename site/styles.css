@@ -221,6 +221,7 @@ h2 {
 
 .section,
 .screenshot-section,
+.compatibility,
 .install {
   width: min(1120px, calc(100% - 44px));
   margin: 0 auto;
@@ -298,6 +299,39 @@ h2 {
   border-top: 1px solid var(--line);
 }
 
+.compatibility {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: clamp(32px, 6vw, 72px);
+  padding: 94px 0;
+  border-top: 1px solid var(--line);
+}
+
+.compatibility-heading {
+  min-width: 0;
+}
+
+.compatibility-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 36px;
+}
+
+.compatibility h3 {
+  margin: 0 0 16px;
+  color: #102f38;
+  font-size: 20px;
+}
+
+.compatibility ul {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 .checks {
   display: grid;
   gap: 14px;
@@ -362,9 +396,11 @@ h2 {
 }
 
 .footer {
+  flex-wrap: wrap;
   justify-content: center;
   gap: 22px;
   min-height: 74px;
+  padding: 18px 22px;
   border-top: 1px solid var(--line);
   color: #526971;
   font-size: 14px;
@@ -404,8 +440,13 @@ h2 {
   .intro-band,
   .section,
   .screenshot-section,
+  .compatibility,
   .install {
     grid-template-columns: 1fr;
+  }
+
+  .compatibility-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .steps {
@@ -413,7 +454,8 @@ h2 {
   }
 
   .section,
-  .screenshot-section {
+  .screenshot-section,
+  .compatibility {
     padding: 64px 0;
   }
 
@@ -458,7 +500,12 @@ h2 {
 
   .section,
   .screenshot-section,
+  .compatibility,
   .install {
     width: calc(100% - 40px);
+  }
+
+  .compatibility-columns {
+    grid-template-columns: 1fr;
   }
 }

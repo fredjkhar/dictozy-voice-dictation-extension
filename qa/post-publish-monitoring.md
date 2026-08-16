@@ -62,6 +62,19 @@ Verify the public listing after publish:
 - Homepage link points to the current repository or published landing page.
 - The listing is visible in the intended regions and channels.
 
+## Discovery And Landing-Page Check
+
+After a Store metadata or landing-page update:
+
+- Confirm the summary and detailed description match `store/listing.md`.
+- Confirm the core dictation screenshot remains first and both captions are accurate.
+- Confirm the Homepage URL opens successfully and matches the landing page canonical URL.
+- Confirm the landing page, `robots.txt`, sitemap, icons, and social image return `200` without authentication.
+- Confirm visible claims still match the published extension and privacy policy.
+- Record Store visibility, visits, installs, uninstalls, and rating metrics available before the change.
+- Record Search Console indexed status, impressions, clicks, click-through rate, and observed queries after launch.
+- Review the same measurements after two weeks and four weeks without adding extension telemetry.
+
 ## Backend Health And CORS
 
 Check production health:
