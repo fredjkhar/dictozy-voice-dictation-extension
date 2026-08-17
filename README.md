@@ -8,7 +8,7 @@ The project includes both the Chrome Manifest V3 extension and the FastAPI backe
 
 ## Landing Page
 
-A self-contained static product landing page is available at [site/index.html](site/index.html). Preview it locally with `python3 -m http.server 8080 --directory site`. The page is prepared for GitHub Pages but is not live until the manual steps in [site/DEPLOYMENT.md](site/DEPLOYMENT.md) are completed.
+A self-contained static product website is available at [site/index.html](site/index.html). It includes first-party privacy, support, and 404 pages and can be previewed with `python3 -m http.server 8080 --directory site`. Follow [docs/site-deployment.md](docs/site-deployment.md) for the manual GitHub Pages workflow and post-deployment checks.
 
 ## Architecture
 
@@ -47,7 +47,7 @@ Version `0.1.8` is the published privacy-first per-site controls release.
 - Backend Docker deployment files are available.
 - Production endpoint validation and deployment smoke tests are available.
 - Chrome Web Store copy, screenshots, promo tile, icon, and release notes are available under `store/`.
-- Store discovery strategy, optimized listing copy, landing-page SEO guidance, and a manual Search Console checklist are available under `store/`, `site/`, and `qa/`.
+- Store discovery strategy, optimized listing copy, website deployment guidance, and Search Console and website-quality checklists are available under `store/`, `docs/`, and `qa/`.
 - Post-publish monitoring and support triage checklists are available under `qa/`.
 - The `0.1.8` package keeps the current Dictozy icons consistent across the toolbar, popup, and Chrome extensions page.
 
@@ -132,6 +132,7 @@ Run mocked Chromium workflows without contacting the production backend:
 ```bash
 npm ci
 npm run test:browser
+npm run test:site
 ```
 
 Validate and create the Chrome Web Store draft ZIP:
@@ -174,9 +175,9 @@ python scripts/smoke_test.py https://YOUR_BACKEND_HOST
 
 ## Chrome Web Store Materials
 
-Privacy, release, Store listing, and search-discovery materials are available in [PRIVACY.md](PRIVACY.md), [store/](store/), and [site/](site/). The generated ZIP under `dist/` is intentionally ignored by Git and should be rebuilt only for an extension-code release. Phase 31 is a metadata and landing-page update and does not require a new package.
+Privacy, release, Store listing, and search-discovery materials are available in [PRIVACY.md](PRIVACY.md), [store/](store/), [site/](site/), and [qa/](qa/). The generated ZIP under `dist/` is intentionally ignored by Git and should be rebuilt only for an extension-code release. Website-only changes do not require a new extension package.
 
-Use [store/seo-strategy.md](store/seo-strategy.md) for the discovery strategy, [site/DEPLOYMENT.md](site/DEPLOYMENT.md) for the planned GitHub Pages launch, and [qa/seo-launch-checklist.md](qa/seo-launch-checklist.md) for Search Console and post-change measurement.
+Use [store/seo-strategy.md](store/seo-strategy.md) for the discovery strategy, [docs/site-deployment.md](docs/site-deployment.md) for GitHub Pages deployment, [qa/seo-launch-checklist.md](qa/seo-launch-checklist.md) for Search Console measurement, and [qa/site-quality-checklist.md](qa/site-quality-checklist.md) for website QA.
 
 ## Post-Publish Operations
 

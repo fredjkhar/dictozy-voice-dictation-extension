@@ -1,14 +1,14 @@
 # Privacy Policy
 
-Effective date: August 13, 2026
+Effective date: August 16, 2026
 
-Dictozy: Voice Dictation helps you dictate short text into supported web fields. Recording starts only when you click the visible microphone button, and the returned transcript is inserted into the field you selected.
+Dictozy: Voice Dictation helps you dictate short text into supported web fields. Recording starts only when you click the visible microphone button or press the assigned browser shortcut, and the returned transcript is inserted into the field you selected.
 
 ## Data Handled
 
 Dictozy handles the following data only to provide voice dictation:
 
-- Audio recorded after the user clicks the visible microphone button.
+- Audio recorded after the user clicks the visible microphone button or presses the assigned browser shortcut.
 - The transcript returned from the speech-to-text service.
 - The enabled state, backend URL, recording-duration preference, language-formatting preference, and origins the user explicitly disables stored locally with `chrome.storage.local`.
 - Page field information inspected locally to determine whether the focused field is supported. The extension does not transmit the page URL, browsing history, existing field contents, or surrounding page content to the backend.
@@ -52,6 +52,6 @@ The use of information received from Google APIs adheres to the Chrome Web Store
 
 ## Changes And Contact
 
-This policy will be updated if the extension's data handling changes. Questions or privacy requests can be submitted through the project's public issue tracker:
+This policy will be updated if the extension's data handling changes. Questions or privacy requests can be submitted through Dictozy's first-party support page:
 
-https://github.com/fredjkhar/dictozy-voice-dictation-extension/issues
+https://fredjkhar.github.io/dictozy-voice-dictation-extension/support.html

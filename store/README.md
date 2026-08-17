@@ -10,6 +10,6 @@ This folder contains release-readiness material for the Chrome Web Store. It doe
 - `assets/`: final Store screenshots and promotional tile.
 - `source/`: deterministic HTML used to render the final raster assets.
 
-The public privacy policy source is `../PRIVACY.md`. Host it at a stable public HTTPS URL before submission and enter that URL in the Developer Dashboard Privacy practices tab.
+The privacy policy source of truth is `../PRIVACY.md`, with a first-party public rendering at `../site/privacy.html`. Keep the two aligned through `../scripts/validate_site.py` and use the public HTTPS page in the Developer Dashboard only after it returns `200`.
 
-The product landing page lives in `../site/`. It is prepared for GitHub Pages but is not live until the deployment checklist succeeds. Keep the repository as the Chrome Web Store Homepage URL until the landing page returns `200` at its canonical HTTPS URL.
+The public product website lives in `../site/`. Its homepage is live on GitHub Pages; Phase 32 adds first-party privacy and support pages that must be deployed and verified before their Dashboard URLs change. Follow `../docs/site-deployment.md` for the manual workflow. No extension package update is required for website-only changes.

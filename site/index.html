@@ -6,7 +6,7 @@
     <title>Dictozy Voice Dictation for Chrome | Voice Typing</title>
     <meta
       name="description"
-      content="Dictate short messages, notes, searches, and form text in Chrome with Dictozy's visible microphone control and secure speech-to-text backend."
+      content="Dictate short messages, notes, searches, and form text in Chrome with a visible microphone control and secure speech-to-text transcription."
     >
     <link rel="canonical" href="https://fredjkhar.github.io/dictozy-voice-dictation-extension/">
     <meta property="og:type" content="website">
@@ -15,7 +15,7 @@
     <meta property="og:title" content="Dictozy: Voice Dictation for Chrome">
     <meta
       property="og:description"
-      content="Use a visible microphone control to dictate short text into supported Chrome web fields."
+      content="Speak short text into supported Chrome web fields with a visible microphone control."
     >
     <meta property="og:url" content="https://fredjkhar.github.io/dictozy-voice-dictation-extension/">
     <meta
@@ -24,22 +24,22 @@
     >
     <meta property="og:image:width" content="1280">
     <meta property="og:image:height" content="800">
-    <meta property="og:image:alt" content="Dictozy voice dictation controls beside a Chrome text field">
+    <meta property="og:image:alt" content="Dictozy recording controls beside a Chrome text field">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Dictozy: Voice Dictation for Chrome">
     <meta
       name="twitter:description"
-      content="Dictate short text into supported Chrome web fields with a visible microphone control."
+      content="Speak short text into supported Chrome web fields with a visible microphone control."
     >
     <meta
       name="twitter:image"
       content="https://fredjkhar.github.io/dictozy-voice-dictation-extension/assets/screenshot-dictation-1280x800.png"
     >
-    <meta name="theme-color" content="#0f766e">
+    <meta name="theme-color" content="#f4f8f7">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
     <link rel="icon" type="image/png" sizes="128x128" href="assets/icon-128.png">
     <link rel="apple-touch-icon" href="assets/icon-256.png">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=20260817-navigation">
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -62,132 +62,222 @@
     </script>
   </head>
   <body>
-    <header class="site-header" aria-label="Site header">
-      <a class="brand" href="#top" aria-label="Dictozy home">
-        <img src="assets/icon-48.png" alt="" width="48" height="48">
-        <span>Dictozy</span>
-      </a>
-      <nav aria-label="Primary navigation">
-        <a href="#how-it-works">How It Works</a>
-        <a href="#controls">Controls</a>
-        <a href="#privacy">Privacy</a>
-        <a href="#compatibility">Compatibility</a>
-        <a href="#install">Install</a>
-      </nav>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="brand" href="index.html" aria-label="Dictozy home">
+          <img src="assets/icon-48.png" alt="" width="48" height="48">
+          <span>Dictozy</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary navigation">
+          <a href="#how-it-works">How it works</a>
+          <a class="nav-optional" href="#controls">Controls</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="support.html">Support</a>
+        </nav>
+        <a
+          class="header-install"
+          href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma"
+        >Install</a>
+      </div>
     </header>
 
-    <main id="top">
+    <main id="main-content" tabindex="-1">
       <section class="hero" aria-labelledby="hero-title">
-        <img
-          class="hero-image"
-          src="assets/screenshot-dictation-1280x800.png"
-          alt="Dictozy microphone and stop controls beside a supported Chrome text field"
-          width="1280"
-          height="800"
-        >
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <p class="eyebrow">Voice typing in Chrome</p>
-          <h1 id="hero-title">Dictozy: Voice Dictation for Chrome</h1>
+        <div class="hero-component" aria-label="Dictozy recording control preview">
+          <div class="dictation-demo">
+            <label class="dictation-demo__label" for="dictation-preview">Message</label>
+            <div class="dictation-demo__field">
+              <textarea id="dictation-preview" readonly>Meeting moved to Thursday at 10 AM. Please send the updated agenda.</textarea>
+              <button
+                class="voice-dictation-mic-button voice-dictation-mic-button--recording"
+                type="button"
+                disabled
+                aria-label="Stop recording preview"
+                title="Stop recording"
+              >
+                <svg class="voice-dictation-mic-icon voice-dictation-mic-icon--filled" aria-hidden="true" viewBox="0 0 24 24">
+                  <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                </svg>
+              </button>
+              <span class="voice-dictation-status" role="status">Recording</span>
+            </div>
+            <p class="dictation-demo__note">
+              <span aria-hidden="true">&#10003;</span>
+              Recording starts only after your click or assigned shortcut.
+            </p>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <p class="eyebrow">Voice dictation for Chrome</p>
+          <h1 id="hero-title">Speak into the field. Keep writing.</h1>
           <p class="hero-copy">
-            Speak short messages, notes, searches, and form entries directly into supported web fields.
-            Dictozy records only after your click or assigned shortcut, then returns the transcript where you were writing.
+            Dictate short text into supported web fields. Start from the visible microphone or your assigned shortcut,
+            then receive the transcript at your caret.
           </p>
           <div class="hero-actions">
-            <a class="button primary" href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Install from Chrome Web Store</a>
-            <a class="button secondary" href="https://github.com/fredjkhar/dictozy-voice-dictation-extension">View Source</a>
+            <a
+              class="button button--primary"
+              href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma"
+            >Install from Chrome Web Store</a>
+            <a class="button button--secondary" href="#how-it-works">See how it works</a>
           </div>
+          <p class="hero-note">Free to install. No account required.</p>
         </div>
       </section>
 
-      <section class="intro-band" aria-label="Product summary">
+      <section class="assurance-band" aria-label="Product summary">
         <div>
           <strong>Built for short dictation</strong>
           <span>Messages, notes, searches, and form entries.</span>
         </div>
         <div>
-          <strong>Visible recording control</strong>
-          <span>Start only with the page microphone or your assigned browser shortcut.</span>
+          <strong>You control recording</strong>
+          <span>It starts only after your click or assigned shortcut.</span>
         </div>
         <div>
-          <strong>Secure transcription path</strong>
-          <span>Audio goes to the backend over HTTPS; provider keys stay out of the extension.</span>
+          <strong>No account required</strong>
+          <span>Install Dictozy and use its local controls in Chrome.</span>
         </div>
       </section>
 
-      <section class="section" id="how-it-works">
-        <div class="section-copy">
+      <section class="content-section workflow" id="how-it-works" aria-labelledby="workflow-title">
+        <div class="section-heading">
           <p class="eyebrow">How it works</p>
-          <h2>Speech to text without leaving the field.</h2>
+          <h2 id="workflow-title">From your voice to the field in three steps.</h2>
           <p>
-            Focus a supported input, start Dictozy, and speak a short phrase. The extension sends the clip
-            to its FastAPI backend for transcription and inserts the returned plain text at the intended caret or selection.
+            Dictozy is designed around the field you already selected, so there is no separate editor or transcript history to manage.
           </p>
         </div>
-        <div class="steps" aria-label="Dictation steps">
-          <div>
-            <span aria-hidden="true">1</span>
-            <strong>Focus a field</strong>
-            <p>Use a supported input, textarea, contenteditable field, or editable ARIA textbox.</p>
-          </div>
-          <div>
-            <span aria-hidden="true">2</span>
-            <strong>Start speaking</strong>
-            <p>Use the visible microphone button or assigned shortcut and follow Chrome's microphone permission flow.</p>
-          </div>
-          <div>
-            <span aria-hidden="true">3</span>
-            <strong>Receive the text</strong>
-            <p>Stop recording and let Dictozy insert the returned transcript where you were writing.</p>
-          </div>
-        </div>
+        <ol class="steps">
+          <li>
+            <span class="step-number" aria-hidden="true">1</span>
+            <strong>Focus a supported field</strong>
+            <p>Choose a normal input, textarea, supported rich-text field, or editable ARIA textbox.</p>
+          </li>
+          <li>
+            <span class="step-number" aria-hidden="true">2</span>
+            <strong>Start and stop clearly</strong>
+            <p>Use the visible microphone button or your assigned shortcut, then stop whenever you are done.</p>
+          </li>
+          <li>
+            <span class="step-number" aria-hidden="true">3</span>
+            <strong>Continue writing</strong>
+            <p>Dictozy inserts the returned plain text at the intended caret or selection.</p>
+          </li>
+        </ol>
       </section>
 
-      <section class="screenshot-section" id="controls" aria-labelledby="settings-title">
-        <img
-          src="assets/screenshot-settings-1280x800.png"
-          alt="Dictozy popup with global and current-site controls, language formatting, shortcut, and recording limit"
-          width="1280"
-          height="800"
-          loading="lazy"
-        >
-        <div>
+      <section class="product-section" id="controls" aria-labelledby="controls-title">
+        <div class="product-media">
+          <div class="popup-preview" aria-label="Dictozy extension popup preview">
+            <div class="popup-preview__shell">
+              <div class="popup-preview__brand">
+                <span class="popup-preview__mark" aria-hidden="true">
+                  <img src="assets/icon-32.png" alt="" width="32" height="32" loading="lazy" decoding="async">
+                </span>
+                <div>
+                  <strong>Dictozy</strong>
+                  <p>Dictate into supported web fields</p>
+                </div>
+              </div>
+
+              <div class="popup-settings" aria-label="Dictozy settings preview">
+                <label class="popup-toggle-row">
+                  <span class="popup-toggle-copy">
+                    <strong>Dictozy</strong>
+                    <span>Master control for all supported sites.</span>
+                  </span>
+                  <input class="popup-switch" type="checkbox" role="switch" checked disabled aria-label="Dictozy enabled">
+                </label>
+
+                <label class="popup-toggle-row popup-site-row">
+                  <span class="popup-toggle-copy">
+                    <strong>Enable on this site</strong>
+                    <span>example.com - Stored only when disabled.</span>
+                  </span>
+                  <input class="popup-switch" type="checkbox" role="switch" checked disabled aria-label="Current site enabled">
+                </label>
+
+                <div class="popup-shortcut-row">
+                  <span class="popup-shortcut-copy">
+                    <strong>Keyboard shortcut</strong>
+                    <kbd>Command+Shift+Y</kbd>
+                  </span>
+                  <button type="button" disabled aria-label="Keyboard shortcut preview">
+                    <svg aria-hidden="true" viewBox="0 0 24 24">
+                      <rect width="20" height="16" x="2" y="4" rx="2"></rect>
+                      <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"></path>
+                    </svg>
+                  </button>
+                </div>
+
+                <label class="popup-field">
+                  <strong>Language formatting</strong>
+                  <select disabled aria-label="Language formatting preview">
+                    <option selected>English</option>
+                  </select>
+                </label>
+
+                <label class="popup-field">
+                  <strong>Recording limit</strong>
+                  <span>1 to 30 seconds</span>
+                  <input type="number" value="10" disabled aria-label="Recording limit preview">
+                </label>
+
+                <button class="popup-save" type="button" disabled>Save Settings</button>
+              </div>
+
+              <div class="popup-advanced" aria-label="Advanced Backend collapsed">
+                <span aria-hidden="true">&#9656;</span>
+                <strong>Advanced Backend</strong>
+              </div>
+              <p class="popup-status">Ready.</p>
+            </div>
+          </div>
+        </div>
+        <div class="product-copy">
           <p class="eyebrow">Everyday controls</p>
-          <h2 id="settings-title">Choose where and how Dictozy works.</h2>
+          <h2 id="controls-title">Set it once, adjust it when you need to.</h2>
           <p>
-            Keep Dictozy available globally or disable it for one exact website. The popup also lets you
-            choose language formatting, view the assigned shortcut, adjust the recording limit, cancel active work,
-            and reset site preferences without changing unrelated settings.
+            Keep Dictozy available globally or disable it for one exact website. Choose language formatting,
+            review the assigned shortcut, set a short recording limit, and check backend availability from Advanced settings.
           </p>
+          <ul class="plain-list">
+            <li>Per-site choices stay in local Chrome extension storage.</li>
+            <li>Retry and cancel controls keep failed work actionable.</li>
+            <li>Language selection guides written formatting; it does not guarantee recognition accuracy.</li>
+          </ul>
         </div>
       </section>
 
-      <section class="section privacy" id="privacy">
-        <div class="section-copy">
-          <p class="eyebrow">Privacy and security</p>
-          <h2>Clear recording behavior and a narrow data path.</h2>
+      <section class="trust-section" id="privacy" aria-labelledby="privacy-title">
+        <div class="section-heading">
+          <p class="eyebrow">Privacy and control</p>
+          <h2 id="privacy-title">A narrow path from your microphone to your text.</h2>
           <p>
             Audio is sent over HTTPS to Dictozy's backend for transcription. The backend calls xAI Speech-to-Text;
-            the browser extension never calls xAI directly and never contains the provider API key.
+            the extension never calls xAI directly and never contains the provider API key.
           </p>
+          <a class="text-link" href="privacy.html">Read the privacy policy</a>
         </div>
-        <ul class="checks">
-          <li>Recording starts only after the microphone button is clicked or the assigned shortcut is pressed.</li>
-          <li>Password, payment, and other sensitive or unsupported fields are ignored.</li>
-          <li>The extension does not collect browsing history, existing field contents, or surrounding page content.</li>
-          <li>Only exact origins you explicitly disable are stored locally; site preferences are not sent to the backend.</li>
-          <li>The backend application does not intentionally persist raw audio or transcripts.</li>
+        <ul class="trust-list">
+          <li>Recording begins only after the microphone button is clicked or the assigned shortcut is pressed.</li>
+          <li>Password, payment, hidden, disabled, readonly, file, checkbox, and radio fields are ignored.</li>
+          <li>Browsing history, existing field contents, and surrounding page content are not sent to the backend.</li>
+          <li>The extension and backend application do not intentionally persist raw audio or transcripts.</li>
         </ul>
       </section>
 
-      <section class="compatibility" id="compatibility" aria-labelledby="compatibility-title">
-        <div class="compatibility-heading">
+      <section class="content-section compatibility" aria-labelledby="compatibility-title">
+        <div class="section-heading">
           <p class="eyebrow">Compatibility</p>
-          <h2 id="compatibility-title">Made for short, supported Chrome fields.</h2>
+          <h2 id="compatibility-title">Made for short text on supported Chrome pages.</h2>
         </div>
-        <div class="compatibility-columns">
+        <div class="compatibility-grid">
           <div>
-            <h3>Works with</h3>
+            <h3>Where it works</h3>
             <ul>
               <li>Text, search, email, URL, and telephone inputs.</li>
               <li>Textareas and supported contenteditable fields.</li>
@@ -196,33 +286,53 @@
             </ul>
           </div>
           <div>
-            <h3>Designed boundaries</h3>
+            <h3>What to expect</h3>
             <ul>
-              <li>Chrome and HTTPS webpages, plus local development pages.</li>
-              <li>Short dictation clips rather than long-form recording.</li>
+              <li>Chrome on supported HTTPS webpages.</li>
               <li>An internet connection and an available transcription backend.</li>
-              <li>Language formatting hints, not guaranteed recognition improvements.</li>
+              <li>Short dictation clips rather than long-form recording.</li>
+              <li>Some complex editors may not behave like standard fields.</li>
             </ul>
           </div>
         </div>
       </section>
 
-      <section class="install" id="install" aria-labelledby="install-title">
-        <img src="assets/icon-128.png" alt="Dictozy app icon" width="128" height="128" loading="lazy">
+      <section class="support-callout" aria-labelledby="support-title">
+        <div>
+          <p class="eyebrow">Need a hand?</p>
+          <h2 id="support-title">Start with focused, privacy-safe troubleshooting.</h2>
+          <p>Check field support, site controls, microphone permission, your shortcut, and service availability.</p>
+        </div>
+        <a class="button button--secondary" href="support.html">Open support</a>
+      </section>
+
+      <section class="install-section" id="install" aria-labelledby="install-title">
+        <img src="assets/icon-128.png" alt="Dictozy app icon" width="128" height="128" loading="lazy" decoding="async">
         <div>
           <p class="eyebrow">Get started</p>
           <h2 id="install-title">Add voice dictation to Chrome.</h2>
-          <p>Install the published extension, focus a supported field, and start with the visible microphone control.</p>
+          <p>Install the published extension, focus a supported field, and begin with a control you can see.</p>
         </div>
-        <a class="button primary" href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Open Chrome Web Store</a>
+        <a
+          class="button button--light"
+          href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma"
+        >Open Chrome Web Store</a>
       </section>
     </main>
 
-    <footer class="footer">
-      <span>Dictozy: Voice Dictation</span>
-      <a href="https://github.com/fredjkhar/dictozy-voice-dictation-extension/blob/main/PRIVACY.md">Privacy Policy</a>
-      <a href="https://github.com/fredjkhar/dictozy-voice-dictation-extension/issues">Support</a>
-      <a href="https://github.com/fredjkhar/dictozy-voice-dictation-extension">Source Code</a>
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <div class="footer-brand">
+          <img src="assets/icon-32.png" alt="" width="32" height="32" loading="lazy" decoding="async">
+          <span>Dictozy: Voice Dictation</span>
+        </div>
+        <nav aria-label="Footer navigation">
+          <a href="index.html">Home</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="support.html">Support</a>
+          <a href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Chrome Web Store</a>
+        </nav>
+      </div>
     </footer>
   </body>
 </html>

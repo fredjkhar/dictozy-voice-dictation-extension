@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Support And Troubleshooting | Dictozy</title>
+    <meta
+      name="description"
+      content="Troubleshoot Dictozy microphone controls, Chrome permissions, shortcuts, transcription failures, supported fields, and site settings."
+    >
+    <link rel="canonical" href="https://fredjkhar.github.io/dictozy-voice-dictation-extension/support.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Dictozy">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:title" content="Support And Troubleshooting | Dictozy">
+    <meta
+      property="og:description"
+      content="Get privacy-safe help with Dictozy controls, permissions, shortcuts, supported fields, and transcription failures."
+    >
+    <meta property="og:url" content="https://fredjkhar.github.io/dictozy-voice-dictation-extension/support.html">
+    <meta
+      property="og:image"
+      content="https://fredjkhar.github.io/dictozy-voice-dictation-extension/assets/screenshot-settings-1280x800.png"
+    >
+    <meta property="og:image:width" content="1280">
+    <meta property="og:image:height" content="800">
+    <meta property="og:image:alt" content="Dictozy popup settings in Chrome">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Support And Troubleshooting | Dictozy">
+    <meta
+      name="twitter:description"
+      content="Get privacy-safe help with Dictozy controls, permissions, shortcuts, supported fields, and transcription failures."
+    >
+    <meta
+      name="twitter:image"
+      content="https://fredjkhar.github.io/dictozy-voice-dictation-extension/assets/screenshot-settings-1280x800.png"
+    >
+    <meta name="theme-color" content="#f4f8f7">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="assets/icon-128.png">
+    <link rel="apple-touch-icon" href="assets/icon-256.png">
+    <link rel="stylesheet" href="styles.css?v=20260817-navigation">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="brand" href="index.html" aria-label="Dictozy home">
+          <img src="assets/icon-48.png" alt="" width="48" height="48">
+          <span>Dictozy</span>
+        </a>
+        <nav class="primary-nav" aria-label="Primary navigation">
+          <a href="index.html#how-it-works">How it works</a>
+          <a class="nav-optional" href="index.html#controls">Controls</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="support.html" aria-current="page">Support</a>
+        </nav>
+        <a
+          class="header-install"
+          href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma"
+        >Install</a>
+      </div>
+    </header>
+
+    <main id="main-content" tabindex="-1">
+      <header class="page-hero">
+        <div class="page-hero__inner">
+          <p class="eyebrow">Dictozy help</p>
+          <h1>Support and troubleshooting</h1>
+          <p class="page-lead">
+            Start with the checks below when a control, recording, or transcription does not behave as expected.
+            They are ordered from the quickest local checks to service availability.
+          </p>
+        </div>
+      </header>
+
+      <div class="document-layout">
+        <nav class="document-nav" aria-label="Support sections">
+          <strong>On this page</strong>
+          <a href="#quick-checks">Quick checks</a>
+          <a href="#microphone">Microphone</a>
+          <a href="#shortcut">Shortcut</a>
+          <a href="#transcription">Transcription</a>
+          <a href="#fields">Supported fields</a>
+          <a href="#reporting">Report a problem</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+
+        <article class="document-content">
+          <section class="support-section" id="quick-checks" aria-labelledby="quick-checks-title">
+            <h2 id="quick-checks-title">Quick checks</h2>
+            <ol>
+              <li>Open the Dictozy popup and confirm the main Dictozy toggle is on.</li>
+              <li>Confirm <strong>Enable on this site</strong> is on for the current website.</li>
+              <li>Reload the page after installing or updating Dictozy, then focus a supported field again.</li>
+              <li>Check that the field is not sensitive, hidden, disabled, or readonly.</li>
+              <li>Try a short phrase in a normal textarea on an HTTPS page.</li>
+            </ol>
+          </section>
+
+          <section class="support-section" id="microphone" aria-labelledby="microphone-title">
+            <h2 id="microphone-title">Microphone control or signal</h2>
+            <h3>The microphone button does not appear</h3>
+            <p>
+              Confirm the global and current-site toggles are enabled. The button appears only beside a supported, editable field.
+              Chrome's own pages, the Chrome Web Store, browser settings, password fields, payment fields, and other excluded fields
+              intentionally do not receive the control.
+            </p>
+            <h3>Chrome does not allow recording</h3>
+            <p>
+              Select the site information control in Chrome's address bar, review the site's microphone permission, and allow access
+              only if you intend to dictate there. Reload the page after changing permission. Dictozy never starts recording automatically.
+            </p>
+            <h3>No microphone signal is detected</h3>
+            <p>
+              Confirm Chrome is using the intended input, the microphone is not muted, and another application is not preventing access.
+              Speak close enough to the selected microphone, then record a new short phrase. Dictozy does not store the signal check.
+            </p>
+          </section>
+
+          <section class="support-section" id="shortcut" aria-labelledby="shortcut-title">
+            <h2 id="shortcut-title">Keyboard shortcut</h2>
+            <p>
+              If the popup shows <strong>Not assigned</strong>, use its keyboard control to open Chrome's extension-shortcut settings,
+              then assign or remap the Dictozy command. The shortcut starts, stops, or cancels the same dictation lifecycle as the visible control.
+            </p>
+            <p>
+              A shortcut is ignored when Dictozy is disabled globally, disabled for the current site, or the focused field is unsupported.
+            </p>
+          </section>
+
+          <section class="support-section" id="transcription" aria-labelledby="transcription-title">
+            <h2 id="transcription-title">Recording or transcription failure</h2>
+            <h3>Cancel and retry</h3>
+            <p>
+              Use the cancel control while transcription is pending. After a failure, use the retry state to record a fresh clip;
+              Dictozy does not resend the previous audio. Keep the phrase short and wait for the status to finish before moving focus.
+            </p>
+            <h3>Check service availability</h3>
+            <p>
+              Open the popup, expand <strong>Advanced Backend</strong>, and use <strong>Check Backend</strong>. If the check fails,
+              wait briefly and try again. A healthy check means the backend is reachable, but a transcription provider request can still fail.
+            </p>
+            <p>
+              If an error displays a short reference, keep that reference and the approximate time. Do not include the spoken text or page contents.
+            </p>
+          </section>
+
+          <section class="support-section" id="fields" aria-labelledby="fields-title">
+            <h2 id="fields-title">Supported and excluded fields</h2>
+            <p>
+              Dictozy supports text, search, email, URL, and telephone inputs; textareas; supported contenteditable fields;
+              and ARIA textboxes that are actually editable. Some complex rich-text editors may manage selection differently from standard fields.
+            </p>
+            <p>
+              Dictozy intentionally ignores password, payment, hidden, disabled, readonly, file, checkbox, and radio fields,
+              plus bare non-editable ARIA textboxes. It also does not run on restricted Chrome pages.
+            </p>
+          </section>
+
+          <section class="support-section" id="reporting" aria-labelledby="reporting-title">
+            <h2 id="reporting-title">Report a problem safely</h2>
+            <p>
+              Open the published <a href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Dictozy Chrome Web Store listing</a>
+              and use the support option shown there. Chrome may require you to sign in before submitting feedback.
+            </p>
+            <p>Helpful, non-sensitive details include:</p>
+            <ul>
+              <li>Chrome version, operating system, and Dictozy version from <code>chrome://extensions</code>.</li>
+              <li>Whether Dictozy came from the Chrome Web Store or was loaded unpacked.</li>
+              <li>The general kind of field involved and the steps that led to the issue.</li>
+              <li>A safe screenshot of Dictozy's status, an approximate time, and any short error reference.</li>
+            </ul>
+            <p class="notice">
+              Never submit raw audio, transcript text, passwords, payment data, API keys, private page content,
+              existing field contents, or browser storage dumps.
+            </p>
+          </section>
+
+          <section class="faq-section" id="faq" aria-labelledby="faq-title">
+            <p class="eyebrow">Common questions</p>
+            <h2 id="faq-title">Dictozy FAQ</h2>
+            <div class="faq-list">
+              <details>
+                <summary>Where does Dictozy work?</summary>
+                <p>On supported editable fields on Chrome HTTPS pages. Restricted browser pages and excluded field types are intentionally unsupported.</p>
+              </details>
+              <details>
+                <summary>Does recording start automatically?</summary>
+                <p>No. Recording begins only after you click the visible microphone button or press your assigned browser shortcut.</p>
+              </details>
+              <details>
+                <summary>Is audio or transcript history stored?</summary>
+                <p>The extension and backend application do not intentionally persist raw audio or transcripts, and Dictozy does not provide transcript history. Service providers may retain operational data under their policies.</p>
+              </details>
+              <details>
+                <summary>Does Dictozy work offline?</summary>
+                <p>No. It needs an internet connection and an available backend because speech-to-text processing occurs through the backend and its provider.</p>
+              </details>
+              <details>
+                <summary>Why might the microphone button not appear?</summary>
+                <p>Dictozy may be disabled globally or for that site, the page may need reloading, or the focused field or page may be intentionally unsupported.</p>
+              </details>
+              <details>
+                <summary>What does language formatting change?</summary>
+                <p>An explicit language guides provider formatting for items such as numbers, currencies, and units. It is a formatting hint, not a promise of better recognition.</p>
+              </details>
+              <details>
+                <summary>Can Dictozy be disabled on one site?</summary>
+                <p>Yes. Turn off Enable on this site in the popup. Dictozy stores only exact origins you explicitly disable in local Chrome extension storage.</p>
+              </details>
+              <details>
+                <summary>Is an account required?</summary>
+                <p>No. Dictozy does not require a user account.</p>
+              </details>
+            </div>
+          </section>
+        </article>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="site-footer__inner">
+        <div class="footer-brand">
+          <img src="assets/icon-32.png" alt="" width="32" height="32" loading="lazy" decoding="async">
+          <span>Dictozy: Voice Dictation</span>
+        </div>
+        <nav aria-label="Footer navigation">
+          <a href="index.html">Home</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="support.html" aria-current="page">Support</a>
+          <a href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Chrome Web Store</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

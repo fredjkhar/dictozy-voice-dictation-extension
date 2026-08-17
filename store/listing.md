@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the existing Chrome Web Store listing for published Dictozy `0.1.8`. Phase 31 changes listing metadata only; it does not require a new extension package or version.
+Use this file as the source of truth when updating the existing Chrome Web Store listing for published Dictozy `0.1.8`. Phase 32 changes only first-party website destinations after deployment; it does not require a new extension package or version.
 
 ## Dashboard Product Details
 
@@ -95,31 +95,27 @@ The current assets accurately represent published `0.1.8`; Phase 31 does not reg
 
 ## Dashboard Links
 
-Homepage URL before the landing page is deployed:
-
-```text
-https://github.com/fredjkhar/dictozy-voice-dictation-extension
-```
-
-Homepage URL after GitHub Pages is enabled and verified:
+Homepage URL:
 
 ```text
 https://fredjkhar.github.io/dictozy-voice-dictation-extension/
 ```
 
-Do not use the planned GitHub Pages URL in the Dashboard while it returns `404`.
+The Homepage URL is already live. Reconfirm it returns `200` when the Phase 32 privacy and support pages are deployed.
 
 Support URL:
 
 ```text
-https://github.com/fredjkhar/dictozy-voice-dictation-extension/issues
+https://fredjkhar.github.io/dictozy-voice-dictation-extension/support.html
 ```
 
 Privacy policy URL:
 
 ```text
-https://github.com/fredjkhar/dictozy-voice-dictation-extension/blob/main/PRIVACY.md
+https://fredjkhar.github.io/dictozy-voice-dictation-extension/privacy.html
 ```
+
+Use the first-party privacy and support URLs only after the Phase 32 website is deployed and all three public pages return `200`. The URL update does not require a new package; version `0.1.8`, permissions, and extension behavior remain unchanged.
 
 ## Single Purpose
 
@@ -204,7 +200,7 @@ Dashboard selections require manual review rather than copy/paste:
 No test account or credentials are required.
 ```
 
-## Phase 31 Dashboard Update
+## Website URL Dashboard Update
 
 Use the existing Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
 
@@ -212,15 +208,16 @@ Fields to change:
 
 1. Store Listing: replace the summary and detailed description with the copy above.
 2. Store Listing: use the revised screenshot captions and keep the dictation screenshot first.
-3. Homepage: keep the repository URL until the landing page is live, then replace it with the verified GitHub Pages URL.
-4. Privacy practices: review the existing selections for consistency; behavior and data handling did not change.
+3. Homepage: keep the verified GitHub Pages URL.
+4. Privacy policy and Support: use the first-party website URLs only after both new pages are deployed and return `200`.
+5. Privacy practices: review the existing selections for consistency; behavior and data handling did not change.
 
 Fields and assets that remain unchanged:
 
 - Extension name, category, and language.
 - Published `0.1.8` package and permissions.
 - Store icon, both screenshot files, and promotional tile.
-- Support and privacy policy URLs.
+- Published support and privacy policy destinations until the first-party replacements are verified.
 - Distribution settings unless the publisher intentionally changes them.
 
 Do not upload a new package, change the version, or submit the metadata update until the user explicitly approves it.

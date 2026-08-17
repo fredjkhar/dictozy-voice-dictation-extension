@@ -80,3 +80,37 @@ jobs:
 
       - name: Validate store assets
         run: python3 scripts/validate_store_assets.py
+
+  website:
+    name: Website Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install browser test dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Validate public site
+        run: python3 scripts/validate_site.py
+
+      - name: Check site test syntax
+        run: |
+          node --check playwright.site.config.js
+          node --check tests/site/site.spec.js
+
+      - name: Run website browser tests
+        run: npm run test:site
