@@ -63,13 +63,12 @@ Supported fields include text, search, email, URL, and telephone inputs; textare
 
 The product is designed for short dictation clips rather than long-form recording. Language formatting is a provider formatting hint, not a promise of improved recognition. English is selected by default, while Automatic leaves provider language and formatting selection unset.
 
-What's new in 0.1.8
+What's new in 0.1.9
 
-- Control the extension globally or for the current website.
-- Disable one exact origin without affecting other sites.
-- Keep disabled-site preferences in local extension storage only.
-- Cancel extension-side work and prevent late insertion when a site is disabled.
-- Reset site preferences without changing unrelated settings.
+- Keeps insertion anchored to the caret or selection captured when recording starts.
+- Preserves surrounding rich-text formatting while inserting transcript text as plain text.
+- Avoids duplicated spaces around inserted transcripts.
+- Continues to reject late insertion if focus moves or the original field becomes unavailable.
 ```
 
 Historical release notes are preserved in [changelog.md](changelog.md), not repeated in the sales description.

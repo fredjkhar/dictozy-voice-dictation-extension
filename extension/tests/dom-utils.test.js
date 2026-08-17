@@ -224,6 +224,33 @@ test("inserts text into form fields and dispatches input events", () => {
   assert.equal(input.dispatchedEvents[1].data, " world");
 });
 
+test("uses a captured form selection even if the live caret moves", () => {
+  const dom = loadDomUtils();
+  const input = new FakeInput("text");
+  input.value = "AlphaBeta";
+  input.selectionStart = 5;
+  input.selectionEnd = 5;
+  const capturedSelection = dom.captureFormFieldSelection(input);
+
+  input.selectionStart = input.value.length;
+  input.selectionEnd = input.value.length;
+
+  assert.equal(dom.insertIntoFormField(input, "middle", capturedSelection), true);
+  assert.equal(input.value, "Alpha middle Beta");
+  assert.equal(input.selectionStart, 13);
+  assert.equal(input.selectionEnd, 13);
+});
+
+test("normalizes transcript boundary whitespace without changing punctuation", () => {
+  const dom = loadDomUtils();
+
+  assert.equal(dom.prepareInsertionText("  dictated  ", "Hello ", " world"), "dictated");
+  assert.equal(dom.prepareInsertionText("dictated", "Hello", "world"), " dictated ");
+  assert.equal(dom.prepareInsertionText(",", "Hello", " world"), ",");
+  assert.equal(dom.prepareInsertionText("inside", "(", ")"), "inside");
+  assert.equal(dom.prepareInsertionText("   ", "Hello", "world"), "");
+});
+
 test("uses the native field setter and dispatches each editing event once", () => {
   const dom = loadDomUtils();
   const input = new FakeInput("text");

@@ -87,10 +87,12 @@
     },
   });
   const {
+    captureFormFieldSelection,
     dispatchInputEvents,
     getEditableField,
     insertIntoFormField,
     isSupportedField,
+    prepareInsertionText,
   } = globalThis.DictozyDom;
   const {
     addRequestReference,
@@ -117,6 +119,7 @@
   let recordingTimeoutId = null;
   let recordingAttempt = 0;
   let recordingTargetField = null;
+  let recordingTargetSelection = null;
   let transientStateTimeoutId = null;
   let recordingChunks = [];
   let extensionEnabled = DEFAULT_EXTENSION_ENABLED;
@@ -125,6 +128,7 @@
   let recordingCanceled = false;
   let currentMicButtonState = "idle";
   let transcriptionTargetField = null;
+  let transcriptionTargetSelection = null;
   const requestLifecycle = createRequestLifecycle();
   const currentOrigin = normalizeOrigin(window.location.origin);
 
@@ -467,9 +471,19 @@
     }
   }
 
-  function getRichTextInsertionRange(element) {
-    if (activeTextRange && element.contains(activeTextRange.commonAncestorContainer)) {
-      return activeTextRange.cloneRange();
+  function isRangeInsideField(element, range) {
+    return Boolean(
+      range &&
+      element.contains(range.startContainer) &&
+      element.contains(range.endContainer)
+    );
+  }
+
+  function getRichTextInsertionRange(element, capturedSelection = null) {
+    if (capturedSelection?.kind === "rich-text") {
+      return isRangeInsideField(element, capturedSelection.range)
+        ? capturedSelection.range.cloneRange()
+        : null;
     }
 
     const selection = window.getSelection();
@@ -477,15 +491,31 @@
     if (selection?.rangeCount) {
       const range = selection.getRangeAt(0);
 
-      if (element.contains(range.commonAncestorContainer)) {
+      if (isRangeInsideField(element, range)) {
         return range.cloneRange();
       }
+    }
+
+    if (isRangeInsideField(element, activeTextRange)) {
+      return activeTextRange.cloneRange();
     }
 
     const range = document.createRange();
     range.selectNodeContents(element);
     range.collapse(false);
     return range;
+  }
+
+  function captureFieldSelection(element) {
+    if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+      return Object.freeze({
+        kind: "form",
+        ...captureFormFieldSelection(element),
+      });
+    }
+
+    const range = getRichTextInsertionRange(element);
+    return range ? Object.freeze({ kind: "rich-text", range }) : null;
   }
 
   function getTextBeforeRange(element, range) {
@@ -500,21 +530,43 @@
     }
   }
 
-  function insertIntoRichTextField(element, text) {
-    element.focus();
+  function getTextAfterRange(element, range) {
+    const followingRange = range.cloneRange();
+    followingRange.selectNodeContents(element);
 
+    try {
+      followingRange.setStart(range.endContainer, range.endOffset);
+      return followingRange.toString();
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function insertIntoRichTextField(element, text, capturedSelection = null) {
+    const insertionRange = getRichTextInsertionRange(element, capturedSelection);
+
+    if (!insertionRange) {
+      return false;
+    }
+
+    element.focus();
     const selection = window.getSelection();
     if (!selection) {
       return false;
     }
 
     selection.removeAllRanges();
-    selection.addRange(getRichTextInsertionRange(element));
+    selection.addRange(insertionRange);
 
     const range = selection.getRangeAt(0);
     const textBeforeRange = getTextBeforeRange(element, range);
-    const prefix = range.collapsed && textBeforeRange && !/\s$/.test(textBeforeRange) ? " " : "";
-    const insertedText = `${prefix}${text}`;
+    const textAfterRange = getTextAfterRange(element, range);
+    const insertedText = prepareInsertionText(text, textBeforeRange, textAfterRange);
+
+    if (!insertedText) {
+      return false;
+    }
+
     const beforeInputEvent = new InputEvent("beforeinput", {
       bubbles: true,
       cancelable: true,
@@ -555,7 +607,7 @@
     return null;
   }
 
-  function insertTranscript(text, expectedField) {
+  function insertTranscript(text, expectedField, capturedSelection = null) {
     const field = getTranscriptTargetField(expectedField);
 
     if (!field) {
@@ -570,8 +622,12 @@
 
     try {
       const inserted = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement
-        ? insertIntoFormField(field, text)
-        : insertIntoRichTextField(field, text);
+        ? insertIntoFormField(field, text, capturedSelection?.kind === "form" ? capturedSelection : null)
+        : insertIntoRichTextField(
+          field,
+          text,
+          capturedSelection?.kind === "rich-text" ? capturedSelection : null,
+        );
 
       if (!inserted) {
         return {
@@ -616,6 +672,7 @@
     recordingAttempt += 1;
     recordingCanceled = true;
     recordingTargetField = null;
+    recordingTargetSelection = null;
 
     if (recordingTimeoutId) {
       window.clearTimeout(recordingTimeoutId);
@@ -654,6 +711,7 @@
   function cancelTranscription({ announce = true } = {}) {
     const operation = requestLifecycle.cancel();
     transcriptionTargetField = null;
+    transcriptionTargetSelection = null;
 
     if (!operation) {
       return;
@@ -777,7 +835,9 @@
     field.focus();
     recordingCanceled = false;
     recordingTargetField = field;
+    recordingTargetSelection = captureFieldSelection(field);
     transcriptionTargetField = null;
+    transcriptionTargetSelection = null;
     setMicButtonState("idle");
     setMicButtonState("requesting", "Requesting microphone access");
 
@@ -824,6 +884,7 @@
 
       if (isDictationEnabled() && attempt === recordingAttempt) {
         recordingTargetField = null;
+        recordingTargetSelection = null;
         showErrorState("Microphone access failed. Check Chrome microphone access and try again.");
       }
     }
@@ -842,6 +903,8 @@
       mediaRecorder.stop();
     } catch (_error) {
       clearRecordingResources();
+      recordingTargetField = null;
+      recordingTargetSelection = null;
       showErrorState("Could not stop recording. Try again.");
     }
   }
@@ -974,8 +1037,10 @@
       const signalResult = recordingSignalMonitor?.getResult() || "unknown";
       const mimeType = mediaRecorder?.mimeType || "audio/webm";
       const targetField = getTranscriptTargetField(recordingTargetField);
+      const targetSelection = recordingTargetSelection;
       recordingBlob = new Blob(recordingChunks, { type: mimeType });
       recordingTargetField = null;
+      recordingTargetSelection = null;
 
       clearRecordingResources();
 
@@ -1003,6 +1068,7 @@
       }
 
       transcriptionTargetField = targetField;
+      transcriptionTargetSelection = targetSelection;
       operation = requestLifecycle.begin(createRequestId());
       setMicButtonState("transcribing", "Transcribing");
 
@@ -1015,7 +1081,9 @@
 
       requestLifecycle.complete(operation);
       const expectedField = transcriptionTargetField;
+      const expectedSelection = transcriptionTargetSelection;
       transcriptionTargetField = null;
+      transcriptionTargetSelection = null;
 
       if (!isDictationEnabled()) {
         updateMicButton();
@@ -1032,7 +1100,7 @@
         return;
       }
 
-      const insertion = insertTranscript(result.transcript, expectedField);
+      const insertion = insertTranscript(result.transcript, expectedField, expectedSelection);
       if (!insertion.ok) {
         showFieldFailureState(insertion.message, result.requestId || operation.requestId);
         return;
@@ -1043,6 +1111,8 @@
     } catch (_error) {
       clearRecordingResources();
       recordingBlob = null;
+      recordingTargetField = null;
+      recordingTargetSelection = null;
 
       if (operation && !requestLifecycle.isCurrent(operation)) {
         return;
@@ -1053,6 +1123,7 @@
       }
 
       transcriptionTargetField = null;
+      transcriptionTargetSelection = null;
 
       if (!isDictationEnabled()) {
         updateMicButton();

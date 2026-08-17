@@ -2,6 +2,13 @@
 
 These notes preserve the release history without placing every prior version in the Chrome Web Store sales description.
 
+## 0.1.9
+
+- Kept transcript insertion anchored to the caret or selection captured when recording starts.
+- Preserved surrounding rich-text markup while inserting transcript text as plain text.
+- Normalized spacing at transcript boundaries without changing punctuation.
+- Retained safe failure behavior when focus moves or the original field becomes unavailable.
+
 ## 0.1.8
 
 - Added a current-site toggle while retaining the global master control.

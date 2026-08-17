@@ -16,6 +16,8 @@
   ]);
   const COMPACT_PAYMENT_PATTERN = /^(?:card(?:holder|name|number|type|expiry|expiration|csc|cvc|cvv)|cc(?:name|number|type|exp|expiry|csc|cvc|cvv)|creditcard|paymentcard|ibannumber)/;
   const EDITABLE_FIELD_SELECTOR = '[contenteditable]:not([contenteditable="false"])';
+  const NO_SPACE_BEFORE_PATTERN = /^[,.;:!?%')\]}]/;
+  const NO_SPACE_AFTER_PATTERN = /[(\[{]$/;
 
   function getEditableField(target) {
     if (!(target instanceof Element)) {
@@ -167,6 +169,48 @@
     }
   }
 
+  function captureFormFieldSelection(element) {
+    const selection = getFormFieldSelection(element);
+    return Object.freeze({
+      end: selection.end,
+      start: selection.start,
+    });
+  }
+
+  function normalizeFormFieldSelection(element, selection) {
+    if (!selection || !Number.isFinite(selection.start) || !Number.isFinite(selection.end)) {
+      return getFormFieldSelection(element);
+    }
+
+    const length = element.value.length;
+    const start = Math.min(length, Math.max(0, Math.trunc(selection.start)));
+    const end = Math.min(length, Math.max(start, Math.trunc(selection.end)));
+    return { end, start };
+  }
+
+  function prepareInsertionText(text, before = "", after = "") {
+    const normalized = typeof text === "string" ? text.trim() : "";
+
+    if (!normalized) {
+      return "";
+    }
+
+    const prefix = (
+      before &&
+      !/\s$/.test(before) &&
+      !NO_SPACE_BEFORE_PATTERN.test(normalized) &&
+      !NO_SPACE_AFTER_PATTERN.test(before)
+    ) ? " " : "";
+    const suffix = (
+      after &&
+      !/^\s/.test(after) &&
+      !NO_SPACE_BEFORE_PATTERN.test(after) &&
+      !NO_SPACE_AFTER_PATTERN.test(normalized)
+    ) ? " " : "";
+
+    return `${prefix}${normalized}${suffix}`;
+  }
+
   function setFormFieldSelection(element, position) {
     try {
       element.setSelectionRange(position, position);
@@ -175,12 +219,16 @@
     }
   }
 
-  function insertIntoFormField(element, text) {
-    const { end, start } = getFormFieldSelection(element);
+  function insertIntoFormField(element, text, capturedSelection = null) {
+    const { end, start } = normalizeFormFieldSelection(element, capturedSelection);
     const before = element.value.slice(0, start);
     const after = element.value.slice(end);
-    const separator = before && !/\s$/.test(before) ? " " : "";
-    const nextText = `${separator}${text}`;
+    const nextText = prepareInsertionText(text, before, after);
+
+    if (!nextText) {
+      return false;
+    }
+
     const nextPosition = start + nextText.length;
 
     const beforeInputEvent = new InputEvent("beforeinput", {
@@ -203,10 +251,12 @@
 
   globalThis.DictozyDom = Object.freeze({
     EDITABLE_FIELD_SELECTOR,
+    captureFormFieldSelection,
     dispatchInputEvents,
     getEditableField,
     hasPaymentSignal,
     insertIntoFormField,
     isSupportedField,
+    prepareInsertionText,
   });
 })();

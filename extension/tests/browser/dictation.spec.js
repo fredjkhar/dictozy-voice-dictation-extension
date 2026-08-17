@@ -623,6 +623,79 @@ test("replaces a contenteditable selection with plain text", async ({ page }) =>
   await expect(editor.locator("strong")).toHaveCount(0);
 });
 
+test("keeps a captured form caret while transcription is pending", async ({ page }) => {
+  await loadContentScript(page);
+  const field = page.locator("#plainTextInput");
+  await field.fill("Alpha Beta");
+  await field.focus();
+  await field.evaluate((input) => input.setSelectionRange(5, 5));
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({}, { defer: true });
+  });
+
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+  const requestId = await page.evaluate(() => window.__dictozyTest.requests[0].requestId);
+  await field.evaluate((input) => input.setSelectionRange(input.value.length, input.value.length));
+  await page.evaluate((id) => {
+    window.__dictozyTest.resolveRequest(id, {
+      ok: true,
+      requestId: id,
+      transcript: "dictated",
+    });
+  }, requestId);
+
+  await expect(field).toHaveValue("Alpha dictated Beta");
+  expect(await field.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([14, 14]);
+  expect(await field.evaluate((input) => document.activeElement === input)).toBe(true);
+});
+
+test("keeps the captured rich-text caret and surrounding markup", async ({ page }) => {
+  await loadContentScript(page);
+  const editor = page.locator("#nestedEditor");
+  await editor.evaluate((element) => {
+    element.innerHTML = "<p>Hello<strong>bold</strong> tail</p>";
+    element.focus();
+    const range = document.createRange();
+    range.setStart(element.querySelector("p").firstChild, 5);
+    range.collapse(true);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    window.__dictozyTest.queueResponse({}, { defer: true });
+  });
+
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+  const requestId = await page.evaluate(() => window.__dictozyTest.requests[0].requestId);
+  await editor.evaluate((element) => {
+    const tail = element.querySelector("p").lastChild;
+    const range = document.createRange();
+    range.setStart(tail, tail.length);
+    range.collapse(true);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  });
+  await page.evaluate((id) => {
+    window.__dictozyTest.resolveRequest(id, {
+      ok: true,
+      requestId: id,
+      transcript: "clear",
+    });
+  }, requestId);
+
+  await expect(editor).toHaveText("Hello clear bold tail");
+  await expect(editor.locator("strong")).toHaveText("bold");
+  expect(await editor.evaluate((element) => {
+    const selection = window.getSelection();
+    const preceding = document.createRange();
+    preceding.selectNodeContents(element);
+    preceding.setEnd(selection.anchorNode, selection.anchorOffset);
+    return preceding.toString();
+  })).toBe("Hello clear ");
+});
+
 test("supports fields created after the content script loads without duplicate controls", async ({ page }) => {
   await loadContentScript(page);
   await page.locator("#addDynamicField").click();

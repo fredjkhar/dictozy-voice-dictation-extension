@@ -1,6 +1,6 @@
 # Chrome Web Store Release Checklist
 
-Dictozy `0.1.8` is published. The package sections below preserve its release-readiness record. The Phase 31 discovery update changes Store metadata and the optional landing page only; it does not authorize submission, publication, or a new extension package. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
+Dictozy `0.1.8` is published. Phase 34 prepares the `0.1.9` insertion-reliability package without authorizing submission or publication. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 
 ## Package
 
@@ -8,7 +8,7 @@ Dictozy `0.1.8` is published. The package sections below preserve its release-re
 - [ ] Run `node --test extension/tests/*.test.js`.
 - [ ] Run `npm ci` and `npm run test:browser`; confirm all mocked Chromium workflows pass without contacting production.
 - [ ] Run `python3 scripts/package_extension.py` from the repository root.
-- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.8.zip` and contains `manifest.json` at its root.
+- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.9.zip` and contains `manifest.json` at its root.
 - [ ] Confirm the immutable published package `dist/dictozy-v0.1.7.zip` still has SHA-256 `a573bd146642b7aacb0b494f2e9644b3c85d260295968ec4fa3680d3795debed`.
 - [ ] Load the generated ZIP contents as an unpacked extension and repeat the manual QA checklist.
 - [ ] Confirm no source maps, environment files, raw audio, test fixtures, or unrelated repository files are included.
@@ -35,21 +35,21 @@ Dictozy `0.1.8` is published. The package sections below preserve its release-re
 - [ ] Review `assets/screenshot-dictation-1280x800.png` and `assets/screenshot-settings-1280x800.png`; regenerate only if the screenshots no longer match the shipped UI.
 - [ ] Confirm screenshots show Dictozy branding, global and current-site controls, microphone/stop icon controls, the language-formatting selector, the 10-second default, and no development-only controls.
 - [ ] Review the required `assets/promo-small-440x280.png` tile at full size.
-- [ ] Confirm the regenerated settings screenshot and unchanged remaining visual assets accurately represent the `0.1.8` popup and recording UI before opening a Web Store draft.
+- [ ] Confirm the unchanged visual assets still accurately represent the `0.1.9` popup and recording UI before opening a Web Store draft.
 - [ ] Add other assets only when they accurately represent the shipped extension.
 - [ ] Do not claim real-time streaming, offline transcription, grammar correction, accounts, or other unimplemented features.
-- [ ] Set Homepage and Support URLs to the public GitHub repository and issue tracker.
+- [ ] Set Homepage and Support URLs to the deployed first-party website pages documented in `listing.md`.
 
 ## Developer Dashboard Update
 
 - [ ] Open the existing Chrome Web Store item for extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Do not upload a package for the Phase 31 metadata-only update.
-- [ ] Store Listing tab: replace the summary and detailed description with the optimized copy in `listing.md`.
-- [ ] Keep the dictation screenshot first, use the revised captions, and retain the accurate `0.1.8` icon, screenshots, and promo tile.
-- [ ] Keep the repository Homepage URL until the planned landing page returns `200`; then use its verified canonical HTTPS URL.
+- [ ] Upload `dist/dictozy-v0.1.9.zip` only after automated and manual QA are complete and the user explicitly approves submission.
+- [ ] Store Listing tab: update only the `0.1.9` release note; keep the existing summary and detailed description.
+- [ ] Keep the dictation screenshot first and retain the accurate icon, screenshots, and promo tile.
+- [ ] Keep the verified first-party Homepage, Support, and Privacy Policy URLs.
 - [ ] Privacy practices tab: review data-use declarations, permission justifications, remote-code declaration, and Limited Use certifications for consistency; extension behavior and data handling did not change.
 - [ ] Distribution tab: confirm visibility, regions, and rollout settings.
-- [ ] Do not submit the metadata update for review until the user explicitly approves submission.
+- [ ] Do not submit the `0.1.9` update for review until the user explicitly approves submission.
 
 ## Privacy
 
@@ -76,18 +76,18 @@ In Render, retain:
 BACKEND_CORS_ORIGINS=chrome-extension://folpeencabfejhjokmldikaelonphmma
 ```
 
-Do not include a trailing slash. A temporary unpacked-extension origin may be added for local testing, then removed when testing is complete. Phase 31 does not require a Render or CORS change.
+Do not include a trailing slash. A temporary unpacked-extension origin may be added for local testing, then removed when testing is complete. Phase 34 does not require a Render or CORS change.
 
 ## Backend Compatibility
 
-- [ ] Confirm no backend code or production configuration change is required for `0.1.8`.
+- [ ] Confirm no backend code or production configuration change is required for `0.1.9`.
 - [ ] Confirm production `/health` remains healthy.
-- [ ] Run one real transcription from the Store-installed `0.1.8` extension before submitting a listing-only metadata update.
+- [ ] Run one real transcription from the unpacked `0.1.9` release candidate before submission.
 
 ## Final QA Before Submission
 
 - [ ] Open `https://voice-dictation-extension.onrender.com/health` and confirm the production backend returns `{"status":"ok"}`.
-- [ ] Confirm the Store-installed `0.1.8` extension has no errors in `chrome://extensions`.
+- [ ] Confirm the unpacked `0.1.9` release candidate has no errors in `chrome://extensions`.
 - [ ] Test a normal text input, textarea, contenteditable field, and editable ARIA textbox.
 - [ ] Confirm a bare non-editable ARIA textbox is ignored.
 - [ ] Confirm camel-case, snake-case, kebab-case, compact, and standard `cc-*` payment fields are ignored while safe near-misses remain supported.
@@ -102,6 +102,8 @@ Do not include a trailing slash. A temporary unpacked-extension origin may be ad
 - [ ] Verify the visible click controls still start, stop, cancel, retry, and insert successfully.
 - [ ] Verify a successful Render transcription inserts text and restores field focus.
 - [ ] Replace selections in a normal input, textarea, and contenteditable field; confirm surrounding text remains and the caret follows the transcript.
+- [ ] Move the caret within the same field while transcription is pending; confirm insertion uses the captured caret or selection.
+- [ ] Insert next to existing whitespace and formatted rich text; confirm spacing is clean and surrounding markup remains intact.
 - [ ] Confirm the controlled input and textarea fixtures retain text and emit one editing-event sequence.
 - [ ] Add a supported field after page load and confirm only one microphone control appears.
 - [ ] Replace, remove, hide, disable, or make readonly the original target during transcription; confirm no late insertion and a safe field-unavailable message.
@@ -127,7 +129,7 @@ Do not include a trailing slash. A temporary unpacked-extension origin may be ad
 
 - [ ] Confirm the public listing is visible and shows the intended name, icon, screenshots, promotional tile, support link, homepage link, and privacy policy link.
 - [ ] Install the Chrome Web Store version and confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Confirm version `0.1.8`.
+- [ ] Confirm version `0.1.9` after the patch release is published.
 - [ ] Run the Store-installed smoke test in [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 - [ ] Confirm Render CORS includes `chrome-extension://folpeencabfejhjokmldikaelonphmma`.
 - [ ] Review Render logs for request IDs, status, latency, `429`, `502`, `503`, and safe logging.

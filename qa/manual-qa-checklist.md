@@ -23,7 +23,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - The unpacked extension loads without errors in `chrome://extensions`.
 - Popup settings persist after closing and reopening the popup.
-- The popup shows `Dictozy` branding and version `0.1.8` in `chrome://extensions`.
+- The popup shows `Dictozy` branding and version `0.1.9` in `chrome://extensions` when testing the unpacked release candidate.
 - The popup displays the current `toggle-dictation` shortcut or `Not assigned`.
 - The popup keyboard icon opens `chrome://extensions/shortcuts`.
 - The suggested shortcut is `Ctrl+Shift+Y`, or `Command+Shift+Y` on macOS, when Chrome can assign it without a conflict.
@@ -81,10 +81,13 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 - A successful transcript is inserted into the focused field.
 - If focus moves away before transcription completes, the transcript is not inserted into an old field.
 - Native inputs and textareas preserve existing text, replace only the selected range, and place the caret after the transcript.
+- Moving the caret within the same input while transcription is pending does not change the captured insertion point.
 - Controlled input and textarea fixtures retain inserted text after their normal event-driven state update.
 - Each insertion dispatches one `beforeinput`, one `input`, and one `change` event; no duplicate events are observed.
 - Focus returns to the intended field after insertion.
 - Contenteditable fields replace an in-field selection or insert at the saved caret, preserve surrounding content, and treat transcript markup as plain text.
+- Contenteditable insertion keeps surrounding elements and formatting intact when the caret is nested inside formatted markup.
+- Leading or trailing transcript whitespace does not create duplicated spaces next to existing text.
 - Nested `contenteditable` fields resolve to one editable host and receive one transcript and one editing-event sequence.
 - A supported field added after page load shows one microphone control and accepts a transcript without a full-page scan.
 - Replacing or detaching the original field during transcription cancels extension-side work, inserts nothing into the replacement, and shows a safe field-unavailable message.
@@ -92,6 +95,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 - Shadow DOM inputs on the local QA page should show the microphone icon button and accept inserted text.
 - Canvas-based editors and custom widgets without a standard writable DOM field are unsupported.
 - Record actual results before claiming named-site compatibility; where practical, test Gmail compose, Outlook Web compose, a controlled form, and a contenteditable chat or note editor.
+- Repeat the core input, textarea, contenteditable, focus-change, and excluded-field smoke tests in current Chrome and Brave builds.
 - xAI API keys never appear in extension files, browser console output, or network calls from the page.
 - Site preferences, origins, URLs, hostnames, page content, and field metadata never appear in backend transcription requests.
 
