@@ -6,7 +6,7 @@ The existing Dictozy homepage is published at:
 https://fredjkhar.github.io/dictozy-voice-dictation-extension/
 ```
 
-The Phase 32 website update adds first-party privacy and support pages but does not deploy them automatically. The Pages workflow remains manual, and Store URLs must not change until all public pages have been deployed and verified.
+The pending website update adds first-party privacy and support pages but does not deploy them automatically. The Pages workflow remains manual, and Store URLs must not change until all public pages have been deployed and verified.
 
 ## Local Preview
 

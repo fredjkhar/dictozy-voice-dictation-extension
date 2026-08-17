@@ -16,6 +16,8 @@ Use this checklist before and after deploying a change to the public Dictozy web
 - [ ] Review the homepage at `320x568`, `390x844`, `768x1024`, `1280x800`, `1440x1000`, and `1920x960`.
 - [ ] Review the privacy, support, and 404 pages at mobile and desktop widths.
 - [ ] Confirm the Dictozy microphone, recording state, and popup preview remain faithful to the published product and render sharply.
+- [ ] Confirm the hero uses the neutral page background behind the dictation preview, with no darker green panel.
+- [ ] Confirm the three-part assurance band uses the same maximum width and horizontal gutters as the main content.
 - [ ] Confirm headings, body text, buttons, product previews, and footer links do not overlap or clip.
 - [ ] Confirm there is no horizontal page overflow.
 - [ ] Confirm the first viewport clearly shows the Dictozy name, voice-dictation offer, real product, Store action, and account reassurance.

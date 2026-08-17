@@ -116,6 +116,64 @@ test("homepage presents the real Dictozy controls as crisp components", async ({
   await expect(page.locator('main img[src*="screenshot-"]')).toHaveCount(0);
 });
 
+test("homepage refinements keep the hero neutral and primary sections aligned", async ({ page }) => {
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 1920, height: 960 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/index.html");
+
+    const layout = await page.evaluate(() => {
+      const bodyStyle = getComputedStyle(document.body);
+      const hero = document.querySelector(".hero");
+      const heroPanel = document.querySelector(".hero-panel");
+      const assuranceElement = document.querySelector(".assurance-band");
+      const assuranceItem = assuranceElement.firstElementChild;
+      const assurance = assuranceElement.getBoundingClientRect();
+      const content = document.querySelector(".content-section").getBoundingClientRect();
+      const assuranceStyle = getComputedStyle(assuranceElement);
+      const assuranceItemStyle = getComputedStyle(assuranceItem);
+      const supportStyle = getComputedStyle(document.querySelector(".support-callout"));
+
+      return {
+        bodyBackground: bodyStyle.backgroundColor,
+        heroBackground: getComputedStyle(hero).backgroundColor,
+        heroPanelBackground: getComputedStyle(heroPanel).backgroundColor,
+        assuranceLeft: assurance.left,
+        assuranceWidth: assurance.width,
+        contentLeft: content.left,
+        contentWidth: content.width,
+        assuranceBorderWidths: [
+          assuranceStyle.borderTopWidth,
+          assuranceStyle.borderRightWidth,
+          assuranceStyle.borderBottomWidth,
+          assuranceStyle.borderLeftWidth,
+        ],
+        assuranceMarginTop: assuranceStyle.marginTop,
+        assuranceAlignment: assuranceItemStyle.alignContent,
+        assurancePaddingLeft: Number.parseFloat(assuranceItemStyle.paddingLeft),
+        assurancePaddingRight: Number.parseFloat(assuranceItemStyle.paddingRight),
+        assurancePaddingTop: assuranceItemStyle.paddingTop,
+        assurancePaddingBottom: assuranceItemStyle.paddingBottom,
+        supportBorderTopWidth: supportStyle.borderTopWidth,
+      };
+    });
+
+    expect(layout.heroBackground).toBe(layout.bodyBackground);
+    expect(layout.heroPanelBackground).toBe(layout.bodyBackground);
+    expect(Math.abs(layout.assuranceLeft - layout.contentLeft)).toBeLessThanOrEqual(1);
+    expect(Math.abs(layout.assuranceWidth - layout.contentWidth)).toBeLessThanOrEqual(1);
+    expect(layout.assuranceBorderWidths).toEqual(["1px", "1px", "1px", "1px"]);
+    expect(layout.assuranceMarginTop).toBe("24px");
+    expect(layout.assuranceAlignment).toBe("start");
+    expect(layout.assurancePaddingLeft).toBeLessThanOrEqual(26);
+    expect(layout.assurancePaddingRight).toBeLessThanOrEqual(26);
+    expect(layout.assurancePaddingTop).toBe(layout.assurancePaddingBottom);
+    expect(layout.supportBorderTopWidth).toBe("1px");
+  }
+});
+
 test("section and page navigation preserves clear destinations and browser history", async ({ page }) => {
   await page.goto("/index.html");
   await page.locator('.primary-nav a[href="#controls"]').click();
@@ -181,7 +239,7 @@ test("skip navigation is first, visible on focus, and moves focus to main conten
   expect(new URL(page.url()).hash).toBe("#main-content");
 });
 
-test("homepage local lab vitals stay within the Phase 32 targets", async ({ page }) => {
+test("homepage local lab vitals stay within the website quality targets", async ({ page }) => {
   await page.addInitScript(() => {
     window.__dictozyVitals = { cls: 0, lcp: 0 };
     new PerformanceObserver((entryList) => {

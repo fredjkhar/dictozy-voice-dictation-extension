@@ -5,7 +5,7 @@ Use this checklist for the Phase 31 landing-page and Chrome Web Store metadata u
 ## Before Deployment
 
 - [ ] Confirm published extension version `0.1.8` is healthy.
-- [ ] Confirm the existing homepage still returns `200` before deploying the Phase 32 website update.
+- [ ] Confirm the existing homepage still returns `200` before deploying the pending website update.
 - [ ] Preview `site/` locally at desktop and mobile widths.
 - [ ] Confirm all icons, screenshots, navigation links, support links, and install links resolve.
 - [ ] Confirm the title, meta description, canonical URL, Open Graph fields, Twitter card fields, and JSON-LD are present.

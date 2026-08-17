@@ -21,7 +21,7 @@ VERIFICATION_FILE = "google477277a037f62b85.html"
 VERIFICATION_CONTENT = b"google-site-verification: google477277a037f62b85.html"
 STORE_URL = "https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma"
 PUBLIC_ROOT = "https://fredjkhar.github.io/dictozy-voice-dictation-extension/"
-STYLESHEET_URL = "styles.css?v=20260817-navigation"
+STYLESHEET_URL = "styles.css?v=20260817-refinement"
 EXPECTED_CANONICALS = {
     "index.html": PUBLIC_ROOT,
     "privacy.html": f"{PUBLIC_ROOT}privacy.html",
@@ -245,6 +245,7 @@ def validate_page_metadata(pages: dict[str, ParsedPage], errors: list[str]) -> N
             ("Twitter title", ("name", "twitter:title")),
             ("Twitter description", ("name", "twitter:description")),
             ("Twitter image", ("name", "twitter:image")),
+            ("Twitter image alt text", ("name", "twitter:image:alt")),
         ):
             if not page.meta(*metadata_key):
                 errors.append(f"{name}: {metadata_name} metadata is missing")
