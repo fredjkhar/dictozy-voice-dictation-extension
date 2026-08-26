@@ -1,12 +1,12 @@
 # Dictozy Website Deployment
 
-The existing Dictozy homepage is published at:
+The production Dictozy website is published at:
 
 ```text
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/
+https://dictozy.com/
 ```
 
-The pending website update adds first-party privacy and support pages but does not deploy them automatically. The Pages workflow remains manual, and Store URLs must not change until all public pages have been deployed and verified.
+The GitHub Pages workflow remains manual. A normal push updates the repository but does not deploy `site/`; run the workflow only after the website change has been reviewed and explicitly approved.
 
 ## Local Preview
 
@@ -20,7 +20,7 @@ Open `http://127.0.0.1:8080/`.
 
 The `site/` folder is the complete public artifact. It contains only intentional website files: HTML pages, the shared stylesheet, icons, social-sharing screenshots, `.nojekyll`, crawler files, and the Search Console verification file. Developer documentation and browser tests remain outside the deployed folder. Visible product previews use HTML and CSS versions of Dictozy's controls so they stay sharp and responsive.
 
-For a standard GitHub Pages project site, crawler rules are requested from the host root at `https://fredjkhar.github.io/robots.txt`, not from the repository subpath. The checked-in `site/robots.txt` becomes authoritative only if the artifact is served at a host root, such as a dedicated custom domain. Submit the project sitemap directly in Search Console regardless.
+Because the artifact is served from the custom-domain root, `site/robots.txt` is authoritative at `https://dictozy.com/robots.txt`. It must reference the production sitemap at `https://dictozy.com/sitemap.xml`.
 
 ## GitHub Pages Workflow
 
@@ -46,12 +46,12 @@ GitHub's official custom-workflow documentation describes `actions/configure-pag
 Confirm these pages return `200` over HTTPS:
 
 ```text
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/privacy.html
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/support.html
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/robots.txt
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/sitemap.xml
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/google477277a037f62b85.html
+https://dictozy.com/
+https://dictozy.com/privacy.html
+https://dictozy.com/support.html
+https://dictozy.com/robots.txt
+https://dictozy.com/sitemap.xml
+https://dictozy.com/google477277a037f62b85.html
 ```
 
 Also verify:
@@ -66,28 +66,48 @@ Also verify:
 
 ## Chrome Web Store URLs
 
-Only after the homepage, privacy page, and support page all return `200`, update the existing Store item to:
+Keep the existing Store item aligned with these verified first-party destinations:
 
 Homepage:
 
 ```text
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/
+https://dictozy.com/
 ```
 
 Privacy policy:
 
 ```text
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/privacy.html
+https://dictozy.com/privacy.html
 ```
 
 Support:
 
 ```text
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/support.html
+https://dictozy.com/support.html
 ```
 
-This website release does not require an extension package update. Version `0.1.8`, extension permissions, and extension behavior remain unchanged.
+This website release does not require an extension package update and must not alter the `0.1.10` Store draft under review.
+
+## Legacy Redirect
+
+The previous project URL is retained here only for a post-deployment redirect check:
+
+```text
+https://fredjkhar.github.io/dictozy-voice-dictation-extension/
+```
+
+It must return a permanent redirect to `https://dictozy.com/`. It must not appear in canonical, social, structured-data, robots, or sitemap declarations.
+
+## Performance And Measurement
+
+The site intentionally has no executable page JavaScript, external font, analytics script, tracking pixel, advertising file, or separate CDN dependency. The single small stylesheet remains render-blocking so visitors do not receive an unstyled first render. Add analytics only as a separate privacy and measurement decision with a real configuration and updated disclosures.
+
+Displayed icons use explicit dimensions and local size variants. The 1280x800 PNG files are social-sharing images rather than visible page UI. Do not add WebP or AVIF variants unless a real rendered image shows a measurable delivery benefit and retains a compatible fallback.
+
+## HSTS Limitation
+
+HSTS is an HTTP response header and cannot be implemented in HTML. The current GitHub Pages deployment does not expose response-header configuration in this repository. Adding HSTS requires a reviewed hosting or CDN change. Audit every subdomain before enabling `includeSubDomains`, and leave `preload` disabled until the domain permanently satisfies preload requirements.
 
 ## Structured-Data Limitation
 
-The homepage includes truthful `SoftwareApplication` metadata and a zero-price offer because the extension is free. Dictozy does not add fabricated ratings or reviews. Rich Results Test warnings about rating or review eligibility must be recorded rather than worked around with unsupported data.
+The homepage includes truthful `SoftwareApplication` metadata and a zero-price offer because the extension is free. Its `softwareVersion` must reflect the version visible on the public Chrome Web Store listing, not a draft under review. At the Phase 36 implementation point, the public version is `0.1.9`; update this field after `0.1.10` is actually published. Dictozy does not add fabricated ratings or reviews. Rich Results Test warnings about rating or review eligibility must be recorded rather than worked around with unsupported data.

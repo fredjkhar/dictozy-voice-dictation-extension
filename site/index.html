@@ -6,9 +6,9 @@
     <title>Dictozy Voice Dictation for Chrome | Voice Typing</title>
     <meta
       name="description"
-      content="Dictate short messages, notes, searches, and form text in Chrome with a visible microphone control and secure speech-to-text transcription."
+      content="Dictozy is a Chrome voice dictation extension for quickly entering messages, notes, searches, and form text into supported web fields with no account required."
     >
-    <link rel="canonical" href="https://fredjkhar.github.io/dictozy-voice-dictation-extension/">
+    <link rel="canonical" href="https://dictozy.com/">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Dictozy">
     <meta property="og:locale" content="en_US">
@@ -17,10 +17,10 @@
       property="og:description"
       content="Speak short text into supported Chrome web fields with a visible microphone control."
     >
-    <meta property="og:url" content="https://fredjkhar.github.io/dictozy-voice-dictation-extension/">
+    <meta property="og:url" content="https://dictozy.com/">
     <meta
       property="og:image"
-      content="https://fredjkhar.github.io/dictozy-voice-dictation-extension/assets/screenshot-dictation-1280x800.png"
+      content="https://dictozy.com/assets/screenshot-dictation-1280x800.png"
     >
     <meta property="og:image:width" content="1280">
     <meta property="og:image:height" content="800">
@@ -33,14 +33,14 @@
     >
     <meta
       name="twitter:image"
-      content="https://fredjkhar.github.io/dictozy-voice-dictation-extension/assets/screenshot-dictation-1280x800.png"
+      content="https://dictozy.com/assets/screenshot-dictation-1280x800.png"
     >
     <meta name="twitter:image:alt" content="Dictozy recording control beside a Chrome text field">
     <meta name="theme-color" content="#f4f8f7">
     <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
     <link rel="icon" type="image/png" sizes="128x128" href="assets/icon-128.png">
     <link rel="apple-touch-icon" href="assets/icon-256.png">
-    <link rel="stylesheet" href="styles.css?v=20260817-refinement">
+    <link rel="stylesheet" href="styles.css?v=20260826-seo">
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -49,10 +49,10 @@
         "description": "Voice dictation for short messages, notes, searches, and form text in supported Chrome web fields.",
         "applicationCategory": "UtilitiesApplication",
         "operatingSystem": "Google Chrome",
-        "softwareVersion": "0.1.10",
-        "url": "https://fredjkhar.github.io/dictozy-voice-dictation-extension/",
+        "softwareVersion": "0.1.9",
+        "url": "https://dictozy.com/",
         "installUrl": "https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma",
-        "image": "https://fredjkhar.github.io/dictozy-voice-dictation-extension/assets/screenshot-dictation-1280x800.png",
+        "image": "https://dictozy.com/assets/screenshot-dictation-1280x800.png",
         "isAccessibleForFree": true,
         "offers": {
           "@type": "Offer",
@@ -274,6 +274,10 @@
         <div class="section-heading">
           <p class="eyebrow">Compatibility</p>
           <h2 id="compatibility-title">Made for short text on supported Chrome pages.</h2>
+          <p>
+            Recognition quality can vary with microphone quality, background noise, pronunciation and speaking clarity,
+            browser or device behavior, and the availability and performance of the transcription service.
+          </p>
         </div>
         <div class="compatibility-grid">
           <div>
@@ -294,6 +298,36 @@
               <li>Some complex editors may not behave like standard fields.</li>
             </ul>
           </div>
+        </div>
+      </section>
+
+      <section class="content-section homepage-faq" id="faq" aria-labelledby="homepage-faq-title">
+        <div class="section-heading">
+          <p class="eyebrow">Common questions</p>
+          <h2 id="homepage-faq-title">A few things to know before you dictate.</h2>
+          <p>For troubleshooting and more detailed answers, visit <a class="text-link" href="support.html">Dictozy support</a>.</p>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>When does Dictozy request microphone access?</summary>
+            <p>Only after you click the visible microphone button or press your assigned shortcut while a supported field is focused.</p>
+          </details>
+          <details>
+            <summary>Which fields can I use?</summary>
+            <p>Dictozy supports common text fields, textareas, and supported editable fields. Password, payment, hidden, disabled, readonly, and other sensitive or unsupported fields are ignored.</p>
+          </details>
+          <details>
+            <summary>What if the keyboard shortcut is already in use?</summary>
+            <p>Open Chrome's extension shortcut settings from the Dictozy popup, then assign another available shortcut.</p>
+          </details>
+          <details>
+            <summary>How are audio and transcripts handled?</summary>
+            <p>User-triggered audio is sent over HTTPS to Dictozy's backend for transcription. The extension and backend application do not intentionally persist raw audio or transcript history. Read the <a href="privacy.html">privacy policy</a> for details.</p>
+          </details>
+          <details>
+            <summary>Do I need an account?</summary>
+            <p>No. Dictozy does not require a user account.</p>
+          </details>
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 # Post-Publish Monitoring
 
-Use this checklist after a Chrome Web Store release is live. It is written for Dictozy `0.1.8` and the published extension ID:
+Use this checklist after a Chrome Web Store release is live. At the Phase 36 website update, Dictozy `0.1.9` is public and `0.1.10` is under review. The published extension ID is:
 
 ```text
 folpeencabfejhjokmldikaelonphmma
@@ -29,7 +29,7 @@ Use the Chrome Web Store-installed extension, not the unpacked development exten
 
 1. Install Dictozy from the Chrome Web Store.
 2. Open `chrome://extensions` and confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm the installed version is `0.1.8` after the per-site controls release is installed.
+3. Confirm the installed version matches the version currently shown on the public Chrome Web Store listing.
 4. Open an HTTPS page with a normal text input or textarea.
 5. Focus a supported field and confirm the visible microphone button appears.
 6. Click the microphone button.
@@ -58,8 +58,9 @@ Verify the public listing after publish:
 - Icon, screenshots, and promotional tile match the released extension.
 - Description does not claim background recording, direct xAI access, transcript history, accounts, payments, realtime streaming, grammar correction, or unsupported browser support.
 - Privacy policy link opens the current `PRIVACY.md`.
-- Support link points to GitHub issues.
-- Homepage link points to the current repository or published landing page.
+- Support link points to `https://dictozy.com/support.html`.
+- Homepage link points to `https://dictozy.com/`.
+- Privacy policy link points to `https://dictozy.com/privacy.html`.
 - The listing is visible in the intended regions and channels.
 
 ## Discovery And Landing-Page Check

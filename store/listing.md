@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.8` is currently published; Phase 35 prepares the `0.1.10` production-hardening package, including the completed `0.1.9` insertion improvements, without authorizing submission.
+Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.9` is currently published, and the `0.1.10` production-hardening package has been submitted for review. Website-only work must not alter that draft.
 
 ## Dashboard Product Details
 
@@ -97,24 +97,24 @@ The dictation screenshot and promotional tile remain accurate. The settings scre
 Homepage URL:
 
 ```text
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/
+https://dictozy.com/
 ```
 
-The Homepage URL is already live. Reconfirm it returns `200` when the Phase 32 privacy and support pages are deployed.
+The Homepage URL is live. Reconfirm it returns `200` after a reviewed website deployment.
 
 Support URL:
 
 ```text
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/support.html
+https://dictozy.com/support.html
 ```
 
 Privacy policy URL:
 
 ```text
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/privacy.html
+https://dictozy.com/privacy.html
 ```
 
-The first-party homepage, privacy, and support URLs are already deployed. Reconfirm all three return `200` before submitting the `0.1.10` package; no URL change is required for this phase.
+The first-party homepage, privacy, and support URLs are already deployed. Reconfirm all three after Phase 36 is deployed; no Dashboard URL change is required.
 
 ## Single Purpose
 
@@ -199,28 +199,27 @@ Dashboard selections require manual review rather than copy/paste:
 No test account or credentials are required.
 ```
 
-## Website URL Dashboard Update
+## Website URL Dashboard Verification
 
 Use the existing Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
 
-Fields to change:
+Phase 36 does not require a Chrome Web Store metadata change. Confirm these existing values without modifying the `0.1.10` draft under review:
 
-1. Store Listing: replace the summary and detailed description with the copy above.
-2. Store Listing: use the revised screenshot captions and keep the dictation screenshot first.
-3. Homepage: keep the verified GitHub Pages URL.
-4. Privacy policy and Support: use the first-party website URLs only after both new pages are deployed and return `200`.
-5. Privacy practices: update the storage and backend-host explanations to remove the obsolete backend URL setting and localhost backend access.
+1. Homepage remains `https://dictozy.com/`.
+2. Privacy policy remains `https://dictozy.com/privacy.html`.
+3. Support remains `https://dictozy.com/support.html`.
+4. The summary, detailed description, screenshot order, and permission explanations remain the reviewed `0.1.10` values.
 
 Fields and assets that remain unchanged:
 
 - Extension name, category, and language.
-- Published `0.1.8` package until the user explicitly approves the `0.1.10` submission.
+- Published `0.1.9` package until the submitted `0.1.10` update is reviewed and published.
 - Store icon, dictation screenshot, and promotional tile.
 - Long description and short description, which remain accurate.
-- Published support and privacy policy destinations until the first-party replacements are verified.
+- Published homepage, support, and privacy policy destinations.
 - Distribution settings unless the publisher intentionally changes them.
 
-Do not upload a new package, change the version, or submit the metadata update until the user explicitly approves it.
+Do not upload a new package, change the version, or alter the submitted draft as part of website-only work.
 
 ## Official References
 

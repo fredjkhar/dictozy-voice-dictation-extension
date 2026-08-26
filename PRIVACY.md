@@ -54,4 +54,4 @@ The use of information received from Google APIs adheres to the Chrome Web Store
 
 This policy will be updated if the extension's data handling changes. Questions or privacy requests can be submitted through Dictozy's first-party support page:
 
-https://fredjkhar.github.io/dictozy-voice-dictation-extension/support.html
+https://dictozy.com/support.html

@@ -26,7 +26,7 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.8` is the published privacy-first per-site controls release. The repository is preparing `0.1.10` as a production-hardening update that also includes the completed `0.1.9` insertion improvements.
+Version `0.1.9` is published. Version `0.1.10` has been submitted as a production-hardening update that simplifies settings and tightens extension and backend boundaries.
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Recording starts only after an explicit microphone-button click or assigned browser shortcut.

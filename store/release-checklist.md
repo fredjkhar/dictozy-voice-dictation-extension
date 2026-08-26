@@ -1,6 +1,6 @@
 # Chrome Web Store Release Checklist
 
-Dictozy `0.1.8` is published. Phase 35 prepares the `0.1.10` production-hardening package, including the completed `0.1.9` insertion improvements, without authorizing submission or publication. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
+Dictozy `0.1.9` is published, and the `0.1.10` production-hardening package has been submitted for review. Phase 36 website work must not alter that Store draft. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 
 ## Package
 

@@ -40,7 +40,7 @@ Use this checklist before and after deploying a change to the public Dictozy web
 - [ ] Confirm support never asks for audio, transcripts, passwords, payment data, API keys, private page content, existing field contents, or browser storage dumps.
 - [ ] Confirm no public page links to source hosting or a public issue tracker.
 - [ ] Confirm no analytics, telemetry, cookies, advertising, tracking pixels, remote scripts, or remote styles were introduced.
-- [ ] Confirm all product, privacy, compatibility, price, and account claims remain accurate for published version `0.1.8`.
+- [ ] Confirm all product, privacy, compatibility, price, and account claims remain accurate for the currently published Store version.
 
 ## Live Deployment Review
 
@@ -51,13 +51,15 @@ Use this checklist before and after deploying a change to the public Dictozy web
 - [ ] Confirm `robots.txt`, `sitemap.xml`, and the Search Console verification file remain reachable.
 - [ ] Run PageSpeed Insights for the homepage, privacy page, and support page; record real mobile and desktop findings.
 - [ ] Review LCP, CLS, and interaction findings. Target LCP at or below 2.5 seconds and CLS at or below 0.1 without weakening usability.
+- [ ] Treat analytics, ads.txt, CDN detection, and modern-image-format recommendations as product or architecture decisions, not automatic failures.
+- [ ] Confirm the live response headers separately; HSTS requires hosting or CDN configuration and must not be represented as an HTML meta tag.
 
 ## Search Console And Store Follow-Up
 
 - [ ] Resubmit the sitemap after the privacy and support URLs are live.
 - [ ] Run URL Inspection for the homepage, privacy page, and support page and request indexing where appropriate.
 - [ ] Change the Store Privacy policy and Support URLs only after all three first-party pages return `200`.
-- [ ] Do not upload an extension package. Version `0.1.8`, permissions, and extension behavior are unchanged.
+- [ ] Do not upload or modify an extension package as part of website-only work.
 - [ ] Record Search Console observations after two weeks.
 - [ ] Record Search Console observations after four weeks.
 - [ ] Use Search Console and Chrome Web Store aggregate reporting only; do not add website or extension analytics.

@@ -64,7 +64,7 @@ For the published production path:
 
 1. Install Dictozy from the Chrome Web Store.
 2. Confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm version `0.1.8` after the per-site controls release is installed.
+3. Confirm version `0.1.9` while the `0.1.10` production-hardening update remains under review.
 4. Run the same supported-field recording and insertion checks.
 5. Confirm the popup displays the assigned shortcut or `Not assigned`, and that the keyboard icon opens Chrome's shortcut settings.
 6. Confirm the assigned shortcut starts and stops one recording and cancels one pending transcription.

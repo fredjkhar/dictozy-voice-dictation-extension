@@ -20,12 +20,23 @@ INDEXABLE_PAGES = ("index.html", "privacy.html", "support.html")
 VERIFICATION_FILE = "google477277a037f62b85.html"
 VERIFICATION_CONTENT = b"google-site-verification: google477277a037f62b85.html"
 STORE_URL = "https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma"
-PUBLIC_ROOT = "https://fredjkhar.github.io/dictozy-voice-dictation-extension/"
-STYLESHEET_URL = "styles.css?v=20260817-refinement"
+PUBLIC_ROOT = "https://dictozy.com/"
+LEGACY_PUBLIC_ROOT = "https://fredjkhar.github.io/dictozy-voice-dictation-extension/"
+STYLESHEET_URL = "styles.css?v=20260826-seo"
+PUBLISHED_EXTENSION_VERSION = "0.1.9"
+HOMEPAGE_DESCRIPTION = (
+    "Dictozy is a Chrome voice dictation extension for quickly entering messages, notes, searches, and form text "
+    "into supported web fields with no account required."
+)
 EXPECTED_CANONICALS = {
     "index.html": PUBLIC_ROOT,
     "privacy.html": f"{PUBLIC_ROOT}privacy.html",
     "support.html": f"{PUBLIC_ROOT}support.html",
+}
+EXPECTED_SOCIAL_IMAGES = {
+    "index.html": f"{PUBLIC_ROOT}assets/screenshot-dictation-1280x800.png",
+    "privacy.html": f"{PUBLIC_ROOT}assets/screenshot-dictation-1280x800.png",
+    "support.html": f"{PUBLIC_ROOT}assets/screenshot-settings-1280x800.png",
 }
 POLICY_SECTIONS = (
     "Data Handled",
@@ -61,12 +72,21 @@ SUPPORT_SAFETY_TERMS = (
 FAQ_QUESTIONS = (
     "Where does Dictozy work?",
     "Does recording start automatically?",
+    "When is microphone permission requested?",
     "Is audio or transcript history stored?",
     "Does Dictozy work offline?",
     "Why might the microphone button not appear?",
+    "What if the keyboard shortcut conflicts with another command?",
     "What does language formatting change?",
     "Can Dictozy be disabled on one site?",
     "Is an account required?",
+)
+HOMEPAGE_FAQ_QUESTIONS = (
+    "When does Dictozy request microphone access?",
+    "Which fields can I use?",
+    "What if the keyboard shortcut is already in use?",
+    "How are audio and transcripts handled?",
+    "Do I need an account?",
 )
 
 
@@ -234,6 +254,10 @@ def validate_page_metadata(pages: dict[str, ParsedPage], errors: list[str]) -> N
             errors.append(f"{name}: canonical must be {EXPECTED_CANONICALS[name]}")
         if page.meta("property", "og:url") != EXPECTED_CANONICALS[name]:
             errors.append(f"{name}: og:url must match the canonical")
+        if page.meta("property", "og:image") != EXPECTED_SOCIAL_IMAGES[name]:
+            errors.append(f"{name}: og:image must use the production domain")
+        if page.meta("name", "twitter:image") != EXPECTED_SOCIAL_IMAGES[name]:
+            errors.append(f"{name}: twitter:image must use the production domain")
         if ("link", STYLESHEET_URL) not in page.resources:
             errors.append(f"{name}: cache-busted stylesheet reference must be {STYLESHEET_URL}")
 
@@ -249,6 +273,12 @@ def validate_page_metadata(pages: dict[str, ParsedPage], errors: list[str]) -> N
         ):
             if not page.meta(*metadata_key):
                 errors.append(f"{name}: {metadata_name} metadata is missing")
+
+    homepage_description = pages["index.html"].meta("name", "description") or ""
+    if homepage_description != HOMEPAGE_DESCRIPTION:
+        errors.append("index.html: homepage description must match the audited production copy")
+    if not 150 <= len(homepage_description) <= 170:
+        errors.append("index.html: homepage description must be 150 to 170 characters")
 
 
 def validate_references(pages: dict[str, ParsedPage], errors: list[str]) -> None:
@@ -297,6 +327,10 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
                 errors.append(f"{name}: forbidden public or tracking destination: {link}")
 
         for image in page.images:
+            if "alt" not in image:
+                errors.append(f"{name}: image is missing an alt attribute: {image.get('src', '')}")
+            if not image.get("width") or not image.get("height"):
+                errors.append(f"{name}: image dimensions are missing: {image.get('src', '')}")
             if image.get("width") == "1" or image.get("height") == "1":
                 errors.append(f"{name}: possible tracking pixel detected")
 
@@ -321,10 +355,20 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
 
     if structured_data.get("@type") != "SoftwareApplication":
         errors.append("index.html: JSON-LD must describe a SoftwareApplication")
-    if structured_data.get("softwareVersion") != "0.1.10":
-        errors.append("index.html: JSON-LD softwareVersion must match 0.1.10")
+    if structured_data.get("softwareVersion") != PUBLISHED_EXTENSION_VERSION:
+        errors.append(
+            f"index.html: JSON-LD softwareVersion must match published version {PUBLISHED_EXTENSION_VERSION}"
+        )
+    if structured_data.get("url") != PUBLIC_ROOT:
+        errors.append("index.html: JSON-LD url must use the production homepage")
+    if structured_data.get("image") != EXPECTED_SOCIAL_IMAGES["index.html"]:
+        errors.append("index.html: JSON-LD image must use the production domain")
     if structured_data.get("installUrl") != STORE_URL:
         errors.append("index.html: JSON-LD installUrl is incorrect")
+    if structured_data.get("applicationCategory") != "UtilitiesApplication":
+        errors.append("index.html: JSON-LD application category is incorrect")
+    if structured_data.get("isAccessibleForFree") is not True:
+        errors.append("index.html: JSON-LD free-access claim is incorrect")
     if "aggregateRating" in structured_data or "review" in structured_data:
         errors.append("index.html: fabricated rating or review data is not allowed")
 
@@ -368,12 +412,26 @@ def validate_policy_and_support(pages: dict[str, ParsedPage], errors: list[str])
             errors.append(f"privacy.html: critical claim changed or missing: {claim}")
 
     support_text = normalize(pages["support.html"].text)
+    homepage_text = normalize(pages["index.html"].text)
     for safety_term in SUPPORT_SAFETY_TERMS:
         if normalize(safety_term) not in support_text:
             errors.append(f"support.html: safety disclosure is missing {safety_term}")
     for question in FAQ_QUESTIONS:
         if normalize(question) not in support_text:
             errors.append(f"support.html: FAQ is missing {question}")
+    for question in HOMEPAGE_FAQ_QUESTIONS:
+        if normalize(question) not in homepage_text:
+            errors.append(f"index.html: homepage FAQ is missing {question}")
+
+    accuracy_terms = (
+        "microphone quality",
+        "background noise",
+        "pronunciation",
+        "browser or device behavior",
+    )
+    for term in accuracy_terms:
+        if normalize(term) not in homepage_text:
+            errors.append(f"index.html: accuracy disclosure is missing {term}")
 
     if STORE_URL not in pages["support.html"].links:
         errors.append("support.html: published Chrome Web Store support destination is missing")
@@ -423,6 +481,17 @@ def validate_artifact(errors: list[str]) -> None:
     for required_file in (".nojekyll", "robots.txt", "sitemap.xml", "styles.css"):
         if not (SITE_DIR / required_file).is_file():
             errors.append(f"missing required public file: site/{required_file}")
+
+    robots_path = SITE_DIR / "robots.txt"
+    if robots_path.is_file():
+        robots_text = robots_path.read_text(encoding="utf-8")
+        if f"Sitemap: {PUBLIC_ROOT}sitemap.xml" not in robots_text:
+            errors.append("robots.txt: sitemap must use the production domain")
+
+    for public_path in SITE_DIR.rglob("*"):
+        if public_path.is_file() and public_path.suffix in {".html", ".txt", ".xml"}:
+            if LEGACY_PUBLIC_ROOT in public_path.read_text(encoding="utf-8"):
+                errors.append(f"{public_path.relative_to(ROOT)}: legacy public website URL remains")
 
     markdown_files = sorted(path.relative_to(ROOT) for path in SITE_DIR.rglob("*.md"))
     if markdown_files:

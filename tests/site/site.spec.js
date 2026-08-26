@@ -4,6 +4,10 @@ const path = require("node:path");
 
 const PUBLIC_PAGES = ["/index.html", "/privacy.html", "/support.html", "/404.html"];
 const STORE_URL = "https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma";
+const PRODUCTION_ROOT = "https://dictozy.com/";
+const LEGACY_ROOT = "https://fredjkhar.github.io/dictozy-voice-dictation-extension/";
+const HOMEPAGE_DESCRIPTION =
+  "Dictozy is a Chrome voice dictation extension for quickly entering messages, notes, searches, and form text into supported web fields with no account required.";
 const REQUIRED_VIEWPORTS = [
   { name: "phone-small", width: 320, height: 568 },
   { name: "phone", width: 390, height: 844 },
@@ -105,6 +109,58 @@ test("public pages contain no source repository destinations", async ({ page }) 
   }
 });
 
+test("indexable metadata and crawler files use the production domain", async ({ page, request }) => {
+  const expectedPages = [
+    {
+      path: "/index.html",
+      canonical: PRODUCTION_ROOT,
+      image: `${PRODUCTION_ROOT}assets/screenshot-dictation-1280x800.png`,
+    },
+    {
+      path: "/privacy.html",
+      canonical: `${PRODUCTION_ROOT}privacy.html`,
+      image: `${PRODUCTION_ROOT}assets/screenshot-dictation-1280x800.png`,
+    },
+    {
+      path: "/support.html",
+      canonical: `${PRODUCTION_ROOT}support.html`,
+      image: `${PRODUCTION_ROOT}assets/screenshot-settings-1280x800.png`,
+    },
+  ];
+
+  for (const expected of expectedPages) {
+    await page.goto(expected.path);
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", expected.canonical);
+    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", expected.canonical);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", expected.image);
+    await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", expected.image);
+    expect((await page.content()).includes(LEGACY_ROOT)).toBe(false);
+  }
+
+  await page.goto("/index.html");
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", HOMEPAGE_DESCRIPTION);
+  expect(HOMEPAGE_DESCRIPTION.length).toBeGreaterThanOrEqual(150);
+  expect(HOMEPAGE_DESCRIPTION.length).toBeLessThanOrEqual(170);
+
+  const structuredData = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
+  expect(structuredData.url).toBe(PRODUCTION_ROOT);
+  expect(structuredData.image).toBe(`${PRODUCTION_ROOT}assets/screenshot-dictation-1280x800.png`);
+  expect(structuredData.softwareVersion).toBe("0.1.9");
+  expect(structuredData.installUrl).toBe(STORE_URL);
+  expect(structuredData.aggregateRating).toBeUndefined();
+  expect(structuredData.review).toBeUndefined();
+
+  const robots = await (await request.get("/robots.txt")).text();
+  expect(robots).toContain(`Sitemap: ${PRODUCTION_ROOT}sitemap.xml`);
+  expect(robots).not.toContain(LEGACY_ROOT);
+
+  const sitemap = await (await request.get("/sitemap.xml")).text();
+  expect(sitemap).toContain(`<loc>${PRODUCTION_ROOT}</loc>`);
+  expect(sitemap).toContain(`<loc>${PRODUCTION_ROOT}privacy.html</loc>`);
+  expect(sitemap).toContain(`<loc>${PRODUCTION_ROOT}support.html</loc>`);
+  expect(sitemap).not.toContain(LEGACY_ROOT);
+});
+
 test("homepage presents the real Dictozy controls as crisp components", async ({ page }) => {
   await page.goto("/index.html");
 
@@ -114,6 +170,46 @@ test("homepage presents the real Dictozy controls as crisp components", async ({
   await expect(page.locator(".popup-preview")).toBeVisible();
   await expect(page.locator(".popup-switch")).toHaveCount(2);
   await expect(page.locator('main img[src*="screenshot-"]')).toHaveCount(0);
+});
+
+test("homepage FAQ is concise, keyboard operable, and linked to first-party help", async ({ page }) => {
+  await page.goto("/index.html");
+
+  const faq = page.locator("#faq");
+  await expect(faq.locator("details")).toHaveCount(5);
+  await expect(faq.getByRole("link", { name: "Dictozy support" })).toHaveAttribute("href", "support.html");
+  await expect(faq.locator('a[href="privacy.html"]')).toHaveAttribute("href", "privacy.html");
+
+  const firstDetails = faq.locator("details").first();
+  const firstSummary = firstDetails.locator("summary");
+  await firstSummary.focus();
+  await expect(firstSummary).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(firstDetails).toHaveAttribute("open", "");
+  await page.keyboard.press("Enter");
+  await expect(firstDetails).not.toHaveAttribute("open", "");
+});
+
+test("images declare dimensions and external new-tab links are isolated", async ({ page }) => {
+  for (const path of PUBLIC_PAGES) {
+    await page.goto(path);
+    const imageMetadata = await page.locator("img").evaluateAll((images) =>
+      images.map((image) => ({
+        altPresent: image.hasAttribute("alt"),
+        width: image.getAttribute("width"),
+        height: image.getAttribute("height"),
+      })),
+    );
+    expect(imageMetadata.every((image) => image.altPresent && image.width && image.height), path).toBe(true);
+
+    const unsafeNewTabs = await page.locator('a[target="_blank"]').evaluateAll((links) =>
+      links.filter((link) => {
+        const rel = new Set(link.rel.split(/\s+/).filter(Boolean));
+        return !rel.has("noopener") || !rel.has("noreferrer");
+      }).length,
+    );
+    expect(unsafeNewTabs, path).toBe(0);
+  }
 });
 
 test("homepage refinements keep the hero neutral and primary sections aligned", async ({ page }) => {

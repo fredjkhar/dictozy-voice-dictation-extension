@@ -110,7 +110,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - Install Dictozy from the Chrome Web Store.
 - Confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- Confirm version `0.1.8` after the per-site controls release is installed.
+- Confirm version `0.1.9` while the `0.1.10` production-hardening update remains under review.
 - Confirm English is selected by default, then save and smoke-test Automatic and one explicit non-English language.
 - Run a short dictation on a supported HTTPS text field.
 - Confirm recording starts only after clicking the visible microphone button or pressing the assigned browser shortcut.
