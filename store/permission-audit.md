@@ -1,14 +1,14 @@
 # Extension Permission Audit
 
-Audit date: August 13, 2026
+Audit date: August 26, 2026
 
-This audit explains why Dictozy `0.1.8` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
+This audit explains why Dictozy `0.1.10` needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
 
 ## API Permissions
 
 `storage`: retained.
 
-Required to save the enabled state, backend URL, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables in `chrome.storage.local`. Site preferences are not synchronized or sent to the backend.
+Required to save the enabled state, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables in `chrome.storage.local`. Site preferences are not synchronized or sent to the backend. The production backend endpoint is fixed in packaged code and is not stored as a user setting.
 
 `activeTab`: removed.
 
@@ -27,16 +27,16 @@ The command does not require `tabs`, `activeTab`, or `scripting`. Chrome users m
 Retained:
 
 - `https://voice-dictation-extension.onrender.com/*`
-- `http://127.0.0.1/*`
-- `http://localhost/*`
 
-The production Render origin is required for health and transcription requests from the Manifest V3 service worker. Local origins are retained for the documented self-hosted development workflow.
+The production Render origin is required for user-triggered transcription requests from the Manifest V3 service worker. The service worker cannot be configured by users, pages, messages, or stored values to call a different endpoint.
 
 Removed:
 
 - `https://*/*` from `host_permissions`
+- `http://127.0.0.1/*` from `host_permissions`
+- `http://localhost/*` from `host_permissions`
 
-The extension no longer has service-worker network permission for arbitrary HTTPS backends. Popup validation accepts only the production Render origin or local development hosts, matching the manifest.
+The extension has no service-worker network permission for arbitrary HTTPS backends or local backend hosts. Localhost remains only in the content-script page matches so maintainers can exercise field behavior on the repository QA page; it does not grant localhost fetch access to the service worker.
 
 ## Page Access
 
@@ -55,4 +55,4 @@ No manifest microphone permission is requested. Microphone access is initiated t
 
 ## Remote Code
 
-No remote code is loaded or executed. The popup scripts, content scripts, lifecycle helper, site-preference helper, service worker, and shared configuration are all packaged in the extension ZIP. Backend responses contain health data, errors, or transcript text only.
+No remote code is loaded or executed. The popup scripts, content scripts, lifecycle helper, site-preference helper, service worker, background validation helper, and shared configuration are all packaged in the extension ZIP. Backend responses contain errors or transcript text only.

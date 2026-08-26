@@ -10,16 +10,16 @@ Dictozy handles the following data only to provide voice dictation:
 
 - Audio recorded after the user clicks the visible microphone button or presses the assigned browser shortcut.
 - The transcript returned from the speech-to-text service.
-- The enabled state, backend URL, recording-duration preference, language-formatting preference, and origins the user explicitly disables stored locally with `chrome.storage.local`.
+- The enabled state, recording-duration preference, language-formatting preference, and origins the user explicitly disables stored locally with `chrome.storage.local`.
 - Page field information inspected locally to determine whether the focused field is supported. The extension does not transmit the page URL, browsing history, existing field contents, or surrounding page content to the backend.
 
 Sites are enabled by default. Dictozy stores an exact origin only when the user explicitly disables that origin. It does not retain a record for each site visited, and it does not use site preferences as browsing history. Dictozy does not activate on password or payment fields. It does not record automatically and does not record in the background.
 
 ## How Data Is Used
 
-Recorded audio is sent to the configured FastAPI backend solely to generate a transcript. The selected language-formatting code is sent with that user-triggered audio request. For an explicit language, the backend passes the code to xAI Speech-to-Text to guide written formatting such as numbers, currencies, and units. In Automatic mode, the backend omits the provider language and formatting parameters. The backend receives the transcript and returns it to the extension, which inserts it into the user-selected field.
+Recorded audio is sent to the fixed Dictozy production backend solely to generate a transcript. The selected language-formatting code is sent with that user-triggered audio request. For an explicit language, the backend passes the code to xAI Speech-to-Text to guide written formatting such as numbers, currencies, and units. In Automatic mode, the backend omits the provider language and formatting parameters. The backend receives the transcript and returns it to the extension, which inserts it into the user-selected field.
 
-The Advanced Check Backend control sends a health-check request without audio or page content. Site preferences, origins, URLs, and hostnames are not sent to Dictozy's backend, xAI, or an analytics service.
+Site preferences, origins, URLs, and hostnames are not sent to Dictozy's backend, xAI, or an analytics service.
 
 Data is not used for advertising, profiling, credit decisions, or sale to third parties.
 
@@ -34,13 +34,13 @@ Render and xAI receive the user's IP address and may process other technical req
 
 ## Storage And Retention
 
-The extension stores the enabled state, backend URL, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables in Chrome local extension storage. Site preferences are not synchronized to a backend and are not used for analytics, advertising, profiling, or browsing-history collection. These settings remain until the user changes or resets them, clears extension data, or removes the extension.
+The extension stores the enabled state, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables in Chrome local extension storage. Site preferences are not synchronized to a backend and are not used for analytics, advertising, profiling, or browsing-history collection. These settings remain until the user changes or resets them, clears extension data, or removes the extension.
 
 The extension and backend application code do not intentionally persist raw audio or transcripts. Audio and transcripts are held in memory only as needed to complete a transcription request. Infrastructure and service providers may retain operational data according to their own policies.
 
 ## Security
 
-Production audio requests use HTTPS. The xAI API key is stored only in backend environment variables and is never included in extension code. Browser permissions are limited to storage, supported webpage access required for dictation, and the configured backend hosts.
+Production audio requests use HTTPS. The xAI API key is stored only in backend environment variables and is never included in extension code. Browser permissions are limited to storage, supported webpage access required for dictation, and the fixed Dictozy production backend host.
 
 ## User Controls
 

@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the existing Chrome Web Store listing for published Dictozy `0.1.8`. Phase 32 changes only first-party website destinations after deployment; it does not require a new extension package or version.
+Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.8` is currently published; Phase 35 prepares the `0.1.10` production-hardening package, including the completed `0.1.9` insertion improvements, without authorizing submission.
 
 ## Dashboard Product Details
 
@@ -63,12 +63,12 @@ Supported fields include text, search, email, URL, and telephone inputs; textare
 
 The product is designed for short dictation clips rather than long-form recording. Language formatting is a provider formatting hint, not a promise of improved recognition. English is selected by default, while Automatic leaves provider language and formatting selection unset.
 
-What's new in 0.1.9
+What's new in 0.1.10
 
-- Keeps insertion anchored to the caret or selection captured when recording starts.
-- Preserves surrounding rich-text formatting while inserting transcript text as plain text.
-- Avoids duplicated spaces around inserted transcripts.
-- Continues to reject late insertion if focus moves or the original field becomes unavailable.
+- Simplified settings by removing developer-facing backend controls.
+- Fixed Dictozy to its production transcription service.
+- Reduced unnecessary network access and tightened request validation.
+- Preserved existing dictation, language, recording, retry, site, and insertion controls.
 ```
 
 Historical release notes are preserved in [changelog.md](changelog.md), not repeated in the sales description.
@@ -90,7 +90,7 @@ Small promotional tile:
 
 - `assets/promo-small-440x280.png`
 
-The current assets accurately represent published `0.1.8`; Phase 31 does not regenerate them.
+The dictation screenshot and promotional tile remain accurate. The settings screenshot is regenerated for `0.1.10` so it shows the simplified popup without backend controls.
 
 ## Dashboard Links
 
@@ -114,7 +114,7 @@ Privacy policy URL:
 https://fredjkhar.github.io/dictozy-voice-dictation-extension/privacy.html
 ```
 
-Use the first-party privacy and support URLs only after the Phase 32 website is deployed and all three public pages return `200`. The URL update does not require a new package; version `0.1.8`, permissions, and extension behavior remain unchanged.
+The first-party homepage, privacy, and support URLs are already deployed. Reconfirm all three return `200` before submitting the `0.1.10` package; no URL change is required for this phase.
 
 ## Single Purpose
 
@@ -127,7 +127,7 @@ Dictozy lets users dictate short text into supported web fields by recording aud
 `storage`:
 
 ```text
-Stores the enabled state, backend URL, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables locally in Chrome. No cloud synchronization is used by the extension.
+Stores the enabled state, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables locally in Chrome. No cloud synchronization is used by the extension, and the production backend endpoint is not a stored user setting.
 ```
 
 Site access on HTTPS pages:
@@ -145,7 +145,7 @@ Supports local manual QA and development with the repository's test page.
 Backend host access:
 
 ```text
-Allows the Manifest V3 service worker to send user-triggered audio to https://voice-dictation-extension.onrender.com and to local FastAPI instances during development. The extension never calls an xAI host directly.
+Allows the Manifest V3 service worker to send user-triggered audio only to https://voice-dictation-extension.onrender.com. The extension has no localhost backend fetch permission and never calls an xAI host directly.
 ```
 
 `activeTab` is intentionally not requested because declarative content scripts already provide the page access required by the feature.
@@ -194,7 +194,7 @@ Dashboard selections require manual review rather than copy/paste:
 7. Open the popup and confirm the global and current-site controls are enabled.
 8. Turn off Enable on this site, refocus the field, and confirm the microphone control stays hidden and the shortcut is ignored.
 9. Re-enable the site and confirm the microphone control returns after refocusing the field.
-10. Expand Advanced, use Check Backend, then reset site preferences and confirm unrelated settings remain unchanged.
+10. Use Reset Site Preferences in the settings panel and confirm recording, language, global enabled state, and shortcut settings remain unchanged.
 
 No test account or credentials are required.
 ```
@@ -209,13 +209,14 @@ Fields to change:
 2. Store Listing: use the revised screenshot captions and keep the dictation screenshot first.
 3. Homepage: keep the verified GitHub Pages URL.
 4. Privacy policy and Support: use the first-party website URLs only after both new pages are deployed and return `200`.
-5. Privacy practices: review the existing selections for consistency; behavior and data handling did not change.
+5. Privacy practices: update the storage and backend-host explanations to remove the obsolete backend URL setting and localhost backend access.
 
 Fields and assets that remain unchanged:
 
 - Extension name, category, and language.
-- Published `0.1.8` package and permissions.
-- Store icon, both screenshot files, and promotional tile.
+- Published `0.1.8` package until the user explicitly approves the `0.1.10` submission.
+- Store icon, dictation screenshot, and promotional tile.
+- Long description and short description, which remain accurate.
 - Published support and privacy policy destinations until the first-party replacements are verified.
 - Distribution settings unless the publisher intentionally changes them.
 

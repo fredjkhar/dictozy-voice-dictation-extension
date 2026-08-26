@@ -26,7 +26,7 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.8` is the published privacy-first per-site controls release.
+Version `0.1.8` is the published privacy-first per-site controls release. The repository is preparing `0.1.10` as a production-hardening update that also includes the completed `0.1.9` insertion improvements.
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Recording starts only after an explicit microphone-button click or assigned browser shortcut.
@@ -34,7 +34,7 @@ Version `0.1.8` is the published privacy-first per-site controls release.
 - A popup language-formatting preference offers Automatic plus 25 explicit languages. English is the default.
 - The popup includes a global master toggle plus an exact-origin control for the current supported site.
 - Only sites the user explicitly disables are retained in local extension storage; site preferences are never sent to the backend.
-- Extension sends audio to the configured FastAPI backend.
+- Extension sends audio only to the fixed Dictozy production backend.
 - Backend calls xAI Speech-to-Text.
 - Transcript is inserted back into the focused field.
 - Controlled inputs receive updates through native setters and standard editing events, while contenteditable transcripts are inserted as plain text at the saved selection.
@@ -53,7 +53,7 @@ Version `0.1.8` is the published privacy-first per-site controls release.
 
 ## Local Development
 
-The extension records a short user-triggered clip, sends it to the configured FastAPI backend, and inserts the transcript returned by the backend. The backend calls xAI Speech-to-Text using `XAI_API_KEY` from environment variables.
+The extension records a short user-triggered clip, sends it to the fixed Dictozy production backend, and inserts the transcript returned by the backend. The backend calls xAI Speech-to-Text using `XAI_API_KEY` from environment variables.
 
 ## Quick Start
 
@@ -87,7 +87,7 @@ Extension setup:
 3. Click Load unpacked.
 4. Select the `extension/` folder.
 5. Reload any test page after loading or reloading the extension.
-6. Open the extension popup to use the global or current-site control, view or manage the keyboard shortcut, choose language formatting, adjust the recording limit, or open Advanced backend settings if needed.
+6. Open the extension popup to use the global or current-site control, view or manage the keyboard shortcut, choose language formatting, adjust the recording limit, or reset disabled-site preferences.
 
 QA page:
 
@@ -158,15 +158,13 @@ python3 scripts/validate_store_assets.py
 - Microphone button does not appear: reload the page after loading the extension and focus a supported non-sensitive field.
 - Microphone button does not appear on one site: confirm both the global Dictozy toggle and `Enable on this site` are on. Restricted Chrome pages do not support the current-site control.
 - Keyboard shortcut does not work: open the popup and check whether it shows `Not assigned`. Use its keyboard icon to open `chrome://extensions/shortcuts`, then assign or remap the command.
-- Backend URL does not work: use the production Render endpoint or local HTTP on `127.0.0.1` or `localhost`. Other remote hosts and xAI URLs are rejected.
+- Production service is unreachable: open the backend `/health` endpoint directly, then check Render deployment status and privacy-safe request logs.
 
 ## Deployment
 
 The backend includes Docker deployment files under `backend/`. See [backend/DEPLOYMENT.md](backend/DEPLOYMENT.md).
 
-After deploying the backend, set the extension popup Backend URL to the deployed HTTPS `/api/transcribe` endpoint.
-
-Use the popup's Advanced Check Backend control to verify `/health`, then follow [qa/deployment-smoke-test.md](qa/deployment-smoke-test.md) for a complete production-path check. The backend also includes a reusable command-line smoke test:
+The Store extension is pinned to the production HTTPS `/api/transcribe` endpoint. Verify `/health` directly, then follow [qa/deployment-smoke-test.md](qa/deployment-smoke-test.md) for a complete production-path check. The backend also includes a reusable command-line smoke test:
 
 ```bash
 cd backend

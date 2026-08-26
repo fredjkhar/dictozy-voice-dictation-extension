@@ -41,7 +41,7 @@ POLICY_CLAIMS = (
     "Recording starts only when you click the visible microphone button or press the assigned browser shortcut",
     "The extension does not transmit the page URL, browsing history, existing field contents, or surrounding page content to the backend",
     "It does not record automatically and does not record in the background",
-    "Recorded audio is sent to the configured FastAPI backend solely to generate a transcript",
+    "Recorded audio is sent to the fixed Dictozy production backend solely to generate a transcript",
     "Site preferences, origins, URLs, and hostnames are not sent to Dictozy's backend, xAI, or an analytics service",
     "Data is not used for advertising, profiling, credit decisions, or sale to third parties",
     "The extension and backend application code do not intentionally persist raw audio or transcripts",
@@ -321,8 +321,8 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
 
     if structured_data.get("@type") != "SoftwareApplication":
         errors.append("index.html: JSON-LD must describe a SoftwareApplication")
-    if structured_data.get("softwareVersion") != "0.1.8":
-        errors.append("index.html: JSON-LD softwareVersion must remain 0.1.8")
+    if structured_data.get("softwareVersion") != "0.1.10":
+        errors.append("index.html: JSON-LD softwareVersion must match 0.1.10")
     if structured_data.get("installUrl") != STORE_URL:
         errors.append("index.html: JSON-LD installUrl is incorrect")
     if "aggregateRating" in structured_data or "review" in structured_data:

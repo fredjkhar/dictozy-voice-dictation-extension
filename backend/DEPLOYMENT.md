@@ -22,17 +22,17 @@ Start from the production-safe template:
 cp .env.production.example .env.production
 ```
 
-Replace `YOUR_EXTENSION_ID` with the ID shown for the loaded extension on `chrome://extensions`. Keep the real production file and API key outside source control.
+The template already contains the published Dictozy extension origin. Keep the real production file and API key outside source control.
 
 ## Chrome Web Store Extension ID
 
-The Web Store assigns the final extension ID after the first ZIP is uploaded as a draft item. Before submitting that draft for review, update Render with the exact origin:
+The published extension ID is fixed. Production startup requires this exact origin:
 
 ```text
-BACKEND_CORS_ORIGINS=chrome-extension://FINAL_EXTENSION_ID
+BACKEND_CORS_ORIGINS=chrome-extension://folpeencabfejhjokmldikaelonphmma
 ```
 
-Do not add a trailing slash. During pre-release testing, the final ID and unpacked development ID may be supplied as comma-separated origins. Redeploy after changing the environment variable and verify both `/health` and a real extension transcription. See [../store/release-checklist.md](../store/release-checklist.md) for the complete sequence.
+Do not add a trailing slash or additional origins. When `APP_ENV=production`, the backend fails startup unless this is the only CORS origin. Redeploy after changing the environment variable and verify both `/health` and a real extension transcription. See [../store/release-checklist.md](../store/release-checklist.md) for the complete sequence.
 
 ## Docker Build
 
@@ -51,7 +51,7 @@ docker run --rm -p 8000:8000 \
   -e XAI_API_KEY="replace_with_real_key" \
   -e XAI_API_BASE_URL="https://api.x.ai" \
   -e APP_ENV="production" \
-  -e BACKEND_CORS_ORIGINS="chrome-extension://YOUR_EXTENSION_ID,https://YOUR_FRONTEND_ORIGIN" \
+  -e BACKEND_CORS_ORIGINS="chrome-extension://folpeencabfejhjokmldikaelonphmma" \
   -e TRANSCRIPTION_ENABLED="true" \
   -e TRANSCRIBE_MAX_CONCURRENT_REQUESTS="2" \
   -e TRANSCRIBE_RATE_LIMIT_REQUESTS="30" \
@@ -60,7 +60,7 @@ docker run --rm -p 8000:8000 \
   voice-dictation-backend
 ```
 
-For local Docker testing with the unpacked extension:
+For local Docker and direct smoke-script testing:
 
 ```bash
 docker run --rm -p 8000:8000 \
@@ -80,18 +80,17 @@ Expected response:
 {"status":"ok"}
 ```
 
-## Extension Configuration
+## Extension Verification
 
 After the backend is deployed:
 
-1. Open the extension popup.
-2. Choose the language-formatting preference to test. English is the default.
-3. Set Backend URL to the deployed HTTPS endpoint ending in `/api/transcribe`.
-4. Save settings.
-5. Expand Advanced, click Check Backend, and confirm `Backend is reachable.`
-6. Reload the test page and run a short dictation test.
+1. Confirm the deployed service uses the production origin packaged in `extension/config.js`.
+2. Open `/health` directly and confirm `{"status":"ok"}`.
+3. Open the extension popup and choose the language-formatting preference to test. English is the default.
+4. Reload the test page and run a short dictation test.
+5. Confirm the service-worker request target is the production backend and never an xAI host.
 
-The extension must call only your backend. It must never call xAI directly.
+The Store extension is not configurable to use another backend. It must never call xAI directly.
 
 ## Language Compatibility And Rollout
 

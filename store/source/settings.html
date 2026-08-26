@@ -108,8 +108,7 @@
         line-height: 1.35;
       }
 
-      .settings-panel,
-      .advanced {
+      .settings-panel {
         min-width: 0;
         max-width: 100%;
         overflow: hidden;
@@ -291,18 +290,21 @@
         stroke-width: 2;
       }
 
-      .advanced summary {
-        padding: 9px 12px;
-        color: #233244;
-        font-size: 13px;
-        font-weight: 720;
-      }
-
-      .advanced-fields {
+      .reset-row {
         display: grid;
         min-width: 0;
-        gap: 8px;
-        padding: 0 12px 10px;
+        gap: 6px;
+        padding-top: 10px;
+        border-top: 1px solid #e5eaf0;
+      }
+
+      .popup .reset-help {
+        width: auto;
+        margin: 0;
+        color: #64748b;
+        font-size: 12px;
+        line-height: 1.35;
+        text-align: center;
       }
 
       .status {
@@ -409,19 +411,11 @@
               </div>
               <div class="primary-button">Save Settings</div>
             </div>
-          </section>
-
-          <details class="advanced">
-            <summary>Advanced Backend</summary>
-            <div class="advanced-fields">
-              <div class="field-label">
-                <span class="field-title">Backend URL</span>
-                <div class="input">https://voice-dictation-extension.onrender.com/api/transcribe</div>
-              </div>
-              <div class="secondary-button">Check Backend</div>
+            <div class="reset-row">
               <div class="secondary-button">Reset Site Preferences</div>
+              <p class="reset-help">Clears only the websites you disabled.</p>
             </div>
-          </details>
+          </section>
 
           <p class="status">Ready.</p>
         </aside>

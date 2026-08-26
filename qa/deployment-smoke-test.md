@@ -10,10 +10,10 @@ For the already-published Chrome Web Store extension, also follow [post-publish-
 - `APP_ENV` is `production`.
 - `XAI_API_KEY` is stored only in the hosting provider's secret or environment system.
 - `XAI_API_BASE_URL` is `https://api.x.ai` unless xAI documentation requires another official endpoint.
-- `BACKEND_CORS_ORIGINS` contains the expected `chrome-extension://EXTENSION_ID` origin and does not use `*`.
+- `BACKEND_CORS_ORIGINS` contains only `chrome-extension://folpeencabfejhjokmldikaelonphmma` and does not use `*`, localhost, or additional origins.
 - No real `.env` file, API key, or recorded audio is committed to Git.
 
-Find the unpacked extension ID on `chrome://extensions`. If the ID changes, update the backend CORS configuration and restart or redeploy the backend.
+The production backend fails startup when `APP_ENV=production` unless the published Dictozy origin is the only configured CORS origin.
 
 ## Backend Checks
 
@@ -40,25 +40,25 @@ Confirm that health and transcription both pass. If transcription fails while he
 
 ## Extension Checks
 
-For local or staging backend checks:
+For local or staging backend checks, use `scripts/smoke_test.py` directly. The production extension cannot be redirected to localhost or a staging origin.
+
+For the unpacked release candidate:
 
 1. Reload the unpacked extension on `chrome://extensions`.
-2. Open the popup and enter `https://YOUR_BACKEND_HOST/api/transcribe`.
-3. Confirm Language formatting defaults to English.
-4. Click Save Settings, close the popup, reopen it, and confirm the URL and language persisted.
-5. Expand Advanced, click Check Backend, and confirm `Backend is reachable.`
-6. Open or refresh the local QA page or a normal HTTPS site.
-7. Focus a supported, non-sensitive field and click the microphone icon.
-8. Record a short phrase and stop.
-9. Confirm the status advances through recording and transcribing.
-10. Confirm the transcript appears in the original field and focus returns to it.
-11. Confirm the request target in the extension service worker network tools is your backend, never an `x.ai` host.
-12. Repeat the start, stop, and successful insertion flow with the assigned browser shortcut.
-13. Save Automatic and one explicit non-English language in turn; confirm each request succeeds and the selection persists.
-14. Cancel one pending transcription with the shortcut and confirm no late result is inserted.
-15. Disable the current site during recording and during pending transcription; confirm extension-side work stops and no late result is inserted.
-16. Re-enable the site, refocus a supported field, and confirm dictation works again.
-17. Inspect the transcription request and confirm it contains no origin, URL, hostname, site preference, page content, or field metadata.
+2. Confirm Language formatting defaults to English.
+3. Confirm the popup contains no backend URL, Check Backend, or Advanced Backend control.
+4. Open or refresh the local QA page or a normal HTTPS site.
+5. Focus a supported, non-sensitive field and click the microphone icon.
+6. Record a short phrase and stop.
+7. Confirm the status advances through recording and transcribing.
+8. Confirm the transcript appears in the original field and focus returns to it.
+9. Confirm the request target is `https://voice-dictation-extension.onrender.com`, never an `x.ai` host.
+10. Repeat the start, stop, and successful insertion flow with the assigned browser shortcut.
+11. Save Automatic and one explicit non-English language in turn; confirm each request succeeds and the selection persists.
+12. Cancel one pending transcription with the shortcut and confirm no late result is inserted.
+13. Disable the current site during recording and during pending transcription; confirm extension-side work stops and no late result is inserted.
+14. Re-enable the site, refocus a supported field, and confirm dictation works again.
+15. Inspect the transcription request and confirm it contains no origin, URL, hostname, site preference, page content, or field metadata.
 
 For the published production path:
 
@@ -75,17 +75,18 @@ For the published production path:
 
 ## Backend Compatibility Check
 
-Version `0.1.8` does not change the backend contract:
+Version `0.1.10` keeps the successful transcription contract while tightening production configuration:
 
 1. Confirm production `/health` before extension testing.
-2. Use the published `0.1.7` extension and confirm one transcription still succeeds.
-3. Load the `0.1.8` package and test English, Automatic, and one explicit non-English language.
-4. Confirm extension traffic still goes only to the configured Dictozy backend.
+2. Use the currently published extension and confirm one transcription still succeeds.
+3. Load the `0.1.10` package and test English, Automatic, and one explicit non-English language.
+4. Confirm extension traffic goes only to the fixed Dictozy production backend.
+5. Restart a production-configured backend with an unsafe CORS value and confirm startup fails clearly; restore the exact published extension origin afterward.
 
 ## Failure Checks
 
-- Entering remote HTTP is rejected before it is saved.
-- Entering an xAI URL is rejected before it is saved.
+- A legacy stored `backendUrl` value is ignored and removed during extension update.
+- Runtime messages containing an endpoint override are rejected before any network request.
 - A stopped or unavailable backend produces a reachable error state instead of leaving the extension on Transcribing.
 - A backend timeout returns control to the user with a retry state and short request reference.
 - Cancelling a pending transcription prevents any late response from being inserted; it does not guarantee provider-side processing stops after upload.

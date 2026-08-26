@@ -6,7 +6,7 @@ The extension uses Manifest V3 with plain JavaScript, content scripts for page i
 
 ## Current State
 
-Dictozy detects supported fields, shows a microphone button beside the active field, and records a short audio clip after an explicit microphone-button click or assigned browser shortcut. The clip and selected language-formatting code are sent to the configured FastAPI backend, and the returned transcript is inserted into the active field. The shortcut and visible control share the same start, stop, cancellation, retry, and stale-operation protections. The extension does not call xAI directly.
+Dictozy detects supported fields, shows a microphone button beside the active field, and records a short audio clip after an explicit microphone-button click or assigned browser shortcut. The clip and selected language-formatting code are sent only to the fixed Dictozy production backend, and the returned transcript is inserted into the active field. The shortcut and visible control share the same start, stop, cancellation, retry, and stale-operation protections. The extension does not call xAI directly.
 
 `dictation-lifecycle.js` owns privacy-safe request IDs, stale-operation rejection, cancellation signals, and conservative local microphone-signal inspection. `site-preferences.js` validates exact HTTP/HTTPS origins and the bounded, explicitly disabled-origin list. `content.js` remains responsible for page fields, the visible control, recording, insertion, and accessible status UI. Runtime code has no third-party JavaScript dependencies.
 
@@ -36,23 +36,20 @@ The popup stores local settings with `chrome.storage.local`:
 - Current-site state: supported sites are enabled by default. Turning off `Enable on this site` stores only that exact origin in `chrome.storage.local`; paths, queries, and fragments share the preference, while subdomains and non-default ports remain separate.
 - Keyboard shortcut: the `toggle-dictation` command suggests `Ctrl+Shift+Y` by default and `Command+Shift+Y` on macOS. Chrome may leave it unassigned after a conflict; the popup shows the current assignment and opens `chrome://extensions/shortcuts` for remapping.
 - Language formatting: defaults to English. Automatic asks the backend to omit provider language and formatting parameters; an explicit choice sends its language code so xAI can guide written formatting for numbers, currencies, and units. It is not a guarantee of improved speech recognition.
-- Backend URL: defaults to `https://voice-dictation-extension.onrender.com/api/transcribe`.
 - Recording limit: defaults to 10 seconds and is clamped between 1 and 30 seconds.
-- Check Backend: available under Advanced and checks the corresponding `/health` endpoint without recording or uploading audio.
-- Reset Site Preferences: removes only explicitly disabled origins and leaves the global enabled state, backend URL, recording limit, language formatting, and keyboard shortcut unchanged.
+- Reset Site Preferences: removes only explicitly disabled origins and leaves the global enabled state, recording limit, language formatting, and keyboard shortcut unchanged.
 
-The backend URL must end with `/api/transcribe`. The release build permits the production Render backend or local HTTP (`localhost` or `127.0.0.1`) for development. Other remote hosts and xAI hostnames are rejected; xAI remains backend-only.
+The release build pins transcription to `https://voice-dictation-extension.onrender.com/api/transcribe`. Popup messages, page data, and stored settings cannot select another endpoint. xAI remains backend-only.
 
 ## Deployed Backend
 
-1. Deploy the FastAPI backend behind HTTPS.
-2. Open the extension popup.
-3. Enter `https://YOUR_BACKEND_HOST/api/transcribe`.
-4. Click Save Settings.
-5. Open Advanced, click Check Backend, and confirm the backend is reachable.
-6. Run a short dictation test on a non-sensitive text field.
+1. Deploy the FastAPI backend behind HTTPS at the production Render origin packaged in `config.js`.
+2. Open `https://voice-dictation-extension.onrender.com/health` and confirm `{"status":"ok"}`.
+3. Open the extension popup and choose the language-formatting preference to test.
+4. Run a short dictation test on a non-sensitive text field.
+5. Confirm extension traffic goes only to the packaged production backend and never directly to xAI.
 
-The connectivity check calls only `/health`; it does not access xAI or upload audio.
+Maintainers can also use `backend/scripts/smoke_test.py` for direct health and provider-path checks.
 
 ## Manual Test
 
@@ -70,15 +67,15 @@ source .venv/bin/activate
 uvicorn app.main:app --reload
 ```
 
-Open the extension popup, expand Advanced, and change Backend URL to `http://127.0.0.1:8000/api/transcribe` before local-backend testing. Fresh installations default to the production HTTPS backend.
+The production extension does not connect to localhost. Test a local backend directly with `python scripts/smoke_test.py http://127.0.0.1:8000 --allow-http`; mocked extension browser tests exercise the fixed production endpoint without contacting production.
 
 Extension setup:
 
-1. Start the FastAPI backend at `http://127.0.0.1:8000`.
-2. Open `chrome://extensions`.
-3. Enable Developer mode.
-4. Load or reload this `extension/` folder as an unpacked extension.
-5. Open the extension popup and confirm the global and current-site controls are enabled, then confirm English language formatting, the backend URL under Advanced, and the recording limit.
+1. Open `chrome://extensions`.
+2. Enable Developer mode.
+3. Load or reload this `extension/` folder as an unpacked extension.
+4. Open the extension popup and confirm the global and current-site controls are enabled, then confirm English language formatting and the recording limit.
+5. Confirm no backend URL, health-check, or Advanced Backend control appears.
 6. Open or reload a normal web page with a text field. For local QA, use `http://127.0.0.1:8080/qa/manual-test-page.html`.
 7. Focus a supported field such as a text input or textarea.
 8. Confirm a small microphone icon button appears beside the field.
@@ -107,7 +104,7 @@ Extension setup:
 31. Disable the current site and confirm the microphone control disappears, the shortcut is ignored, active recording or transcription is cancelled, and no late transcript is inserted.
 32. Re-enable the current site, refocus a supported field, and confirm normal behavior returns.
 33. Open the QA page once through `127.0.0.1` and once through `localhost`; confirm their exact-origin preferences remain independent.
-34. Reset site preferences under Advanced and confirm unrelated settings remain unchanged.
+34. Reset site preferences from the settings panel and confirm unrelated settings remain unchanged.
 35. Open the popup on `chrome://extensions` and the Chrome Web Store; confirm the current-site control shows a safe unavailable state while global settings remain usable.
 36. Repeat the start, stop, cancel, and successful insertion flow with the visible click controls.
 
@@ -123,6 +120,5 @@ For structured QA, use the checklist and local test page in `../qa/`.
 - If an error includes a short `Reference`, use it to locate the matching privacy-safe backend request log. Do not share audio, transcript text, or field contents in support reports.
 - If Dictozy reports no microphone signal, confirm the selected Chrome input is active and not muted. Quiet or unsupported signal-inspection cases continue to the backend rather than being aggressively rejected.
 - If transcription fails, check the FastAPI terminal logs first. The extension intentionally shows safe, generic error messages.
-- If a custom backend fails, verify the URL is local HTTP or HTTPS and points directly to `/api/transcribe`.
-- If Check Backend fails, open the deployed `/health` URL directly and check the hosting provider logs, TLS certificate, and CORS configuration.
+- If the production backend is unavailable, open its `/health` URL directly and check the hosting provider logs, TLS certificate, and CORS configuration.
 - Canvas-based editors and custom widgets without a standard writable DOM input or contenteditable surface remain unsupported.

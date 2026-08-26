@@ -1,4 +1,3 @@
-const TEST_BACKEND_MESSAGE = "VOICE_DICTATION_TEST_BACKEND";
 const GET_SITE_CONTEXT_MESSAGE = "VOICE_DICTATION_GET_SITE_CONTEXT";
 const TOGGLE_DICTATION_COMMAND = "toggle-dictation";
 const SHORTCUT_SETTINGS_URL = "chrome://extensions/shortcuts";
@@ -7,11 +6,9 @@ const DEFAULT_RECORDING_DURATION_SECONDS = 10;
 const MIN_RECORDING_DURATION_SECONDS = 1;
 const MAX_RECORDING_DURATION_SECONDS = 30;
 const {
-  DEFAULT_BACKEND_URL,
   DEFAULT_TRANSCRIPTION_LANGUAGE,
   TRANSCRIPTION_LANGUAGES,
   normalizeTranscriptionLanguage,
-  validateBackendUrl,
 } = globalThis.VoiceDictationConfig;
 const {
   DISABLED_ORIGINS_STORAGE_KEY,
@@ -26,9 +23,7 @@ const siteToggleRow = document.querySelector("#siteToggleRow");
 const siteDescription = document.querySelector("#siteDescription");
 const siteUnavailable = document.querySelector("#siteUnavailable");
 const saveSettingsButton = document.querySelector("#saveSettings");
-const testBackendButton = document.querySelector("#testBackend");
 const resetSitePreferencesButton = document.querySelector("#resetSitePreferences");
-const backendUrlInput = document.querySelector("#backendUrl");
 const recordingDurationInput = document.querySelector("#recordingDurationSeconds");
 const transcriptionLanguageSelect = document.querySelector("#transcriptionLanguage");
 const manageShortcutButton = document.querySelector("#manageShortcut");
@@ -191,16 +186,12 @@ async function openShortcutSettings() {
 
 async function loadSettings() {
   const settings = await chrome.storage.local.get({
-    backendUrl: DEFAULT_BACKEND_URL,
     extensionEnabled: DEFAULT_EXTENSION_ENABLED,
     recordingDurationMs: DEFAULT_RECORDING_DURATION_SECONDS * 1000,
     transcriptionLanguage: DEFAULT_TRANSCRIPTION_LANGUAGE,
   });
 
-  const backendUrl = validateBackendUrl(settings.backendUrl);
-
   enabledToggle.checked = settings.extensionEnabled !== false;
-  backendUrlInput.value = backendUrl.ok ? backendUrl.url : DEFAULT_BACKEND_URL;
   recordingDurationInput.value = String(normalizeRecordingDurationSeconds(settings.recordingDurationMs / 1000));
   transcriptionLanguageSelect.value = normalizeTranscriptionLanguage(settings.transcriptionLanguage);
   updateSiteDescription();
@@ -208,25 +199,15 @@ async function loadSettings() {
 }
 
 async function saveSettings() {
-  const backendUrl = validateBackendUrl(backendUrlInput.value.trim());
-
-  if (!backendUrl.ok) {
-    setStatus(backendUrl.message, "error");
-    backendUrlInput.focus();
-    return;
-  }
-
   const recordingDurationSeconds = normalizeRecordingDurationSeconds(recordingDurationInput.value);
   const transcriptionLanguage = normalizeTranscriptionLanguage(transcriptionLanguageSelect.value);
 
   await chrome.storage.local.set({
-    backendUrl: backendUrl.url,
     extensionEnabled: enabledToggle.checked,
     recordingDurationMs: recordingDurationSeconds * 1000,
     transcriptionLanguage,
   });
 
-  backendUrlInput.value = backendUrl.url;
   recordingDurationInput.value = String(recordingDurationSeconds);
   transcriptionLanguageSelect.value = transcriptionLanguage;
   setStatus(enabledToggle.checked ? "Settings saved." : "Dictozy is off.", enabledToggle.checked ? "success" : "warning");
@@ -296,37 +277,10 @@ async function resetSitePreferences() {
   }
 }
 
-async function testBackend() {
-  const backendUrl = validateBackendUrl(backendUrlInput.value.trim());
-
-  if (!backendUrl.ok) {
-    setStatus(backendUrl.message, "error");
-    backendUrlInput.focus();
-    return;
-  }
-
-  testBackendButton.disabled = true;
-  setStatus("Checking backend...");
-
-  try {
-    const response = await chrome.runtime.sendMessage({
-      type: TEST_BACKEND_MESSAGE,
-      backendUrl: backendUrl.url,
-    });
-
-    setStatus(response?.message || "Backend check failed.", response?.ok ? "success" : "error");
-  } catch (_error) {
-    setStatus("Unable to check the backend.", "error");
-  } finally {
-    testBackendButton.disabled = false;
-  }
-}
-
 enabledToggle.addEventListener("change", toggleEnabled);
 siteToggle.addEventListener("change", toggleSiteEnabled);
 manageShortcutButton.addEventListener("click", openShortcutSettings);
 saveSettingsButton.addEventListener("click", saveSettings);
-testBackendButton.addEventListener("click", testBackend);
 resetSitePreferencesButton.addEventListener("click", resetSitePreferences);
 populateLanguageOptions();
 loadSettings();

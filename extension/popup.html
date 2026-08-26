@@ -74,8 +74,7 @@
         line-height: 1.35;
       }
 
-      .settings-panel,
-      .advanced {
+      .settings-panel {
         border: 1px solid var(--border);
         border-radius: 8px;
         background: var(--panel);
@@ -205,8 +204,7 @@
       .switch:focus-visible,
       input:focus-visible,
       select:focus-visible,
-      button:focus-visible,
-      summary:focus-visible {
+      button:focus-visible {
         outline: 3px solid #38bdf8;
         outline-offset: 2px;
       }
@@ -217,7 +215,6 @@
       }
 
       input[type="number"],
-      input[type="url"],
       select {
         width: 100%;
         min-height: 36px;
@@ -300,26 +297,15 @@
         stroke-width: 2;
       }
 
-      .advanced {
-        padding: 0;
-      }
-
-      summary {
-        padding: 9px 12px;
-        color: #233244;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 720;
-      }
-
-      .advanced-fields {
+      .reset-row {
         display: grid;
-        gap: 8px;
-        padding: 0 12px 10px;
+        gap: 6px;
+        padding-top: 10px;
+        border-top: 1px solid #e5eaf0;
       }
 
-      .reset-button {
-        margin-top: 2px;
+      .reset-row .field-help {
+        text-align: center;
       }
 
       .status {
@@ -412,19 +398,11 @@
           </label>
           <button id="saveSettings" class="primary-button" type="button">Save Settings</button>
         </form>
-      </section>
-
-      <details class="advanced">
-        <summary>Advanced Backend</summary>
-        <div class="advanced-fields">
-          <label class="field-label">
-            <span class="field-title">Backend URL</span>
-            <input id="backendUrl" type="url" autocomplete="off" spellcheck="false">
-          </label>
-          <button id="testBackend" class="secondary-button" type="button">Check Backend</button>
+        <div class="reset-row">
           <button id="resetSitePreferences" class="secondary-button reset-button" type="button">Reset Site Preferences</button>
+          <p class="field-help">Clears only the websites you disabled.</p>
         </div>
-      </details>
+      </section>
 
       <p id="status" class="status" data-tone="neutral" aria-live="polite"></p>
     </main>

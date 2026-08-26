@@ -49,7 +49,7 @@
         "description": "Voice dictation for short messages, notes, searches, and form text in supported Chrome web fields.",
         "applicationCategory": "UtilitiesApplication",
         "operatingSystem": "Google Chrome",
-        "softwareVersion": "0.1.8",
+        "softwareVersion": "0.1.10",
         "url": "https://fredjkhar.github.io/dictozy-voice-dictation-extension/",
         "installUrl": "https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma",
         "image": "https://fredjkhar.github.io/dictozy-voice-dictation-extension/assets/screenshot-dictation-1280x800.png",
@@ -228,11 +228,10 @@
                 </label>
 
                 <button class="popup-save" type="button" disabled>Save Settings</button>
-              </div>
-
-              <div class="popup-advanced" aria-label="Advanced Backend collapsed">
-                <span aria-hidden="true">&#9656;</span>
-                <strong>Advanced Backend</strong>
+                <div class="popup-reset">
+                  <button type="button" disabled>Reset Site Preferences</button>
+                  <span>Clears only the websites you disabled.</span>
+                </div>
               </div>
               <p class="popup-status">Ready.</p>
             </div>
@@ -243,7 +242,7 @@
           <h2 id="controls-title">Set it once, adjust it when you need to.</h2>
           <p>
             Keep Dictozy available globally or disable it for one exact website. Choose language formatting,
-            review the assigned shortcut, set a short recording limit, and check backend availability from Advanced settings.
+            review the assigned shortcut, set a short recording limit, and reset websites you previously disabled.
           </p>
           <ul class="plain-list">
             <li>Per-site choices stay in local Chrome extension storage.</li>

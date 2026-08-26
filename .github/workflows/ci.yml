@@ -57,6 +57,7 @@ jobs:
           node --check extension/dom-utils.js
           node --check extension/dictation-lifecycle.js
           node --check extension/site-preferences.js
+          node --check extension/background-utils.js
           node --check extension/content.js
           node --check extension/background.js
           node --check extension/popup.js

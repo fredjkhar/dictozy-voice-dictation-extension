@@ -15,7 +15,6 @@ async function installChromeMocks(page) {
     const pendingResponses = new Map();
     const pendingMicrophones = [];
     const defaultStorage = {
-      backendUrl: "https://voice-dictation-extension.onrender.com/api/transcribe",
       extensionEnabled: true,
       recordingDurationMs: 10000,
       transcriptionLanguage: "en",
@@ -1187,9 +1186,7 @@ test("popup settings persist after reload", async ({ page }) => {
   await page.goto("/extension/popup.html");
   await expect(page.locator("#status")).toHaveText("Ready.");
 
-  await page.locator("summary").click();
   await page.locator("#extensionEnabled").uncheck();
-  await page.locator("#backendUrl").fill("http://localhost:9000/api/transcribe");
   await page.locator("#recordingDurationSeconds").fill("14");
   await page.locator("#transcriptionLanguage").selectOption("fr");
   await page.locator("#saveSettings").click();
@@ -1197,7 +1194,6 @@ test("popup settings persist after reload", async ({ page }) => {
 
   await page.reload();
   await expect(page.locator("#extensionEnabled")).not.toBeChecked();
-  await expect(page.locator("#backendUrl")).toHaveValue("http://localhost:9000/api/transcribe");
   await expect(page.locator("#recordingDurationSeconds")).toHaveValue("14");
   await expect(page.locator("#transcriptionLanguage")).toHaveValue("fr");
   await expect(page.locator("#status")).toHaveText("Dictozy is off.");
@@ -1224,23 +1220,30 @@ test("popup stores only an explicitly disabled current origin and preserves glob
 test("reset removes only site preferences", async ({ page }) => {
   await page.goto("/qa/manual-test-page.html");
   await page.evaluate(() => window.__dictozyTest.setStorage({
-    backendUrl: "http://localhost:9000/api/transcribe",
     disabledSiteOrigins: ["https://example.com", "https://app.example.com"],
     extensionEnabled: false,
     recordingDurationMs: 14000,
     transcriptionLanguage: "fr",
   }));
   await page.goto("/extension/popup.html");
-  await page.locator("summary").click();
   await page.locator("#resetSitePreferences").click();
   await expect(page.locator("#status")).toHaveText("Site preferences reset.");
 
   const settings = await page.evaluate(() => window.__dictozyTest.storage());
   expect(settings.disabledSiteOrigins).toBeUndefined();
-  expect(settings.backendUrl).toBe("http://localhost:9000/api/transcribe");
   expect(settings.extensionEnabled).toBe(false);
   expect(settings.recordingDurationMs).toBe(14000);
   expect(settings.transcriptionLanguage).toBe("fr");
+});
+
+test("popup omits backend configuration and keeps site reset available", async ({ page }) => {
+  await page.goto("/extension/popup.html");
+
+  await expect(page.getByText("Advanced Backend", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Backend URL", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Check Backend", { exact: true })).toHaveCount(0);
+  await expect(page.locator("#backendUrl")).toHaveCount(0);
+  await expect(page.locator("#resetSitePreferences")).toBeVisible();
 });
 
 test("popup keeps global settings usable when the current page is inaccessible", async ({ page }) => {

@@ -583,8 +583,7 @@ p {
   height: 24px;
 }
 
-.popup-settings,
-.popup-advanced {
+.popup-settings {
   border: 1px solid #d8e0ea;
   border-radius: 8px;
   background: #ffffff;
@@ -719,14 +718,30 @@ p {
   opacity: 1;
 }
 
-.popup-advanced {
-  display: flex;
-  min-height: 38px;
-  align-items: center;
-  gap: 5px;
-  padding: 9px 12px;
+.popup-reset {
+  display: grid;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid #e5eaf0;
+}
+
+.popup-reset button {
+  min-height: 36px;
+  border: 1px solid #c5d0de;
+  border-radius: 7px;
+  background: #ffffff;
   color: #233244;
+  font: inherit;
   font-size: 13px;
+  font-weight: 750;
+  opacity: 1;
+}
+
+.popup-reset span {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: center;
 }
 
 .popup-status {

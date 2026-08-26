@@ -23,7 +23,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - The unpacked extension loads without errors in `chrome://extensions`.
 - Popup settings persist after closing and reopening the popup.
-- The popup shows `Dictozy` branding and version `0.1.9` in `chrome://extensions` when testing the unpacked release candidate.
+- The popup shows `Dictozy` branding and version `0.1.10` in `chrome://extensions` when testing the unpacked release candidate.
 - The popup displays the current `toggle-dictation` shortcut or `Not assigned`.
 - The popup keyboard icon opens `chrome://extensions/shortcuts`.
 - The suggested shortcut is `Ctrl+Shift+Y`, or `Command+Shift+Y` on macOS, when Chrome can assign it without a conflict.
@@ -41,13 +41,13 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 - Disabling the current site during microphone access, recording, or transcription stops extension-side work and prevents upload or late insertion as appropriate.
 - The shortcut and a stale click control cannot start dictation while the current site is disabled.
 - Re-enabling the current site restores normal behavior after a supported field is focused.
-- Reset Site Preferences removes only explicitly disabled origins and preserves the backend URL, recording limit, language formatting, global enabled state, and keyboard shortcut.
+- Reset Site Preferences is available in the normal settings panel, removes only explicitly disabled origins, and preserves the recording limit, language formatting, global enabled state, and keyboard shortcut.
 - Malformed or duplicate stored origin values do not break the popup or content script.
 - On restricted Chrome pages, the current-site control is unavailable while the global toggle and other popup settings remain usable.
-- Backend URL defaults to `https://voice-dictation-extension.onrender.com/api/transcribe`.
-- Backend URL rejects unapproved remote hosts, xAI URLs, and paths that do not end in `/api/transcribe`.
-- Backend URL rejects embedded credentials, query strings, and fragments.
-- Advanced Check Backend reports success when the configured backend `/health` endpoint returns `{"status":"ok"}`.
+- The popup contains no Advanced Backend, Backend URL, or Check Backend control.
+- An obsolete stored `backendUrl` value is removed on update and cannot change the request destination.
+- `chrome://extensions` shows backend host access only for `https://voice-dictation-extension.onrender.com/*`; localhost backend fetch access is absent.
+- Production transcription requests always target `https://voice-dictation-extension.onrender.com/api/transcribe`.
 - Recording limit defaults to 10 seconds and clamps to the allowed range.
 - The microphone icon button appears on supported fields only.
 - Editable ARIA textboxes, such as `[role="textbox"][contenteditable="true"]`, are supported; bare non-editable ARIA textboxes are ignored.
@@ -141,6 +141,6 @@ http://127.0.0.1:8080/qa/manual-test-page.html
 
 - If the button stays on Transcribing, reload the extension in `chrome://extensions`, refresh the test page, and retry with a shorter recording.
 - Check the backend terminal for `xAI STT` warning lines when the extension shows a speech-to-text error.
-- Make sure the backend is running on `http://127.0.0.1:8000`.
+- For local backend checks, use the direct smoke-test script; the production extension is intentionally pinned to the deployed backend.
 
 For a deployed backend, use [deployment-smoke-test.md](deployment-smoke-test.md).

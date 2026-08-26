@@ -7,7 +7,7 @@ const vm = require("node:vm");
 const extensionDir = path.join(__dirname, "..");
 
 function loadConfig() {
-  const sandbox = { URL };
+  const sandbox = {};
   sandbox.globalThis = sandbox;
   vm.runInNewContext(
     fs.readFileSync(path.join(extensionDir, "config.js"), "utf8"),
@@ -16,6 +16,18 @@ function loadConfig() {
   );
   return sandbox.VoiceDictationConfig;
 }
+
+test("production transcription endpoint is fixed", () => {
+  const config = loadConfig();
+
+  assert.equal(
+    config.TRANSCRIPTION_ENDPOINT,
+    "https://voice-dictation-extension.onrender.com/api/transcribe",
+  );
+  assert.equal(Object.hasOwn(config, "DEFAULT_BACKEND_URL"), false);
+  assert.equal(Object.hasOwn(config, "validateBackendUrl"), false);
+  assert.equal(Object.hasOwn(config, "getHealthUrl"), false);
+});
 
 test("language formatting options match the audited allowlist", () => {
   const config = loadConfig();

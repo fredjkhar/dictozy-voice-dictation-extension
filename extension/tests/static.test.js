@@ -10,18 +10,14 @@ function readExtensionFile(name) {
   return fs.readFileSync(path.join(extensionDir, name), "utf8");
 }
 
-test("manifest is prepared for Dictozy 0.1.9 without new permissions", () => {
+test("manifest is prepared for Dictozy 0.1.10 with production-only backend access", () => {
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
 
   assert.equal(manifest.name, "Dictozy: Voice Dictation");
   assert.equal(manifest.short_name, "Dictozy");
-  assert.equal(manifest.version, "0.1.9");
+  assert.equal(manifest.version, "0.1.10");
   assert.deepEqual(manifest.permissions, ["storage"]);
-  assert.deepEqual(manifest.host_permissions, [
-    "http://127.0.0.1/*",
-    "http://localhost/*",
-    "https://voice-dictation-extension.onrender.com/*",
-  ]);
+  assert.deepEqual(manifest.host_permissions, ["https://voice-dictation-extension.onrender.com/*"]);
   assert.deepEqual(manifest.content_scripts[0].js, [
     "dom-utils.js",
     "dictation-lifecycle.js",
@@ -49,7 +45,7 @@ test("extension and Node package versions stay aligned", () => {
   assert.equal(packageLock.packages[""].version, manifest.version);
 });
 
-test("production popup no longer exposes fake text controls", () => {
+test("production popup exposes user settings without development controls", () => {
   const popupHtml = readExtensionFile("popup.html");
   const popupJs = readExtensionFile("popup.js");
 
@@ -59,13 +55,25 @@ test("production popup no longer exposes fake text controls", () => {
   assert.match(popupHtml, /siteEnabled/);
   assert.match(popupHtml, /Enable on this site/);
   assert.match(popupHtml, /Reset Site Preferences/);
-  assert.match(popupHtml, /Advanced Backend/);
+  assert.equal(/Advanced Backend|Backend URL|Check Backend|backendUrl/.test(popupHtml), false);
+  assert.equal(/VOICE_DICTATION_TEST_BACKEND|backendUrl/.test(popupJs), false);
   assert.match(popupHtml, /brand-mark/);
   assert.match(popupHtml, /shortcutValue/);
   assert.match(popupHtml, /transcriptionLanguage/);
   assert.match(popupHtml, /Language formatting/);
   assert.match(popupJs, /chrome\.commands\.getAll/);
   assert.match(popupHtml, /data-tone="neutral"/);
+});
+
+test("background pins transcription and removes the obsolete endpoint setting", () => {
+  const background = readExtensionFile("background.js");
+  const config = readExtensionFile("config.js");
+
+  assert.match(background, /fetch\(TRANSCRIPTION_ENDPOINT/);
+  assert.match(background, /chrome\.runtime\.onInstalled/);
+  assert.match(background, /OBSOLETE_BACKEND_URL_STORAGE_KEY/);
+  assert.equal(/settings\.backendUrl|message\.backendUrl|VOICE_DICTATION_TEST_BACKEND/.test(background), false);
+  assert.equal(/localhost|127\.0\.0\.1/.test(config), false);
 });
 
 test("content script honors enabled storage and has no fake text message path", () => {

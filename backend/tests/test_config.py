@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from app.core.config import parse_bool_env
+from app.core.config import PRODUCTION_EXTENSION_ORIGIN, Settings, parse_bool_env
 
 
 @pytest.mark.parametrize("value", [None, "", "   "])
@@ -38,6 +38,35 @@ def test_parse_bool_env_rejects_invalid_values(monkeypatch) -> None:
 
     with pytest.raises(ValueError, match=r"^TEST_BOOLEAN must be one of:"):
         parse_bool_env("TEST_BOOLEAN", True)
+
+
+def test_production_settings_require_only_the_published_extension_origin() -> None:
+    settings = Settings(
+        app_env="production",
+        backend_cors_origins=PRODUCTION_EXTENSION_ORIGIN,
+    )
+
+    assert settings.cors_origins == [PRODUCTION_EXTENSION_ORIGIN]
+
+
+@pytest.mark.parametrize(
+    "origins",
+    [
+        "",
+        "*",
+        "http://localhost:3000",
+        f"{PRODUCTION_EXTENSION_ORIGIN},http://localhost:3000",
+    ],
+)
+def test_production_settings_reject_unsafe_cors_origins(origins: str) -> None:
+    with pytest.raises(ValueError, match="Production BACKEND_CORS_ORIGINS"):
+        Settings(app_env="production", backend_cors_origins=origins)
+
+
+def test_local_settings_keep_explicit_development_cors_origin() -> None:
+    settings = Settings(app_env="local", backend_cors_origins="http://localhost:3000")
+
+    assert settings.cors_origins == ["http://localhost:3000"]
 
 
 def test_invalid_transcription_enabled_prevents_backend_config_import() -> None:

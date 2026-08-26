@@ -1,6 +1,8 @@
 import asyncio
 from dataclasses import replace
 
+import pytest
+
 from app.services import xai_service
 
 
@@ -80,3 +82,49 @@ def test_automatic_language_omits_provider_formatting_fields(monkeypatch) -> Non
     captured_request = transcribe_with_language(None, monkeypatch)
 
     assert captured_request["data"] == {}
+
+
+@pytest.mark.parametrize("text_value", [None, ""])
+def test_unusable_provider_responses_do_not_log_payload_keys(monkeypatch, caplog, text_value) -> None:
+    class UnusableResponse(FakeResponse):
+        @staticmethod
+        def json() -> dict[str, object]:
+            return {
+                "private-provider-marker": "must-not-be-logged",
+                "text": text_value,
+            }
+
+    class FakeAsyncClient:
+        def __init__(self, *, timeout: float) -> None:
+            assert timeout == 30.0
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, _exc_type, _exc, _traceback) -> None:
+            return None
+
+        async def post(self, _endpoint, *, headers, data, files):
+            return UnusableResponse()
+
+    monkeypatch.setattr(xai_service.httpx, "AsyncClient", FakeAsyncClient)
+    monkeypatch.setattr(
+        xai_service,
+        "settings",
+        replace(xai_service.settings, xai_api_key="backend-only-test-key"),
+    )
+
+    expected_error = xai_service.XAIServiceError if text_value is None else xai_service.XAIEmptyTranscriptError
+    with caplog.at_level("WARNING"), pytest.raises(expected_error):
+        asyncio.run(
+            xai_service.transcribe_audio(
+                b"normalized audio",
+                filename="recording.wav",
+                content_type="audio/wav",
+                language="en",
+            )
+        )
+
+    assert "private-provider-marker" not in caplog.text
+    assert "must-not-be-logged" not in caplog.text
+    assert "status=200" in caplog.text

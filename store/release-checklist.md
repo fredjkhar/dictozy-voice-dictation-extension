@@ -1,6 +1,6 @@
 # Chrome Web Store Release Checklist
 
-Dictozy `0.1.8` is published. Phase 34 prepares the `0.1.9` insertion-reliability package without authorizing submission or publication. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
+Dictozy `0.1.8` is published. Phase 35 prepares the `0.1.10` production-hardening package, including the completed `0.1.9` insertion improvements, without authorizing submission or publication. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 
 ## Package
 
@@ -8,7 +8,7 @@ Dictozy `0.1.8` is published. Phase 34 prepares the `0.1.9` insertion-reliabilit
 - [ ] Run `node --test extension/tests/*.test.js`.
 - [ ] Run `npm ci` and `npm run test:browser`; confirm all mocked Chromium workflows pass without contacting production.
 - [ ] Run `python3 scripts/package_extension.py` from the repository root.
-- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.9.zip` and contains `manifest.json` at its root.
+- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.10.zip` and contains `manifest.json` at its root.
 - [ ] Confirm the immutable published package `dist/dictozy-v0.1.7.zip` still has SHA-256 `a573bd146642b7aacb0b494f2e9644b3c85d260295968ec4fa3680d3795debed`.
 - [ ] Load the generated ZIP contents as an unpacked extension and repeat the manual QA checklist.
 - [ ] Confirm no source maps, environment files, raw audio, test fixtures, or unrelated repository files are included.
@@ -18,7 +18,7 @@ Dictozy `0.1.8` is published. Phase 34 prepares the `0.1.9` insertion-reliabilit
 
 - [ ] `storage` is the only API permission.
 - [ ] HTTPS page access is justified by field detection, visible microphone UI, and transcript insertion.
-- [ ] Backend host access is limited to the production Render host and localhost development hosts.
+- [ ] Backend host access is limited to the production Render host; localhost backend host access is absent.
 - [ ] `activeTab`, `tabs`, microphone manifest permission, and broad backend `https://*/*` host access are absent.
 - [ ] The `toggle-dictation` command is declared without adding an API permission.
 - [ ] Password and payment fields remain excluded.
@@ -35,7 +35,7 @@ Dictozy `0.1.8` is published. Phase 34 prepares the `0.1.9` insertion-reliabilit
 - [ ] Review `assets/screenshot-dictation-1280x800.png` and `assets/screenshot-settings-1280x800.png`; regenerate only if the screenshots no longer match the shipped UI.
 - [ ] Confirm screenshots show Dictozy branding, global and current-site controls, microphone/stop icon controls, the language-formatting selector, the 10-second default, and no development-only controls.
 - [ ] Review the required `assets/promo-small-440x280.png` tile at full size.
-- [ ] Confirm the unchanged visual assets still accurately represent the `0.1.9` popup and recording UI before opening a Web Store draft.
+- [ ] Confirm the regenerated settings screenshot accurately represents the `0.1.10` popup and the other visual assets remain accurate before opening a Web Store draft.
 - [ ] Add other assets only when they accurately represent the shipped extension.
 - [ ] Do not claim real-time streaming, offline transcription, grammar correction, accounts, or other unimplemented features.
 - [ ] Set Homepage and Support URLs to the deployed first-party website pages documented in `listing.md`.
@@ -43,13 +43,13 @@ Dictozy `0.1.8` is published. Phase 34 prepares the `0.1.9` insertion-reliabilit
 ## Developer Dashboard Update
 
 - [ ] Open the existing Chrome Web Store item for extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Upload `dist/dictozy-v0.1.9.zip` only after automated and manual QA are complete and the user explicitly approves submission.
-- [ ] Store Listing tab: update only the `0.1.9` release note; keep the existing summary and detailed description.
+- [ ] Upload `dist/dictozy-v0.1.10.zip` only after automated and manual QA are complete and the user explicitly approves submission.
+- [ ] Store Listing tab: update the `0.1.10` release note and settings screenshot; keep the existing summary and detailed description.
 - [ ] Keep the dictation screenshot first and retain the accurate icon, screenshots, and promo tile.
 - [ ] Keep the verified first-party Homepage, Support, and Privacy Policy URLs.
-- [ ] Privacy practices tab: review data-use declarations, permission justifications, remote-code declaration, and Limited Use certifications for consistency; extension behavior and data handling did not change.
+- [ ] Privacy practices tab: update the storage and backend-host explanations to remove the obsolete endpoint setting and localhost backend access; retain accurate audio/transcript declarations and Limited Use certifications.
 - [ ] Distribution tab: confirm visibility, regions, and rollout settings.
-- [ ] Do not submit the `0.1.9` update for review until the user explicitly approves submission.
+- [ ] Do not submit the `0.1.10` update for review until the user explicitly approves submission.
 
 ## Privacy
 
@@ -76,18 +76,18 @@ In Render, retain:
 BACKEND_CORS_ORIGINS=chrome-extension://folpeencabfejhjokmldikaelonphmma
 ```
 
-Do not include a trailing slash. A temporary unpacked-extension origin may be added for local testing, then removed when testing is complete. Phase 34 does not require a Render or CORS change.
+Do not include a trailing slash or additional origins. With `APP_ENV=production`, any other CORS value must fail startup clearly.
 
 ## Backend Compatibility
 
-- [ ] Confirm no backend code or production configuration change is required for `0.1.9`.
+- [ ] Deploy the production CORS startup validation before or with the `0.1.10` release and retain the exact published extension origin.
 - [ ] Confirm production `/health` remains healthy.
-- [ ] Run one real transcription from the unpacked `0.1.9` release candidate before submission.
+- [ ] Run one real transcription from the unpacked `0.1.10` release candidate before submission.
 
 ## Final QA Before Submission
 
 - [ ] Open `https://voice-dictation-extension.onrender.com/health` and confirm the production backend returns `{"status":"ok"}`.
-- [ ] Confirm the unpacked `0.1.9` release candidate has no errors in `chrome://extensions`.
+- [ ] Confirm the unpacked `0.1.10` release candidate has no errors in `chrome://extensions`.
 - [ ] Test a normal text input, textarea, contenteditable field, and editable ARIA textbox.
 - [ ] Confirm a bare non-editable ARIA textbox is ignored.
 - [ ] Confirm camel-case, snake-case, kebab-case, compact, and standard `cc-*` payment fields are ignored while safe near-misses remain supported.
@@ -118,10 +118,13 @@ Do not include a trailing slash. A temporary unpacked-extension origin may be ad
 - [ ] Disable the current site during microphone access, recording, and transcription; confirm tracks stop, requests are cancelled where practical, uploads are prevented when possible, and no late transcript is inserted.
 - [ ] Verify the shortcut and click control cannot start dictation while the current site is disabled.
 - [ ] Re-enable the current site, refocus a supported field, and confirm dictation returns.
-- [ ] Reset site preferences and confirm the backend URL, recording limit, language, global enabled state, and keyboard shortcut remain unchanged.
+- [ ] Confirm the popup contains no Advanced Backend, Backend URL, or Check Backend control.
+- [ ] Reset site preferences from the normal settings panel and confirm the recording limit, language, global enabled state, and keyboard shortcut remain unchanged.
+- [ ] Seed an obsolete stored `backendUrl`, update or reload through the migration path, and confirm it is removed and cannot redirect a request.
+- [ ] Confirm `chrome://extensions` shows no localhost backend host access.
 - [ ] Open the popup on `chrome://extensions`, the Chrome Web Store, and another restricted page; confirm the current-site control is safely unavailable and global settings remain usable.
 - [ ] Move focus before a response completes and confirm no transcript is inserted into either the old or new field.
-- [ ] Inspect extension network activity and confirm audio goes only to the configured FastAPI backend.
+- [ ] Inspect extension network activity and confirm audio goes only to `https://voice-dictation-extension.onrender.com`.
 - [ ] Confirm the xAI key is absent from the ZIP, repository status, browser storage, and browser network requests.
 - [ ] Keep the metadata changes in draft until the user explicitly approves submission.
 
@@ -129,7 +132,7 @@ Do not include a trailing slash. A temporary unpacked-extension origin may be ad
 
 - [ ] Confirm the public listing is visible and shows the intended name, icon, screenshots, promotional tile, support link, homepage link, and privacy policy link.
 - [ ] Install the Chrome Web Store version and confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Confirm version `0.1.9` after the patch release is published.
+- [ ] Confirm version `0.1.10` after the hardening release is published.
 - [ ] Run the Store-installed smoke test in [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 - [ ] Confirm Render CORS includes `chrome-extension://folpeencabfejhjokmldikaelonphmma`.
 - [ ] Review Render logs for request IDs, status, latency, `429`, `502`, `503`, and safe logging.

@@ -17,8 +17,6 @@ EXTENSION_DIR = ROOT / "extension"
 DEFAULT_OUTPUT_DIR = ROOT / "dist"
 EXPECTED_PERMISSIONS = ["storage"]
 EXPECTED_HOST_PERMISSIONS = {
-    "http://127.0.0.1/*",
-    "http://localhost/*",
     "https://voice-dictation-extension.onrender.com/*",
 }
 EXPECTED_CONTENT_MATCHES = {
@@ -39,6 +37,7 @@ EXPECTED_COMMANDS = {
 PACKAGE_FILES = (
     "manifest.json",
     "config.js",
+    "background-utils.js",
     "dom-utils.js",
     "dictation-lifecycle.js",
     "site-preferences.js",
@@ -148,6 +147,20 @@ def validate_files() -> None:
         raise ValueError("background.js must import the packaged config.js")
     if 'importScripts("dictation-lifecycle.js")' not in background:
         raise ValueError("background.js must import the packaged dictation-lifecycle.js")
+    if 'importScripts("background-utils.js")' not in background:
+        raise ValueError("background.js must import the packaged background-utils.js")
+
+    packaged_text = "\n".join(
+        (EXTENSION_DIR / name).read_text(encoding="utf-8")
+        for name in PACKAGE_FILES
+        if name.endswith((".html", ".js", ".json"))
+    )
+    for forbidden_value in (
+        "Advanced Backend",
+        "VOICE_DICTATION_TEST_BACKEND",
+    ):
+        if forbidden_value in packaged_text:
+            raise ValueError(f"production package contains forbidden development value: {forbidden_value}")
 
 
 def build_zip(manifest: dict[str, object], output_dir: Path) -> Path:

@@ -73,11 +73,11 @@ async def transcribe_audio(
 
     text = payload.get("text")
     if not isinstance(text, str):
-        logger.warning("xAI STT response did not include text. Keys: %s", sorted(payload.keys()))
+        logger.warning("xAI STT response did not include text. status=%s", response.status_code)
         raise XAIServiceError("xAI transcription response did not include text.")
 
     if not text.strip():
-        logger.warning("xAI STT response included empty text. Keys: %s", sorted(payload.keys()))
+        logger.warning("xAI STT response included empty text. status=%s", response.status_code)
         raise XAIEmptyTranscriptError("xAI transcription response included empty text.")
 
     return XAITranscriptionResult(text=text.strip())

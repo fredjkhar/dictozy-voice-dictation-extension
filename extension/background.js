@@ -1,44 +1,48 @@
 importScripts("config.js");
 importScripts("dictation-lifecycle.js");
+importScripts("background-utils.js");
 
 const TRANSCRIBE_AUDIO_MESSAGE = "VOICE_DICTATION_TRANSCRIBE_AUDIO";
 const CANCEL_TRANSCRIPTION_MESSAGE = "VOICE_DICTATION_CANCEL_TRANSCRIPTION";
-const TEST_BACKEND_MESSAGE = "VOICE_DICTATION_TEST_BACKEND";
 const TOGGLE_DICTATION_COMMAND = "toggle-dictation";
 const TOGGLE_DICTATION_MESSAGE = "VOICE_DICTATION_TOGGLE";
 const TRANSCRIBE_TIMEOUT_MS = 45000;
-const HEALTH_CHECK_TIMEOUT_MS = 10000;
-const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
 const REQUEST_ID_HEADER = "X-Request-ID";
+const OBSOLETE_BACKEND_URL_STORAGE_KEY = "backendUrl";
+const ALLOWED_MESSAGE_TYPES = new Set([
+  CANCEL_TRANSCRIPTION_MESSAGE,
+  TRANSCRIBE_AUDIO_MESSAGE,
+]);
+const TRANSCRIBE_MESSAGE_KEYS = new Set(["audioDataUrl", "requestId", "type"]);
+const CANCEL_MESSAGE_KEYS = new Set(["requestId", "type"]);
+const SAFE_BAD_REQUEST_DETAILS = new Set([
+  "Could not process recorded audio.",
+  "No speech was detected. Please check your microphone and try again.",
+  "No speech was detected. Please try again.",
+  "Unsupported audio file type.",
+  "Unsupported transcription language.",
+  "Uploaded audio file is empty.",
+]);
 const {
-  DEFAULT_BACKEND_URL,
   DEFAULT_TRANSCRIPTION_LANGUAGE,
-  getHealthUrl,
-  normalizeBackendUrl,
+  TRANSCRIPTION_ENDPOINT,
   normalizeTranscriptionLanguage,
 } = globalThis.VoiceDictationConfig;
 const { normalizeRequestId } = globalThis.DictozyLifecycle;
+const { prepareAudioDataUrl } = globalThis.DictozyBackgroundUtils;
 const activeTranscriptions = new Map();
 
-function parseAudioDataUrl(dataUrl) {
-  const match = /^data:(audio\/[^;,]+)(?:;[^,]*)?;base64,(.+)$/i.exec(dataUrl);
+function hasOnlyKeys(message, allowedKeys) {
+  return Boolean(
+    message
+    && typeof message === "object"
+    && !Array.isArray(message)
+    && Object.keys(message).every((key) => allowedKeys.has(key)),
+  );
+}
 
-  if (!match) {
-    return null;
-  }
-
-  const [, mimeType, base64Audio] = match;
-  const binary = atob(base64Audio);
-  const audioBytes = new Uint8Array(binary.length);
-
-  for (let index = 0; index < binary.length; index += 1) {
-    audioBytes[index] = binary.charCodeAt(index);
-  }
-
-  return {
-    blob: new Blob([audioBytes], { type: mimeType.toLowerCase() }),
-    mimeType: mimeType.toLowerCase(),
-  };
+function isTrustedSender(sender) {
+  return !sender?.id || sender.id === chrome.runtime.id;
 }
 
 function getFriendlyBackendError(status, detail) {
@@ -62,8 +66,12 @@ function getFriendlyBackendError(status, detail) {
     return "Recording is too large.";
   }
 
-  if (status === 400 && detail) {
+  if (status === 400 && SAFE_BAD_REQUEST_DETAILS.has(detail)) {
     return detail;
+  }
+
+  if (status === 400) {
+    return "Recorded audio could not be processed.";
   }
 
   return "Dictation request failed. Please try again.";
@@ -71,40 +79,8 @@ function getFriendlyBackendError(status, detail) {
 
 function getStoredSettings() {
   return chrome.storage.local.get({
-    backendUrl: DEFAULT_BACKEND_URL,
     transcriptionLanguage: DEFAULT_TRANSCRIPTION_LANGUAGE,
   });
-}
-
-async function testBackend(backendUrl) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), HEALTH_CHECK_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(getHealthUrl(backendUrl), {
-      method: "GET",
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      return { ok: false, message: `Backend health check failed (${response.status}).` };
-    }
-
-    const data = await response.json();
-
-    if (data?.status !== "ok") {
-      return { ok: false, message: "Backend returned an unexpected health response." };
-    }
-
-    return { ok: true, message: "Backend is reachable." };
-  } catch (error) {
-    return {
-      ok: false,
-      message: error?.name === "AbortError" ? "Backend health check timed out." : "Could not reach the backend.",
-    };
-  } finally {
-    clearTimeout(timeoutId);
-  }
 }
 
 async function transcribeAudio(message) {
@@ -125,24 +101,6 @@ async function transcribeAudio(message) {
     };
   }
 
-  const audio = parseAudioDataUrl(message.audioDataUrl);
-
-  if (!audio || audio.blob.size === 0) {
-    return {
-      ok: false,
-      message: "Could not prepare recorded audio.",
-      requestId,
-    };
-  }
-
-  if (audio.blob.size > MAX_AUDIO_UPLOAD_BYTES) {
-    return {
-      ok: false,
-      message: "Recording is too large to upload.",
-      requestId,
-    };
-  }
-
   if (activeTranscriptions.has(requestId)) {
     return {
       ok: false,
@@ -151,7 +109,16 @@ async function transcribeAudio(message) {
     };
   }
 
-  const extension = audio.mimeType.includes("mp4") ? "mp4" : "webm";
+  const audio = prepareAudioDataUrl(message.audioDataUrl);
+
+  if (!audio.ok) {
+    return {
+      ok: false,
+      message: audio.reason === "too_large" ? "Recording is too large to upload." : "Could not prepare recorded audio.",
+      requestId,
+    };
+  }
+
   const controller = new AbortController();
   const requestContext = {
     cancelReason: "",
@@ -165,11 +132,10 @@ async function transcribeAudio(message) {
 
   try {
     const settings = await getStoredSettings();
-    const endpoint = normalizeBackendUrl(settings.backendUrl);
     const formData = new FormData();
     formData.append("language", normalizeTranscriptionLanguage(settings.transcriptionLanguage));
-    formData.append("file", audio.blob, `recording.${extension}`);
-    const response = await fetch(endpoint, {
+    formData.append("file", audio.blob, `recording.${audio.extension}`);
+    const response = await fetch(TRANSCRIPTION_ENDPOINT, {
       method: "POST",
       body: formData,
       headers: {
@@ -282,13 +248,25 @@ async function sendToggleToActiveTab() {
   }
 }
 
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type === TEST_BACKEND_MESSAGE) {
-    testBackend(message.backendUrl).then(sendResponse);
-    return true;
+chrome.runtime.onInstalled.addListener(() => {
+  void chrome.storage.local.remove(OBSOLETE_BACKEND_URL_STORAGE_KEY);
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (!isTrustedSender(sender) || !ALLOWED_MESSAGE_TYPES.has(message?.type)) {
+    return false;
   }
 
   if (message?.type === CANCEL_TRANSCRIPTION_MESSAGE) {
+    if (!hasOnlyKeys(message, CANCEL_MESSAGE_KEYS) || !normalizeRequestId(message.requestId)) {
+      sendResponse({
+        ok: false,
+        canceled: false,
+        message: "Invalid transcription request.",
+      });
+      return false;
+    }
+
     sendResponse({
       ok: true,
       canceled: cancelTranscription(message.requestId),
@@ -296,7 +274,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return false;
   }
 
-  if (message?.type !== TRANSCRIBE_AUDIO_MESSAGE) {
+  if (!hasOnlyKeys(message, TRANSCRIBE_MESSAGE_KEYS)) {
+    sendResponse({
+      ok: false,
+      message: "Invalid transcription request.",
+      requestId: normalizeRequestId(message.requestId),
+    });
     return false;
   }
 

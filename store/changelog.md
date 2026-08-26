@@ -2,6 +2,15 @@
 
 These notes preserve the release history without placing every prior version in the Chrome Web Store sales description.
 
+## 0.1.10
+
+- Removed developer-facing backend URL and health-check controls from the public popup.
+- Fixed transcription requests to the packaged Dictozy production endpoint and removed localhost backend host access.
+- Removed the obsolete stored backend URL during extension updates.
+- Tightened runtime message and audio payload validation, including encoded-size checks before base64 decoding.
+- Required the exact published extension CORS origin in production backend configuration and reduced provider-failure log detail.
+- Moved Reset Site Preferences into the normal settings panel without changing other user settings.
+
 ## 0.1.9
 
 - Kept transcript insertion anchored to the caret or selection captured when recording starts.

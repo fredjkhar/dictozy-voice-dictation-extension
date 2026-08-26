@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DEFAULT_MAX_TRANSCRIBE_CONTENT_LENGTH_BYTES = 11 * 1024 * 1024
+PRODUCTION_EXTENSION_ORIGIN = "chrome-extension://folpeencabfejhjokmldikaelonphmma"
 
 
 def parse_bool_env(name: str, default: bool) -> bool:
@@ -55,6 +56,15 @@ class Settings:
         "MAX_TRANSCRIBE_CONTENT_LENGTH_BYTES",
         DEFAULT_MAX_TRANSCRIBE_CONTENT_LENGTH_BYTES,
     )
+
+    def __post_init__(self) -> None:
+        if self.app_env.strip().lower() != "production":
+            return
+
+        if self.cors_origins != [PRODUCTION_EXTENSION_ORIGIN]:
+            raise ValueError(
+                "Production BACKEND_CORS_ORIGINS must contain only the published Dictozy extension origin."
+            )
 
     @property
     def cors_origins(self) -> list[str]:

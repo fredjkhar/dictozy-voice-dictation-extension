@@ -53,7 +53,7 @@ Optional hardening settings are included in `.env.example`:
 
 For production configuration, use `.env.production.example` as a template and provide secrets through the hosting provider's environment or secret manager.
 
-For local extension testing, keep `BACKEND_CORS_ORIGINS` limited to trusted local origins. Do not use `*` in production.
+For local backend testing, keep `BACKEND_CORS_ORIGINS` limited to trusted local origins. Production requires only `chrome-extension://folpeencabfejhjokmldikaelonphmma` and rejects wildcard, localhost, or additional origins at startup.
 
 Run the development server:
 

@@ -5,11 +5,13 @@ const test = require("node:test");
 const vm = require("node:vm");
 
 const extensionDir = path.join(__dirname, "..");
+const EXTENSION_ID = "test-extension-id";
 const TRANSCRIBE_MESSAGE = "VOICE_DICTATION_TRANSCRIBE_AUDIO";
 const CANCEL_MESSAGE = "VOICE_DICTATION_CANCEL_TRANSCRIPTION";
 const TOGGLE_COMMAND = "toggle-dictation";
 const TOGGLE_MESSAGE = "VOICE_DICTATION_TOGGLE";
 const AUDIO_DATA_URL = "data:audio/webm;base64,YXVkaW8=";
+const TRANSCRIPTION_ENDPOINT = "https://voice-dictation-extension.onrender.com/api/transcribe";
 
 function createBackground({
   fetchImpl = async () => {
@@ -21,8 +23,11 @@ function createBackground({
   useFakeTimers = false,
 } = {}) {
   let commandListener = null;
+  let installedListener = null;
   let messageListener = null;
   let nextTimerId = 1;
+  const fetchCalls = [];
+  const removedStorageKeys = [];
   const tabMessageCalls = [];
   const tabQueries = [];
   const timers = new Map();
@@ -44,6 +49,12 @@ function createBackground({
         },
       },
       runtime: {
+        id: EXTENSION_ID,
+        onInstalled: {
+          addListener(listener) {
+            installedListener = listener;
+          },
+        },
         onMessage: {
           addListener(listener) {
             messageListener = listener;
@@ -56,6 +67,10 @@ function createBackground({
             ...defaults,
             ...storageValues,
           }),
+          async remove(key) {
+            removedStorageKeys.push(key);
+            delete storageValues[key];
+          },
         },
       },
       tabs: {
@@ -81,7 +96,10 @@ function createBackground({
         clearTimeout(timerId);
       }
     },
-    fetch: fetchImpl,
+    fetch(url, options) {
+      fetchCalls.push({ options, url });
+      return fetchImpl(url, options);
+    },
     setTimeout(callback, delay) {
       if (!useFakeTimers) {
         return setTimeout(callback, delay);
@@ -105,15 +123,28 @@ function createBackground({
   const source = fs.readFileSync(path.join(extensionDir, "background.js"), "utf8");
   vm.runInContext(source, context, { filename: "background.js" });
 
-  function dispatch(message) {
+  function dispatch(message, sender = { id: EXTENSION_ID }) {
     return new Promise((resolve) => {
-      messageListener(message, {}, resolve);
+      let responded = false;
+      const keepChannelOpen = messageListener(message, sender, (response) => {
+        responded = true;
+        resolve(response);
+      });
+
+      if (!responded && keepChannelOpen !== true) {
+        resolve(undefined);
+      }
     });
   }
 
   async function dispatchCommand(command) {
     commandListener(command);
     await new Promise((resolve) => setImmediate(resolve));
+  }
+
+  async function dispatchInstalled(details = { reason: "update" }) {
+    installedListener(details);
+    await Promise.resolve();
   }
 
   function runTimer(delay) {
@@ -126,7 +157,11 @@ function createBackground({
   return {
     dispatch,
     dispatchCommand,
+    dispatchInstalled,
+    fetchCalls,
+    removedStorageKeys,
     runTimer,
+    storageValues,
     tabMessageCalls,
     tabQueries,
   };
@@ -165,10 +200,13 @@ test("background safely ignores missing, restricted, and unrelated command targe
   assert.equal(unrelatedCommand.tabMessageCalls.length, 0);
 });
 
-test("background sends and returns the request ID header", async () => {
+test("background pins the endpoint and sends and returns the request ID header", async () => {
   let receivedHeaders = null;
   let receivedLanguage = null;
   let multipartFields = [];
+  const storageValues = {
+    backendUrl: "http://localhost:9000/api/transcribe",
+  };
   const background = createBackground({
     fetchImpl: async (_url, options) => {
       receivedHeaders = options.headers;
@@ -182,6 +220,7 @@ test("background sends and returns the request ID header", async () => {
         status: 200,
       });
     },
+    storageValues,
   });
 
   const result = await background.dispatch({
@@ -190,6 +229,7 @@ test("background sends and returns the request ID header", async () => {
     type: TRANSCRIBE_MESSAGE,
   });
 
+  assert.equal(background.fetchCalls[0].url, TRANSCRIPTION_ENDPOINT);
   assert.equal(receivedHeaders["X-Request-ID"], "client-request-1234");
   assert.equal(receivedLanguage, "en");
   assert.deepEqual(multipartFields, ["language", "file"]);
@@ -244,6 +284,25 @@ test("provider failures remain safe and do not expose upstream details", async (
   assert.equal(result.ok, false);
   assert.equal(result.message, "Speech-to-text failed. Please try again.");
   assert.equal(JSON.stringify(result).includes("private provider response body"), false);
+});
+
+test("unknown backend details remain generic", async () => {
+  const background = createBackground({
+    fetchImpl: async () => new Response(JSON.stringify({ detail: "private validation detail" }), {
+      headers: { "Content-Type": "application/json" },
+      status: 400,
+    }),
+  });
+
+  const result = await background.dispatch({
+    audioDataUrl: AUDIO_DATA_URL,
+    requestId: "bad-request-1234",
+    type: TRANSCRIBE_MESSAGE,
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.message, "Recorded audio could not be processed.");
+  assert.equal(JSON.stringify(result).includes("private validation detail"), false);
 });
 
 test("background cancellation aborts the active request", async () => {
@@ -307,4 +366,51 @@ test("background timeout aborts and safely recovers", async () => {
   assert.equal(result.canceled, false);
   assert.equal(result.message, "Backend transcription timed out.");
   assert.equal(result.requestId, "timeout-request-1234");
+});
+
+test("messages cannot override the endpoint", async () => {
+  const background = createBackground();
+  const result = await background.dispatch({
+    audioDataUrl: AUDIO_DATA_URL,
+    backendUrl: "https://example.com/api/transcribe",
+    requestId: "override-request-1234",
+    type: TRANSCRIBE_MESSAGE,
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.message, "Invalid transcription request.");
+  assert.equal(background.fetchCalls.length, 0);
+});
+
+test("malformed, untrusted, and unknown messages are rejected safely", async () => {
+  const background = createBackground();
+  const malformedResult = await background.dispatch({
+    requestId: "short",
+    type: CANCEL_MESSAGE,
+  });
+  const untrustedResult = await background.dispatch(
+    {
+      audioDataUrl: AUDIO_DATA_URL,
+      requestId: "untrusted-request-1234",
+      type: TRANSCRIBE_MESSAGE,
+    },
+    { id: "another-extension" },
+  );
+  const unknownResult = await background.dispatch({ type: "UNKNOWN_MESSAGE" });
+
+  assert.equal(malformedResult.ok, false);
+  assert.equal(malformedResult.canceled, false);
+  assert.equal(untrustedResult, undefined);
+  assert.equal(unknownResult, undefined);
+  assert.equal(background.fetchCalls.length, 0);
+});
+
+test("extension updates remove the obsolete backend URL setting", async () => {
+  const storageValues = { backendUrl: "http://localhost:9000/api/transcribe" };
+  const background = createBackground({ storageValues });
+
+  await background.dispatchInstalled();
+
+  assert.deepEqual(background.removedStorageKeys, ["backendUrl"]);
+  assert.equal(Object.hasOwn(background.storageValues, "backendUrl"), false);
 });

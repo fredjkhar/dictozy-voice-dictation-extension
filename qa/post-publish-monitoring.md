@@ -189,7 +189,7 @@ For backend incidents:
 
 - Prefer toggling `TRANSCRIPTION_ENABLED=false` over changing extension code.
 - If the latest backend deploy caused the issue, redeploy the last known-good backend commit from Render.
-- Keep `/health` available so the popup backend check and smoke tests can distinguish backend availability from transcription availability.
+- Keep `/health` available so direct smoke tests can distinguish backend availability from transcription availability.
 
 For Chrome Web Store listing issues:
 
