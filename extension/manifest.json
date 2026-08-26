@@ -3,7 +3,7 @@
   "name": "Dictozy: Voice Dictation",
   "short_name": "Dictozy",
   "version": "0.1.10",
-  "description": "Dictate short text into supported web fields with a visible microphone button and secure backend transcription.",
+  "description": "Write faster in Chrome by dictating messages, notes, searches, and form entries - no account required.",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",

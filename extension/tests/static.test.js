@@ -16,6 +16,11 @@ test("manifest is prepared for Dictozy 0.1.10 with production-only backend acces
   assert.equal(manifest.name, "Dictozy: Voice Dictation");
   assert.equal(manifest.short_name, "Dictozy");
   assert.equal(manifest.version, "0.1.10");
+  assert.equal(
+    manifest.description,
+    "Write faster in Chrome by dictating messages, notes, searches, and form entries - no account required.",
+  );
+  assert.ok(manifest.description.length <= 132);
   assert.deepEqual(manifest.permissions, ["storage"]);
   assert.deepEqual(manifest.host_permissions, ["https://voice-dictation-extension.onrender.com/*"]);
   assert.deepEqual(manifest.content_scripts[0].js, [
