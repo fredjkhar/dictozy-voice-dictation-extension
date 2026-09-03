@@ -370,6 +370,10 @@ function invokeShortcut(page) {
   }));
 }
 
+async function undoLastEdit(page) {
+  await page.keyboard.press(process.platform === "darwin" ? "Meta+Z" : "Control+Z");
+}
+
 test.beforeEach(async ({ page }) => {
   await installChromeMocks(page);
 });
@@ -496,6 +500,41 @@ test("preserves input text, replaces only the selection, and restores the caret"
   ]);
 });
 
+test("native undo restores selected input text and reports historyUndo", async ({ page }) => {
+  await loadContentScript(page);
+  const field = page.locator("#plainTextInput");
+  await field.evaluate((input) => {
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+    descriptor.set.call(input, "Hello old text");
+    input.focus();
+    input.setSelectionRange(6, 9);
+    window.__nativeUndoEvents = [];
+    for (const eventType of ["beforeinput", "input", "change"]) {
+      input.addEventListener(eventType, (event) => {
+        window.__nativeUndoEvents.push({
+          inputType: event.inputType || null,
+          type: event.type,
+        });
+      });
+    }
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "new" });
+  });
+
+  await recordAndStop(page);
+  await expect(field).toHaveValue("Hello new text");
+  await undoLastEdit(page);
+
+  await expect(field).toHaveValue("Hello old text");
+  expect(await field.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([6, 9]);
+  expect(await page.evaluate(() => window.__nativeUndoEvents)).toEqual([
+    { inputType: "insertText", type: "beforeinput" },
+    { inputType: "insertText", type: "input" },
+    { inputType: null, type: "change" },
+    { inputType: "historyUndo", type: "beforeinput" },
+    { inputType: "historyUndo", type: "input" },
+  ]);
+});
+
 test("appends to a textarea and places the caret after the transcript", async ({ page }) => {
   await loadContentScript(page);
   const field = page.locator("#plainTextarea");
@@ -510,6 +549,25 @@ test("appends to a textarea and places the caret after the transcript", async ({
 
   await expect(field).toHaveValue("Existing text continued");
   expect(await field.evaluate((textarea) => textarea.selectionStart)).toBe(23);
+});
+
+test("native undo restores textarea content", async ({ page }) => {
+  await loadContentScript(page);
+  const field = page.locator("#plainTextarea");
+  await field.evaluate((textarea) => {
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value");
+    descriptor.set.call(textarea, "Existing text");
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "continued" });
+  });
+
+  await recordAndStop(page);
+  await expect(field).toHaveValue("Existing text continued");
+  await undoLastEdit(page);
+
+  await expect(field).toHaveValue("Existing text");
+  expect(await field.evaluate((textarea) => [textarea.selectionStart, textarea.selectionEnd])).toEqual([13, 13]);
 });
 
 test("updates a framework-like controlled input through native events after rerender", async ({ page }) => {
@@ -563,6 +621,37 @@ test("updates a framework-like controlled input through native events after rere
     "change",
   ]);
   await expect(page.locator(MIC_BUTTON)).toHaveCount(1);
+});
+
+test("native undo updates a stable controlled-field model", async ({ page }) => {
+  await loadContentScript(page);
+  const field = page.locator("#controlledInput");
+  await field.evaluate((input) => {
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+    descriptor.set.call(input, "Controlled");
+    window.__controlledModel = input.value;
+    window.__controlledUndoInputTypes = [];
+    input.addEventListener("input", (event) => {
+      window.__controlledModel = input.value;
+      window.__controlledUndoInputTypes.push(event.inputType);
+      queueMicrotask(() => descriptor.set.call(input, window.__controlledModel));
+    });
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "update" });
+  });
+
+  await recordAndStop(page);
+  await expect(field).toHaveValue("Controlled update");
+  expect(await page.evaluate(() => window.__controlledModel)).toBe("Controlled update");
+  await undoLastEdit(page);
+
+  await expect(field).toHaveValue("Controlled");
+  expect(await page.evaluate(() => window.__controlledModel)).toBe("Controlled");
+  expect(await page.evaluate(() => window.__controlledUndoInputTypes)).toEqual([
+    "insertText",
+    "historyUndo",
+  ]);
 });
 
 test("inserts plain text at a contenteditable caret exactly once", async ({ page }) => {
@@ -620,6 +709,84 @@ test("replaces a contenteditable selection with plain text", async ({ page }) =>
 
   await expect(editor).toHaveText("Hello <strong>new</strong> text");
   await expect(editor.locator("strong")).toHaveCount(0);
+});
+
+test("native undo restores a replaced contenteditable selection", async ({ page }) => {
+  await loadContentScript(page);
+  const editor = page.locator("#plainEditor");
+  await editor.evaluate((element) => {
+    element.textContent = "Hello old text";
+    element.focus();
+    const range = document.createRange();
+    range.setStart(element.firstChild, 6);
+    range.setEnd(element.firstChild, 9);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "new" });
+  });
+
+  await recordAndStop(page);
+  await expect(editor).toHaveText("Hello new text");
+  await undoLastEdit(page);
+
+  await expect(editor).toHaveText("Hello old text");
+  expect(await editor.evaluate(() => window.getSelection().toString())).toBe("old");
+});
+
+test("native undo restores nested rich-text markup", async ({ page }) => {
+  await loadContentScript(page);
+  const editor = page.locator("#nestedEditor");
+  const initialHtml = "<p>Hello <strong>bold</strong> tail</p>";
+  await editor.evaluate((element) => {
+    element.innerHTML = "<p>Hello <strong>bold</strong> tail</p>";
+    element.focus();
+    const textNode = element.querySelector("p").firstChild;
+    const range = document.createRange();
+    range.setStart(textNode, textNode.length);
+    range.collapse(true);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    window.__richUndoInputTypes = [];
+    element.addEventListener("input", (event) => {
+      window.__richUndoInputTypes.push(event.inputType);
+    });
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "clear" });
+  });
+
+  await recordAndStop(page);
+  await expect(editor).toContainText("Hello clear bold tail");
+  await expect(editor.locator("strong")).toHaveText("bold");
+  await undoLastEdit(page);
+
+  expect(await editor.evaluate((element) => element.innerHTML)).toBe(initialHtml);
+  expect(await page.evaluate(() => window.__richUndoInputTypes)).toEqual([
+    "insertText",
+    "historyUndo",
+  ]);
+});
+
+test("native undo works in an editable ARIA textbox", async ({ page }) => {
+  await loadContentScript(page);
+  const editor = page.locator('[role="textbox"][contenteditable="true"]');
+  await editor.evaluate((element) => {
+    element.textContent = "ARIA text";
+    element.focus();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "added" });
+  });
+
+  await recordAndStop(page);
+  await expect(editor).toHaveText("ARIA text added");
+  await undoLastEdit(page);
+
+  await expect(editor).toHaveText("ARIA text");
 });
 
 test("keeps a captured form caret while transcription is pending", async ({ page }) => {
@@ -691,7 +858,7 @@ test("keeps the captured rich-text caret and surrounding markup", async ({ page 
     const preceding = document.createRange();
     preceding.selectNodeContents(element);
     preceding.setEnd(selection.anchorNode, selection.anchorOffset);
-    return preceding.toString();
+    return preceding.toString().replaceAll("\u00a0", " ");
   })).toBe("Hello clear ");
 });
 

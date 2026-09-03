@@ -2,6 +2,13 @@
 
 These notes preserve the release history without placing every prior version in the Chrome Web Store sales description.
 
+## 0.1.11
+
+- Added native Undo support for recent transcript insertions in supported Chrome and Brave fields.
+- Restored replaced text and preserved surrounding rich-text markup when an insertion is undone.
+- Kept one `beforeinput`, `input`, and `change` insertion sequence without intercepting global keyboard shortcuts.
+- Retained the existing setter and Range insertion paths as compatibility fallbacks.
+
 ## 0.1.10
 
 - Removed developer-facing backend URL and health-check controls from the public popup.

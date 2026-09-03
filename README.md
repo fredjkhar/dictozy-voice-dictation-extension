@@ -26,7 +26,7 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.9` is published. Version `0.1.10` has been submitted as a production-hardening update that simplifies settings and tightens extension and backend boundaries.
+Version `0.1.9` is published. Version `0.1.10` has been submitted as a production-hardening update, and version `0.1.11` is an unreleased source candidate for native Undo reliability.
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Recording starts only after an explicit microphone-button click or assigned browser shortcut.
@@ -37,7 +37,7 @@ Version `0.1.9` is published. Version `0.1.10` has been submitted as a productio
 - Extension sends audio only to the fixed Dictozy production backend.
 - Backend calls xAI Speech-to-Text.
 - Transcript is inserted back into the focused field.
-- Controlled inputs receive updates through native setters and standard editing events, while contenteditable transcripts are inserted as plain text at the saved selection.
+- Supported Chromium fields use a native editing transaction so the standard Undo command can reverse a recent transcript insertion; the established setter and Range paths remain as compatibility fallbacks.
 - Dynamically added fields work through delegated focus handling, and detached or newly unsupported targets are never given a late transcript.
 - xAI API key stays backend-only in `.env`.
 - Pending transcription can be cancelled from the on-page control without inserting a late result.

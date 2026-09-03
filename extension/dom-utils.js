@@ -130,6 +130,20 @@
     return false;
   }
 
+  function dispatchBeforeInputEvent(element, text) {
+    return element.dispatchEvent(new InputEvent("beforeinput", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      data: text,
+      inputType: "insertText",
+    }));
+  }
+
+  function dispatchChangeEvent(element) {
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
   function dispatchInputEvents(element, text) {
     element.dispatchEvent(new InputEvent("input", {
       bubbles: true,
@@ -137,7 +151,35 @@
       data: text,
       inputType: "insertText",
     }));
-    element.dispatchEvent(new Event("change", { bubbles: true }));
+    dispatchChangeEvent(element);
+  }
+
+  function executeNativeTextInsertion(element, text) {
+    const currentDocument = globalThis.document;
+
+    if (!currentDocument || typeof currentDocument.execCommand !== "function") {
+      return { changeDispatched: false, succeeded: false };
+    }
+
+    let changeDispatched = false;
+    const rememberChange = () => {
+      changeDispatched = true;
+    };
+
+    element.addEventListener("change", rememberChange);
+
+    try {
+      // Chromium's editing command is retained here because it creates a native undo transaction.
+      const succeeded = currentDocument.execCommand("insertText", false, text) === true;
+      return {
+        changeDispatched,
+        succeeded,
+      };
+    } catch (_error) {
+      return { changeDispatched, succeeded: false };
+    } finally {
+      element.removeEventListener("change", rememberChange);
+    }
   }
 
   function setNativeFieldValue(element, value) {
@@ -211,11 +253,13 @@
     return `${prefix}${normalized}${suffix}`;
   }
 
-  function setFormFieldSelection(element, position) {
+  function setFormFieldSelection(element, start, end = start) {
     try {
-      element.setSelectionRange(position, position);
+      element.setSelectionRange(start, end);
+      return true;
     } catch (_error) {
       // Some supported input types, including email, do not expose a text selection API.
+      return false;
     }
   }
 
@@ -230,17 +274,24 @@
     }
 
     const nextPosition = start + nextText.length;
+    const selectionRestored = setFormFieldSelection(element, start, end);
 
-    const beforeInputEvent = new InputEvent("beforeinput", {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      data: nextText,
-      inputType: "insertText",
-    });
-
-    if (!element.dispatchEvent(beforeInputEvent)) {
+    if (!dispatchBeforeInputEvent(element, nextText)) {
       return false;
+    }
+
+    const previousValue = element.value;
+    const nativeInsertion = selectionRestored
+      ? executeNativeTextInsertion(element, nextText)
+      : { changeDispatched: false, succeeded: false };
+    const nativeInsertionChangedValue = element.value !== previousValue;
+
+    if (nativeInsertion.succeeded || nativeInsertionChangedValue) {
+      setFormFieldSelection(element, nextPosition);
+      if (!nativeInsertion.changeDispatched) {
+        dispatchChangeEvent(element);
+      }
+      return true;
     }
 
     setNativeFieldValue(element, `${before}${nextText}${after}`);
@@ -252,7 +303,10 @@
   globalThis.DictozyDom = Object.freeze({
     EDITABLE_FIELD_SELECTOR,
     captureFormFieldSelection,
+    dispatchBeforeInputEvent,
+    dispatchChangeEvent,
     dispatchInputEvents,
+    executeNativeTextInsertion,
     getEditableField,
     hasPaymentSignal,
     insertIntoFormField,

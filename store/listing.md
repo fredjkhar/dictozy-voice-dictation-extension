@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.9` is currently published, and the `0.1.10` production-hardening package has been submitted for review. Website-only work must not alter that draft.
+Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.9` is currently published, the `0.1.10` production-hardening package has been submitted for review, and `0.1.11` is an unreleased source candidate. Do not replace or alter an active Store draft.
 
 ## Dashboard Product Details
 
@@ -63,12 +63,10 @@ Supported fields include text, search, email, URL, and telephone inputs; textare
 
 The product is designed for short dictation clips rather than long-form recording. Language formatting is a provider formatting hint, not a promise of improved recognition. English is selected by default, while Automatic leaves provider language and formatting selection unset.
 
-What's new in 0.1.10
+What's new in 0.1.11
 
-- Simplified settings by removing developer-facing backend controls.
-- Fixed Dictozy to its production transcription service.
-- Reduced unnecessary network access and tightened request validation.
-- Preserved existing dictation, language, recording, retry, site, and insertion controls.
+- Improved transcript insertion so the browser's standard Undo command can reverse a recent Dictozy insertion in supported Chrome and Brave fields.
+- Existing caret, selection, formatting, retry, and privacy protections remain in place.
 ```
 
 Historical release notes are preserved in [changelog.md](changelog.md), not repeated in the sales description.

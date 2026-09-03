@@ -23,7 +23,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - The unpacked extension loads without errors in `chrome://extensions`.
 - Popup settings persist after closing and reopening the popup.
-- The popup shows `Dictozy` branding and version `0.1.10` in `chrome://extensions` when testing the unpacked release candidate.
+- The popup shows `Dictozy` branding and version `0.1.11` in `chrome://extensions` when testing the unpacked release candidate.
 - The popup displays the current `toggle-dictation` shortcut or `Not assigned`.
 - The popup keyboard icon opens `chrome://extensions/shortcuts`.
 - The suggested shortcut is `Ctrl+Shift+Y`, or `Command+Shift+Y` on macOS, when Chrome can assign it without a conflict.
@@ -84,6 +84,10 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 - Moving the caret within the same input while transcription is pending does not change the captured insertion point.
 - Controlled input and textarea fixtures retain inserted text after their normal event-driven state update.
 - Each insertion dispatches one `beforeinput`, one `input`, and one `change` event; no duplicate events are observed.
+- Immediately pressing `Command+Z` on macOS or `Ctrl+Z` on Windows/Linux reverses a recent Dictozy insertion in stable supported Chrome and Brave fields.
+- Undo restores replaced input, textarea, and contenteditable text without clearing unrelated content or damaging surrounding rich-text markup.
+- Native Undo dispatches Chromium's normal `historyUndo` editing event and remains available without a custom history store, extension shortcut interception, or transcript retention.
+- Framework editors that replace the original DOM node may not retain the browser's native undo transaction; successful insertion and stale-field protections must still remain intact.
 - Focus returns to the intended field after insertion.
 - Contenteditable fields replace an in-field selection or insert at the saved caret, preserve surrounding content, and treat transcript markup as plain text.
 - Contenteditable insertion keeps surrounding elements and formatting intact when the caret is nested inside formatted markup.

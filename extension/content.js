@@ -88,7 +88,10 @@
   });
   const {
     captureFormFieldSelection,
+    dispatchBeforeInputEvent,
+    dispatchChangeEvent,
     dispatchInputEvents,
+    executeNativeTextInsertion,
     getEditableField,
     insertIntoFormField,
     isSupportedField,
@@ -567,28 +570,47 @@
       return false;
     }
 
-    const beforeInputEvent = new InputEvent("beforeinput", {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      data: insertedText,
-      inputType: "insertText",
-    });
-
-    if (!element.dispatchEvent(beforeInputEvent)) {
+    if (!dispatchBeforeInputEvent(element, insertedText)) {
       return false;
     }
 
-    const textNode = document.createTextNode(insertedText);
-
-    range.deleteContents();
-    range.insertNode(textNode);
-    range.setStartAfter(textNode);
-    range.collapse(true);
+    if (!isRangeInsideField(element, insertionRange)) {
+      return false;
+    }
 
     selection.removeAllRanges();
-    selection.addRange(range);
-    activeTextRange = range.cloneRange();
+    selection.addRange(insertionRange);
+
+    const previousHtml = element.innerHTML;
+    const nativeInsertion = executeNativeTextInsertion(element, insertedText);
+    const nativeInsertionChangedContent = element.innerHTML !== previousHtml;
+
+    if (nativeInsertion.succeeded || nativeInsertionChangedContent) {
+      if (selection.rangeCount && isRangeInsideField(element, selection.getRangeAt(0))) {
+        activeTextRange = selection.getRangeAt(0).cloneRange();
+      }
+
+      if (!nativeInsertion.changeDispatched) {
+        dispatchChangeEvent(element);
+      }
+      return true;
+    }
+
+    if (!selection.rangeCount || !isRangeInsideField(element, selection.getRangeAt(0))) {
+      return false;
+    }
+
+    const fallbackRange = selection.getRangeAt(0);
+    const textNode = document.createTextNode(insertedText);
+
+    fallbackRange.deleteContents();
+    fallbackRange.insertNode(textNode);
+    fallbackRange.setStartAfter(textNode);
+    fallbackRange.collapse(true);
+
+    selection.removeAllRanges();
+    selection.addRange(fallbackRange);
+    activeTextRange = fallbackRange.cloneRange();
     dispatchInputEvents(element, insertedText);
     return true;
   }

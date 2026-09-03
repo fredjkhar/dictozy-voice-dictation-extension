@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Dictozy: Voice Dictation",
   "short_name": "Dictozy",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Write faster in Chrome by dictating messages, notes, searches, and form entries - no account required.",
   "icons": {
     "16": "icons/icon-16.png",

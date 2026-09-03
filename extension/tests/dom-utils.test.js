@@ -23,6 +23,7 @@ class FakeElement {
     this.hidden = false;
     this.isConnected = true;
     this.isContentEditable = false;
+    this.listeners = new Map();
     this.parentElement = null;
     this.readOnly = false;
     this.style = {};
@@ -31,6 +32,12 @@ class FakeElement {
   append(child) {
     child.parentElement = this;
     this.children.push(child);
+  }
+
+  addEventListener(type, listener) {
+    const listeners = this.listeners.get(type) || [];
+    listeners.push(listener);
+    this.listeners.set(type, listeners);
   }
 
   contains(target) {
@@ -55,6 +62,9 @@ class FakeElement {
 
   dispatchEvent(event) {
     this.dispatchedEvents.push(event);
+    for (const listener of this.listeners.get(event.type) || []) {
+      listener.call(this, event);
+    }
     return !(event.type === "beforeinput" && this.cancelBeforeInput);
   }
 
@@ -72,6 +82,11 @@ class FakeElement {
     }
 
     return false;
+  }
+
+  removeEventListener(type, listener) {
+    const listeners = this.listeners.get(type) || [];
+    this.listeners.set(type, listeners.filter((candidate) => candidate !== listener));
   }
 }
 
@@ -104,7 +119,7 @@ class FakeTextArea extends FakeInput {
   }
 }
 
-function loadDomUtils() {
+function loadDomUtils(document = null) {
   const context = {
     Element: FakeElement,
     Event: FakeEvent,
@@ -120,6 +135,9 @@ function loadDomUtils() {
       },
     },
   };
+  if (document) {
+    context.document = document;
+  }
   context.globalThis = context;
 
   const source = fs.readFileSync(path.join(__dirname, "..", "dom-utils.js"), "utf8");
@@ -271,6 +289,38 @@ test("uses the native field setter and dispatches each editing event once", () =
   assert.equal(input.value, "controlled");
   assert.equal(pageSetterCalls, 0);
   assert.deepEqual(input.dispatchedEvents.map(({ type }) => type), ["beforeinput", "input", "change"]);
+});
+
+test("uses the Chromium editing path without duplicating native events", () => {
+  const input = new FakeInput("text");
+  input.value = "Hello old text";
+  input.selectionStart = 6;
+  input.selectionEnd = 9;
+  const document = {
+    execCommand(command, _showUi, text) {
+      assert.equal(command, "insertText");
+      const before = input.value.slice(0, input.selectionStart);
+      const after = input.value.slice(input.selectionEnd);
+      input.value = `${before}${text}${after}`;
+      input.selectionStart = before.length + text.length;
+      input.selectionEnd = input.selectionStart;
+      input.dispatchEvent(new FakeInputEvent("input", {
+        data: text,
+        inputType: "insertText",
+      }));
+      input.dispatchEvent(new FakeEvent("change", { bubbles: true }));
+      return true;
+    },
+  };
+  const dom = loadDomUtils(document);
+
+  assert.equal(dom.insertIntoFormField(input, "new"), true);
+  assert.equal(input.value, "Hello new text");
+  assert.deepEqual(input.dispatchedEvents.map(({ type }) => type), [
+    "beforeinput",
+    "input",
+    "change",
+  ]);
 });
 
 test("does not insert when beforeinput is cancelled", () => {

@@ -1,6 +1,6 @@
 # Chrome Web Store Release Checklist
 
-Dictozy `0.1.9` is published, and the `0.1.10` production-hardening package has been submitted for review. Phase 36 website work must not alter that Store draft. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
+Dictozy `0.1.9` is published, the `0.1.10` production-hardening package has been submitted for review, and `0.1.11` is an unreleased native-Undo candidate. Do not replace or alter an active Store draft. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 
 ## Package
 
@@ -8,7 +8,7 @@ Dictozy `0.1.9` is published, and the `0.1.10` production-hardening package has 
 - [ ] Run `node --test extension/tests/*.test.js`.
 - [ ] Run `npm ci` and `npm run test:browser`; confirm all mocked Chromium workflows pass without contacting production.
 - [ ] Run `python3 scripts/package_extension.py` from the repository root.
-- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.10.zip` and contains `manifest.json` at its root.
+- [ ] Confirm the generated ZIP is `dist/dictozy-v0.1.11.zip` and contains `manifest.json` at its root.
 - [ ] Confirm the immutable published package `dist/dictozy-v0.1.7.zip` still has SHA-256 `a573bd146642b7aacb0b494f2e9644b3c85d260295968ec4fa3680d3795debed`.
 - [ ] Load the generated ZIP contents as an unpacked extension and repeat the manual QA checklist.
 - [ ] Confirm no source maps, environment files, raw audio, test fixtures, or unrelated repository files are included.
@@ -35,7 +35,7 @@ Dictozy `0.1.9` is published, and the `0.1.10` production-hardening package has 
 - [ ] Review `assets/screenshot-dictation-1280x800.png` and `assets/screenshot-settings-1280x800.png`; regenerate only if the screenshots no longer match the shipped UI.
 - [ ] Confirm screenshots show Dictozy branding, global and current-site controls, microphone/stop icon controls, the language-formatting selector, the 10-second default, and no development-only controls.
 - [ ] Review the required `assets/promo-small-440x280.png` tile at full size.
-- [ ] Confirm the regenerated settings screenshot accurately represents the `0.1.10` popup and the other visual assets remain accurate before opening a Web Store draft.
+- [ ] Confirm the existing `0.1.10` settings screenshot remains accurate for the unchanged `0.1.11` popup before opening a Web Store draft.
 - [ ] Add other assets only when they accurately represent the shipped extension.
 - [ ] Do not claim real-time streaming, offline transcription, grammar correction, accounts, or other unimplemented features.
 - [ ] Set Homepage and Support URLs to the deployed first-party website pages documented in `listing.md`.
@@ -43,13 +43,13 @@ Dictozy `0.1.9` is published, and the `0.1.10` production-hardening package has 
 ## Developer Dashboard Update
 
 - [ ] Open the existing Chrome Web Store item for extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Upload `dist/dictozy-v0.1.10.zip` only after automated and manual QA are complete and the user explicitly approves submission.
-- [ ] Store Listing tab: update the `0.1.10` release note and settings screenshot; keep the existing summary and detailed description.
+- [ ] Upload `dist/dictozy-v0.1.11.zip` only after automated and manual QA are complete, no earlier Store draft is active, and the user explicitly approves submission.
+- [ ] Store Listing tab: update only the `0.1.11` release note; keep the existing summary, detailed description, screenshots, and promotional assets.
 - [ ] Keep the dictation screenshot first and retain the accurate icon, screenshots, and promo tile.
 - [ ] Keep the verified first-party Homepage, Support, and Privacy Policy URLs.
 - [ ] Privacy practices tab: update the storage and backend-host explanations to remove the obsolete endpoint setting and localhost backend access; retain accurate audio/transcript declarations and Limited Use certifications.
 - [ ] Distribution tab: confirm visibility, regions, and rollout settings.
-- [ ] Do not submit the `0.1.10` update for review until the user explicitly approves submission.
+- [ ] Do not submit the `0.1.11` update for review until the user explicitly approves submission.
 
 ## Privacy
 
@@ -80,14 +80,14 @@ Do not include a trailing slash or additional origins. With `APP_ENV=production`
 
 ## Backend Compatibility
 
-- [ ] Deploy the production CORS startup validation before or with the `0.1.10` release and retain the exact published extension origin.
+- [ ] Confirm production CORS startup validation remains deployed for `0.1.11` and retains the exact published extension origin.
 - [ ] Confirm production `/health` remains healthy.
-- [ ] Run one real transcription from the unpacked `0.1.10` release candidate before submission.
+- [ ] Run one real transcription and native Undo check from the unpacked `0.1.11` release candidate before submission.
 
 ## Final QA Before Submission
 
 - [ ] Open `https://voice-dictation-extension.onrender.com/health` and confirm the production backend returns `{"status":"ok"}`.
-- [ ] Confirm the unpacked `0.1.10` release candidate has no errors in `chrome://extensions`.
+- [ ] Confirm the unpacked `0.1.11` release candidate has no errors in `chrome://extensions`.
 - [ ] Test a normal text input, textarea, contenteditable field, and editable ARIA textbox.
 - [ ] Confirm a bare non-editable ARIA textbox is ignored.
 - [ ] Confirm camel-case, snake-case, kebab-case, compact, and standard `cc-*` payment fields are ignored while safe near-misses remain supported.
@@ -132,7 +132,7 @@ Do not include a trailing slash or additional origins. With `APP_ENV=production`
 
 - [ ] Confirm the public listing is visible and shows the intended name, icon, screenshots, promotional tile, support link, homepage link, and privacy policy link.
 - [ ] Install the Chrome Web Store version and confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- [ ] Confirm version `0.1.10` after the hardening release is published.
+- [ ] Confirm version `0.1.11` after the native-Undo release is published.
 - [ ] Run the Store-installed smoke test in [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 - [ ] Confirm Render CORS includes `chrome-extension://folpeencabfejhjokmldikaelonphmma`.
 - [ ] Review Render logs for request IDs, status, latency, `429`, `502`, `503`, and safe logging.
