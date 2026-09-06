@@ -50,7 +50,7 @@ Use this checklist for the Phase 36 production-domain SEO consolidation. It does
 
 - [ ] Record available baseline Store impressions, listing visits, installs, uninstalls, and rating metrics.
 - [ ] Open extension ID `folpeencabfejhjokmldikaelonphmma` in the Developer Dashboard.
-- [ ] Do not upload a new ZIP or modify the `0.1.10` draft as part of website-only work.
+- [ ] Do not upload a new ZIP or modify an active extension draft as part of website-only work.
 - [ ] Keep the reviewed short and detailed descriptions from `store/listing.md` unless they become inaccurate.
 - [ ] Keep the dictation screenshot first and update only the screenshot captions.
 - [ ] Keep the icon, screenshots, promo tile, category, language, package, and permissions unchanged.

@@ -102,6 +102,7 @@
     createMicrophoneSignalMonitor,
     createRequestId,
     createRequestLifecycle,
+    getMicrophoneAccessFailure,
   } = globalThis.DictozyLifecycle;
   const {
     DISABLED_ORIGINS_STORAGE_KEY,
@@ -832,6 +833,20 @@
     return Math.min(MAX_RECORDING_DURATION_MS, Math.max(MIN_RECORDING_DURATION_MS, Math.round(duration)));
   }
 
+  function isMicrophoneBlockedByPage() {
+    if (window.isSecureContext !== true) {
+      return true;
+    }
+
+    const permissionsPolicy = document.permissionsPolicy || document.featurePolicy;
+
+    try {
+      return typeof permissionsPolicy?.allowsFeature === "function" && !permissionsPolicy.allowsFeature("microphone");
+    } catch (_error) {
+      return false;
+    }
+  }
+
   async function startRecording() {
     if (!isDictationEnabled()) {
       hideMicButton();
@@ -845,8 +860,12 @@
       return;
     }
 
-    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
-      showErrorState("Recording is not available here.");
+    if (
+      !navigator.mediaDevices?.getUserMedia ||
+      typeof MediaRecorder === "undefined" ||
+      isMicrophoneBlockedByPage()
+    ) {
+      showErrorState(getMicrophoneAccessFailure(null, { blocked: true }).message);
       return;
     }
 
@@ -901,13 +920,16 @@
       recordingTimeoutId = window.setTimeout(() => {
         stopRecording();
       }, recordingDurationMs);
-    } catch (_error) {
+    } catch (error) {
       clearRecordingResources();
 
       if (isDictationEnabled() && attempt === recordingAttempt) {
         recordingTargetField = null;
         recordingTargetSelection = null;
-        showErrorState("Microphone access failed. Check Chrome microphone access and try again.");
+        const failure = getMicrophoneAccessFailure(error, {
+          blocked: isMicrophoneBlockedByPage(),
+        });
+        showErrorState(failure.message);
       }
     }
   }
@@ -979,6 +1001,7 @@
 
       reader.onerror = () => {
         settle({
+          errorCode: "invalid_audio",
           ok: false,
           message: "Could not read recorded audio.",
           requestId: operation.requestId,
@@ -989,6 +1012,7 @@
         try {
           if (typeof reader.result !== "string" || !reader.result.startsWith("data:audio/")) {
             settle({
+              errorCode: "invalid_audio",
               ok: false,
               message: "Could not prepare recorded audio.",
               requestId: operation.requestId,
@@ -1000,8 +1024,9 @@
           timeoutId = window.setTimeout(() => {
             sendCancellationToBackground(operation.requestId);
             settle({
+              errorCode: "timeout",
               ok: false,
-              message: "Transcription timed out. Try a shorter recording.",
+              message: "Transcription took too long. Check your connection and record again.",
               requestId: operation.requestId,
             });
           }, TRANSCRIPTION_RESPONSE_TIMEOUT_MS);
@@ -1015,16 +1040,25 @@
             (response) => {
               if (chrome.runtime.lastError) {
                 settle({
+                  errorCode: "extension_unavailable",
                   ok: false,
-                  message: "Could not reach the extension background service.",
+                  message: "Dictozy could not reach its background service. Reload the page and try again.",
                   requestId: operation.requestId,
                 });
                 return;
               }
 
-              settle(response || {
+              const validSuccess = response?.ok === true &&
+                typeof response.transcript === "string" &&
+                response.transcript.trim() !== "";
+              const validFailure = response?.ok === false &&
+                typeof response.message === "string" &&
+                response.message.trim() !== "";
+
+              settle(validSuccess || validFailure ? response : {
+                errorCode: "invalid_response",
                 ok: false,
-                message: "No transcription response received.",
+                message: "Dictozy received an invalid transcription response. Please record again.",
                 requestId: operation.requestId,
               });
             },
@@ -1033,8 +1067,9 @@
           audioDataUrl = "";
         } catch (_error) {
           settle({
+            errorCode: "extension_unavailable",
             ok: false,
-            message: "Could not send recorded audio.",
+            message: "Dictozy could not reach its background service. Reload the page and try again.",
             requestId: operation.requestId,
           });
         }

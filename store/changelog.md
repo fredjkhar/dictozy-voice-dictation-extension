@@ -2,6 +2,13 @@
 
 These notes preserve the release history without placing every prior version in the Chrome Web Store sales description.
 
+## 0.1.12
+
+- Added clear, privacy-safe guidance for microphone permission, missing-device, busy-device, and blocked-page failures.
+- Distinguished offline, connection, overload, timeout, temporary service, provider, and malformed-response failures.
+- Kept errors dismissible and retry-ready without retaining audio, transcripts, error history, or diagnostic data.
+- Expanded unit and Chromium workflow coverage for failure cleanup, safe references, fresh retries, and late-response protection.
+
 ## 0.1.11
 
 - Added native Undo support for recent transcript insertions in supported Chrome and Brave fields.

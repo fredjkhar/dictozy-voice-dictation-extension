@@ -2,6 +2,58 @@
   const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{8,80}$/;
   const SILENCE_PEAK_THRESHOLD = 0.0001;
   const SIGNAL_SAMPLE_INTERVAL_MS = 100;
+  const MICROPHONE_FAILURES = Object.freeze({
+    blocked: Object.freeze({
+      code: "microphone_blocked",
+      message: "Recording is not available on this page. Open a regular HTTPS page and try again.",
+    }),
+    busy: Object.freeze({
+      code: "microphone_busy",
+      message: "The microphone is unavailable or in use by another app. Close other recording apps and try again.",
+    }),
+    denied: Object.freeze({
+      code: "microphone_permission_denied",
+      message: "Microphone access is blocked. Allow it in your browser's site settings, then try again.",
+    }),
+    missing: Object.freeze({
+      code: "microphone_missing",
+      message: "No microphone was found. Connect or enable a microphone, then try again.",
+    }),
+    unknown: Object.freeze({
+      code: "microphone_unknown",
+      message: "Could not start the microphone. Check your browser's microphone settings and try again.",
+    }),
+  });
+
+  function getMicrophoneAccessFailure(error, { blocked = false } = {}) {
+    if (blocked) {
+      return MICROPHONE_FAILURES.blocked;
+    }
+
+    const errorName = typeof error?.name === "string" ? error.name : "";
+
+    if (errorName === "NotAllowedError") {
+      return MICROPHONE_FAILURES.denied;
+    }
+
+    if (errorName === "NotFoundError" || errorName === "DevicesNotFoundError") {
+      return MICROPHONE_FAILURES.missing;
+    }
+
+    if (
+      errorName === "NotReadableError" ||
+      errorName === "TrackStartError" ||
+      errorName === "AbortError"
+    ) {
+      return MICROPHONE_FAILURES.busy;
+    }
+
+    if (errorName === "SecurityError") {
+      return MICROPHONE_FAILURES.blocked;
+    }
+
+    return MICROPHONE_FAILURES.unknown;
+  }
 
   function normalizeRequestId(value) {
     if (typeof value !== "string") {
@@ -184,6 +236,7 @@
     createMicrophoneSignalMonitor,
     createRequestId,
     createRequestLifecycle,
+    getMicrophoneAccessFailure,
     getRequestReference,
     normalizeRequestId,
   });

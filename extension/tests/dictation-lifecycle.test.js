@@ -35,6 +35,71 @@ test("creates and safely shortens privacy-safe request IDs", () => {
   assert.equal(lifecycle.normalizeRequestId("contains private spaces"), "");
 });
 
+test("classifies microphone permission, device, availability, and page failures safely", () => {
+  const lifecycle = loadLifecycle();
+  const cases = [
+    {
+      code: "microphone_permission_denied",
+      message: "Microphone access is blocked. Allow it in your browser's site settings, then try again.",
+      name: "NotAllowedError",
+    },
+    {
+      code: "microphone_missing",
+      message: "No microphone was found. Connect or enable a microphone, then try again.",
+      name: "NotFoundError",
+    },
+    {
+      code: "microphone_missing",
+      message: "No microphone was found. Connect or enable a microphone, then try again.",
+      name: "DevicesNotFoundError",
+    },
+    {
+      code: "microphone_busy",
+      message: "The microphone is unavailable or in use by another app. Close other recording apps and try again.",
+      name: "NotReadableError",
+    },
+    {
+      code: "microphone_busy",
+      message: "The microphone is unavailable or in use by another app. Close other recording apps and try again.",
+      name: "TrackStartError",
+    },
+    {
+      code: "microphone_busy",
+      message: "The microphone is unavailable or in use by another app. Close other recording apps and try again.",
+      name: "AbortError",
+    },
+    {
+      code: "microphone_blocked",
+      message: "Recording is not available on this page. Open a regular HTTPS page and try again.",
+      name: "SecurityError",
+    },
+  ];
+
+  for (const expected of cases) {
+    const failure = lifecycle.getMicrophoneAccessFailure({ name: expected.name });
+    assert.equal(failure.code, expected.code);
+    assert.equal(failure.message, expected.message);
+  }
+});
+
+test("uses bounded microphone fallbacks without exposing unknown errors", () => {
+  const lifecycle = loadLifecycle();
+
+  const unknown = lifecycle.getMicrophoneAccessFailure(new Error("private device detail"));
+  assert.equal(unknown.code, "microphone_unknown");
+  assert.equal(
+    unknown.message,
+    "Could not start the microphone. Check your browser's microphone settings and try again.",
+  );
+
+  const blocked = lifecycle.getMicrophoneAccessFailure(null, { blocked: true });
+  assert.equal(blocked.code, "microphone_blocked");
+  assert.equal(
+    blocked.message,
+    "Recording is not available on this page. Open a regular HTTPS page and try again.",
+  );
+});
+
 test("cancellation invalidates an operation and aborts its local signal", () => {
   const lifecycle = loadLifecycle().createRequestLifecycle();
   const first = lifecycle.begin("request-one-1234");

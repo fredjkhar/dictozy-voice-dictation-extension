@@ -15,6 +15,20 @@ const ALLOWED_MESSAGE_TYPES = new Set([
 ]);
 const TRANSCRIBE_MESSAGE_KEYS = new Set(["audioDataUrl", "requestId", "type"]);
 const CANCEL_MESSAGE_KEYS = new Set(["requestId", "type"]);
+const FAILURE_CODES = Object.freeze({
+  canceled: "canceled",
+  extensionUnavailable: "extension_unavailable",
+  invalidAudio: "invalid_audio",
+  invalidRequest: "invalid_request",
+  invalidResponse: "invalid_response",
+  networkUnavailable: "network_unavailable",
+  offline: "offline",
+  providerFailure: "provider_failure",
+  rateLimited: "rate_limited",
+  serviceUnavailable: "service_unavailable",
+  timeout: "timeout",
+  unknown: "unknown",
+});
 const SAFE_BAD_REQUEST_DETAILS = new Set([
   "Could not process recorded audio.",
   "No speech was detected. Please check your microphone and try again.",
@@ -45,36 +59,86 @@ function isTrustedSender(sender) {
   return !sender?.id || sender.id === chrome.runtime.id;
 }
 
-function getFriendlyBackendError(status, detail) {
-  if (status === 503) {
-    if (/temporarily unavailable/i.test(detail)) {
-      return "Dictation is temporarily unavailable.";
-    }
+function createFailure(errorCode, message, requestId = "", { canceled = false } = {}) {
+  return {
+    canceled,
+    errorCode,
+    message,
+    ok: false,
+    ...(requestId ? { requestId } : {}),
+  };
+}
 
-    return "Backend speech-to-text is not configured.";
+function getBackendFailure(status, detail) {
+  if (status === 503) {
+    return {
+      errorCode: FAILURE_CODES.serviceUnavailable,
+      message: "Dictation is temporarily unavailable. Please try again later.",
+    };
   }
 
   if (status === 429) {
-    return "Too many dictation requests. Try again in a moment.";
+    return {
+      errorCode: FAILURE_CODES.rateLimited,
+      message: "Dictozy is busy right now. Wait a moment and record again.",
+    };
   }
 
   if (status === 502) {
-    return "Speech-to-text failed. Please try again.";
+    return {
+      errorCode: FAILURE_CODES.providerFailure,
+      message: "Speech-to-text is temporarily unavailable. Please record again.",
+    };
   }
 
   if (status === 413) {
-    return "Recording is too large.";
+    return {
+      errorCode: FAILURE_CODES.invalidAudio,
+      message: "Recording is too large.",
+    };
   }
 
   if (status === 400 && SAFE_BAD_REQUEST_DETAILS.has(detail)) {
-    return detail;
+    return {
+      errorCode: FAILURE_CODES.invalidAudio,
+      message: detail,
+    };
   }
 
   if (status === 400) {
-    return "Recorded audio could not be processed.";
+    return {
+      errorCode: FAILURE_CODES.invalidAudio,
+      message: "Recorded audio could not be processed.",
+    };
   }
 
-  return "Dictation request failed. Please try again.";
+  if (status >= 500 && status <= 599) {
+    return {
+      errorCode: FAILURE_CODES.serviceUnavailable,
+      message: "Dictation is temporarily unavailable. Please try again later.",
+    };
+  }
+
+  return {
+    errorCode: FAILURE_CODES.unknown,
+    message: "Dictation request failed. Please try again.",
+  };
+}
+
+function getResponseRequestId(response, fallbackRequestId) {
+  try {
+    return normalizeRequestId(response?.headers?.get?.(REQUEST_ID_HEADER)) || fallbackRequestId;
+  } catch (_error) {
+    return fallbackRequestId;
+  }
+}
+
+function invalidResponse(requestId) {
+  return createFailure(
+    FAILURE_CODES.invalidResponse,
+    "Dictozy received an invalid transcription response. Please record again.",
+    requestId,
+  );
 }
 
 function getStoredSettings() {
@@ -87,36 +151,29 @@ async function transcribeAudio(message) {
   const requestId = normalizeRequestId(message.requestId);
 
   if (!requestId) {
-    return {
-      ok: false,
-      message: "Could not create a transcription request.",
-    };
+    return createFailure(FAILURE_CODES.invalidRequest, "Could not create a transcription request.");
   }
 
   if (typeof message.audioDataUrl !== "string" || message.audioDataUrl.length === 0) {
-    return {
-      ok: false,
-      message: "No audio was recorded.",
-      requestId,
-    };
+    return createFailure(FAILURE_CODES.invalidAudio, "No audio was recorded.", requestId);
   }
 
   if (activeTranscriptions.has(requestId)) {
-    return {
-      ok: false,
-      message: "This transcription request is already active.",
+    return createFailure(
+      FAILURE_CODES.invalidRequest,
+      "This transcription request is already active.",
       requestId,
-    };
+    );
   }
 
   const audio = prepareAudioDataUrl(message.audioDataUrl);
 
   if (!audio.ok) {
-    return {
-      ok: false,
-      message: audio.reason === "too_large" ? "Recording is too large to upload." : "Could not prepare recorded audio.",
+    return createFailure(
+      FAILURE_CODES.invalidAudio,
+      audio.reason === "too_large" ? "Recording is too large to upload." : "Could not prepare recorded audio.",
       requestId,
-    };
+    );
   }
 
   const controller = new AbortController();
@@ -143,15 +200,19 @@ async function transcribeAudio(message) {
       },
       signal: controller.signal,
     });
-    const responseRequestId = normalizeRequestId(response.headers.get(REQUEST_ID_HEADER)) || requestId;
+    if (!response || typeof response.ok !== "boolean" || typeof response.json !== "function") {
+      return invalidResponse(requestId);
+    }
+
+    const responseRequestId = getResponseRequestId(response, requestId);
 
     if (requestContext.cancelReason === "user") {
-      return {
-        ok: false,
-        canceled: true,
-        message: "Transcription cancelled.",
-        requestId: responseRequestId,
-      };
+      return createFailure(
+        FAILURE_CODES.canceled,
+        "Transcription cancelled.",
+        responseRequestId,
+        { canceled: true },
+      );
     }
 
     if (!response.ok) {
@@ -167,21 +228,26 @@ async function transcribeAudio(message) {
         // Keep the safe fallback message.
       }
 
-      return {
-        ok: false,
-        message: getFriendlyBackendError(response.status, detail),
-        requestId: responseRequestId,
-      };
+      const failure = getBackendFailure(response.status, detail);
+      return createFailure(failure.errorCode, failure.message, responseRequestId);
     }
 
-    const data = await response.json();
+    let data = null;
 
-    if (typeof data.transcript !== "string" || data.transcript.trim() === "") {
-      return {
-        ok: false,
-        message: "Backend response did not include a transcript.",
-        requestId: responseRequestId,
-      };
+    try {
+      data = await response.json();
+    } catch (_error) {
+      return invalidResponse(responseRequestId);
+    }
+
+    if (
+      !data ||
+      typeof data !== "object" ||
+      Array.isArray(data) ||
+      typeof data.transcript !== "string" ||
+      data.transcript.trim() === ""
+    ) {
+      return invalidResponse(responseRequestId);
     }
 
     return {
@@ -192,19 +258,24 @@ async function transcribeAudio(message) {
   } catch (error) {
     if (error?.name === "AbortError") {
       const canceled = requestContext.cancelReason === "user";
-      return {
-        ok: false,
-        canceled,
-        message: canceled ? "Transcription cancelled." : "Backend transcription timed out.",
+      return createFailure(
+        canceled ? FAILURE_CODES.canceled : FAILURE_CODES.timeout,
+        canceled
+          ? "Transcription cancelled."
+          : "Transcription took too long. Check your connection and record again.",
         requestId,
-      };
+        { canceled },
+      );
     }
 
-    return {
-      ok: false,
-      message: "Could not reach the backend.",
+    const offline = globalThis.navigator?.onLine === false;
+    return createFailure(
+      offline ? FAILURE_CODES.offline : FAILURE_CODES.networkUnavailable,
+      offline
+        ? "You appear to be offline. Reconnect and record again."
+        : "Dictozy could not reach the transcription service. Check your connection and try again.",
       requestId,
-    };
+    );
   } finally {
     clearTimeout(timeoutId);
 
@@ -260,6 +331,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === CANCEL_TRANSCRIPTION_MESSAGE) {
     if (!hasOnlyKeys(message, CANCEL_MESSAGE_KEYS) || !normalizeRequestId(message.requestId)) {
       sendResponse({
+        errorCode: FAILURE_CODES.invalidRequest,
         ok: false,
         canceled: false,
         message: "Invalid transcription request.",
@@ -276,6 +348,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (!hasOnlyKeys(message, TRANSCRIBE_MESSAGE_KEYS)) {
     sendResponse({
+      errorCode: FAILURE_CODES.invalidRequest,
       ok: false,
       message: "Invalid transcription request.",
       requestId: normalizeRequestId(message.requestId),
@@ -287,8 +360,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     .then(sendResponse)
     .catch(() => {
       sendResponse({
+        errorCode: FAILURE_CODES.networkUnavailable,
         ok: false,
-        message: "Could not reach the backend.",
+        message: "Dictozy could not reach the transcription service. Check your connection and try again.",
         requestId: normalizeRequestId(message.requestId),
       });
     });

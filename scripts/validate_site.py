@@ -23,7 +23,7 @@ STORE_URL = "https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelo
 PUBLIC_ROOT = "https://dictozy.com/"
 LEGACY_PUBLIC_ROOT = "https://fredjkhar.github.io/dictozy-voice-dictation-extension/"
 STYLESHEET_URL = "styles.css?v=20260826-seo"
-PUBLISHED_EXTENSION_VERSION = "0.1.9"
+PUBLISHED_EXTENSION_VERSION = "0.1.11"
 HOMEPAGE_DESCRIPTION = (
     "Dictozy is a Chrome voice dictation extension for quickly entering messages, notes, searches, and form text "
     "into supported web fields with no account required."

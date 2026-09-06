@@ -23,7 +23,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - The unpacked extension loads without errors in `chrome://extensions`.
 - Popup settings persist after closing and reopening the popup.
-- The popup shows `Dictozy` branding and version `0.1.11` in `chrome://extensions` when testing the unpacked release candidate.
+- The popup shows `Dictozy` branding and version `0.1.12` in `chrome://extensions` when testing the unpacked release candidate.
 - The popup displays the current `toggle-dictation` shortcut or `Not assigned`.
 - The popup keyboard icon opens `chrome://extensions/shortcuts`.
 - The suggested shortcut is `Ctrl+Shift+Y`, or `Command+Shift+Y` on macOS, when Chrome can assign it without a conflict.
@@ -72,6 +72,9 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 - Transcribing must recover to success or a persistent error/retry state; it should not remain stuck indefinitely.
 - Failure details remain visible until dismissed, retried, disabled, or cleared by moving to another field.
 - A request failure shows only a short support reference, not audio, transcript text, field content, or a full request ID.
+- Denied microphone permission, a missing microphone, a busy microphone, and a browser-blocked page each show distinct, actionable guidance without a request reference or upload.
+- Offline, connection, `429`, `502`, `503`, timeout, and malformed-response failures show safe retry guidance and only a shortened request reference.
+- Non-JSON, blank, missing, or otherwise malformed success responses are treated as invalid responses rather than connection failures.
 - Clicking the retry icon starts a new recording with a new request ID; failed audio is not resent.
 - A backend timeout returns to the persistent retry state.
 - Turning Dictozy off during recording stops the stream and does not upload the cancelled recording.
@@ -114,7 +117,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - Install Dictozy from the Chrome Web Store.
 - Confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- Confirm version `0.1.9` while the `0.1.10` production-hardening update remains under review.
+- Confirm version `0.1.11` on the currently published extension.
 - Confirm English is selected by default, then save and smoke-test Automatic and one explicit non-English language.
 - Run a short dictation on a supported HTTPS text field.
 - Confirm recording starts only after clicking the visible microphone button or pressing the assigned browser shortcut.

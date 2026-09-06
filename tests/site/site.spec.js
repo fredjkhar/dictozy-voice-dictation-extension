@@ -145,7 +145,7 @@ test("indexable metadata and crawler files use the production domain", async ({ 
   const structuredData = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
   expect(structuredData.url).toBe(PRODUCTION_ROOT);
   expect(structuredData.image).toBe(`${PRODUCTION_ROOT}assets/screenshot-dictation-1280x800.png`);
-  expect(structuredData.softwareVersion).toBe("0.1.9");
+  expect(structuredData.softwareVersion).toBe("0.1.11");
   expect(structuredData.installUrl).toBe(STORE_URL);
   expect(structuredData.aggregateRating).toBeUndefined();
   expect(structuredData.review).toBeUndefined();

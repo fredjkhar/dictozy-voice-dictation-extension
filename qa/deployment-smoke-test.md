@@ -64,7 +64,7 @@ For the published production path:
 
 1. Install Dictozy from the Chrome Web Store.
 2. Confirm the extension ID is `folpeencabfejhjokmldikaelonphmma`.
-3. Confirm version `0.1.9` while the `0.1.10` production-hardening update remains under review.
+3. Confirm version `0.1.11` on the currently published extension.
 4. Run the same supported-field recording and insertion checks.
 5. Confirm the popup displays the assigned shortcut or `Not assigned`, and that the keyboard icon opens Chrome's shortcut settings.
 6. Confirm the assigned shortcut starts and stops one recording and cancels one pending transcription.
@@ -75,11 +75,11 @@ For the published production path:
 
 ## Backend Compatibility Check
 
-Version `0.1.10` keeps the successful transcription contract while tightening production configuration:
+Version `0.1.12` keeps the existing production transcription contract while improving extension-side failure guidance:
 
 1. Confirm production `/health` before extension testing.
 2. Use the currently published extension and confirm one transcription still succeeds.
-3. Load the `0.1.10` package and test English, Automatic, and one explicit non-English language.
+3. Load the `0.1.12` release candidate and test English, Automatic, and one explicit non-English language.
 4. Confirm extension traffic goes only to the fixed Dictozy production backend.
 5. Restart a production-configured backend with an unsafe CORS value and confirm startup fails clearly; restore the exact published extension origin afterward.
 
@@ -89,6 +89,8 @@ Version `0.1.10` keeps the successful transcription contract while tightening pr
 - Runtime messages containing an endpoint override are rejected before any network request.
 - A stopped or unavailable backend produces a reachable error state instead of leaving the extension on Transcribing.
 - A backend timeout returns control to the user with a retry state and short request reference.
+- Denied, missing, busy, and browser-blocked microphone states show distinct guidance without uploading audio or adding a request reference.
+- Offline, rate-limited, provider, temporarily unavailable, and malformed-response states remain safe, actionable, and retryable.
 - Cancelling a pending transcription prevents any late response from being inserted; it does not guarantee provider-side processing stops after upload.
 - Turning Dictozy off during recording or transcription cancels extension-side active work safely.
 - A retry records a fresh clip and does not reuse failed audio.

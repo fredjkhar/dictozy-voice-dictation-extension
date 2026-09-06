@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.9` is currently published, the `0.1.10` production-hardening package has been submitted for review, and `0.1.11` is an unreleased source candidate. Do not replace or alter an active Store draft.
+Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.11` is currently published, and `0.1.12` is an unreleased reliability candidate. Do not replace or alter an active Store draft.
 
 ## Dashboard Product Details
 
@@ -63,10 +63,9 @@ Supported fields include text, search, email, URL, and telephone inputs; textare
 
 The product is designed for short dictation clips rather than long-form recording. Language formatting is a provider formatting hint, not a promise of improved recognition. English is selected by default, while Automatic leaves provider language and formatting selection unset.
 
-What's new in 0.1.11
+What's new in 0.1.12
 
-- Improved transcript insertion so the browser's standard Undo command can reverse a recent Dictozy insertion in supported Chrome and Brave fields.
-- Existing caret, selection, formatting, retry, and privacy protections remain in place.
+- Improved error guidance for microphone permissions, unavailable devices, connection interruptions, busy periods, timeouts, and temporary transcription failures. Dictozy now returns cleanly to a retry-ready state while keeping support references privacy-safe.
 ```
 
 Historical release notes are preserved in [changelog.md](changelog.md), not repeated in the sales description.
@@ -88,7 +87,7 @@ Small promotional tile:
 
 - `assets/promo-small-440x280.png`
 
-The dictation screenshot and promotional tile remain accurate. The settings screenshot is regenerated for `0.1.10` so it shows the simplified popup without backend controls.
+The dictation screenshot, settings screenshot, and promotional tile remain accurate. The popup has not changed in `0.1.12`, so no visual assets need regeneration.
 
 ## Dashboard Links
 
@@ -112,7 +111,7 @@ Privacy policy URL:
 https://dictozy.com/privacy.html
 ```
 
-The first-party homepage, privacy, and support URLs are already deployed. Reconfirm all three after Phase 36 is deployed; no Dashboard URL change is required.
+The first-party homepage, privacy, and support URLs are deployed. Reconfirm all three before release; no Dashboard URL change is required.
 
 ## Single Purpose
 
@@ -201,23 +200,23 @@ No test account or credentials are required.
 
 Use the existing Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
 
-Phase 36 does not require a Chrome Web Store metadata change. Confirm these existing values without modifying the `0.1.10` draft under review:
+Phase 38 changes only the release note in the Chrome Web Store listing. Confirm these existing values before submitting `0.1.12`:
 
 1. Homepage remains `https://dictozy.com/`.
 2. Privacy policy remains `https://dictozy.com/privacy.html`.
 3. Support remains `https://dictozy.com/support.html`.
-4. The summary, detailed description, screenshot order, and permission explanations remain the reviewed `0.1.10` values.
+4. The summary, detailed description, screenshot order, and permission explanations remain unchanged.
 
 Fields and assets that remain unchanged:
 
 - Extension name, category, and language.
-- Published `0.1.9` package until the submitted `0.1.10` update is reviewed and published.
+- Published `0.1.11` package until the `0.1.12` update is reviewed and published.
 - Store icon, dictation screenshot, and promotional tile.
 - Long description and short description, which remain accurate.
 - Published homepage, support, and privacy policy destinations.
 - Distribution settings unless the publisher intentionally changes them.
 
-Do not upload a new package, change the version, or alter the submitted draft as part of website-only work.
+Do not upload a new package or alter an active Store draft as part of website-only work.
 
 ## Official References
 

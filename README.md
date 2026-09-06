@@ -26,7 +26,7 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.9` is published. Version `0.1.10` has been submitted as a production-hardening update, and version `0.1.11` is an unreleased source candidate for native Undo reliability.
+Version `0.1.11` is published. Version `0.1.12` is an unreleased reliability candidate with clearer, privacy-safe microphone and transcription failure guidance.
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Recording starts only after an explicit microphone-button click or assigned browser shortcut.
@@ -42,6 +42,7 @@ Version `0.1.9` is published. Version `0.1.10` has been submitted as a productio
 - xAI API key stays backend-only in `.env`.
 - Pending transcription can be cancelled from the on-page control without inserting a late result.
 - Failures remain visible with a fresh-recording retry state and a short support reference.
+- Microphone, connection, overload, timeout, service, and malformed-response failures use bounded internal classifications and actionable customer-facing messages.
 - A conservative local signal check rejects clearly silent microphone input without storing or transmitting signal data.
 - Backend tests, Node extension tests, Chromium workflow tests, and a local manual QA page are available.
 - Backend Docker deployment files are available.
@@ -49,7 +50,7 @@ Version `0.1.9` is published. Version `0.1.10` has been submitted as a productio
 - Chrome Web Store copy, screenshots, promo tile, icon, and release notes are available under `store/`.
 - Store discovery strategy, optimized listing copy, website deployment guidance, and Search Console and website-quality checklists are available under `store/`, `docs/`, and `qa/`.
 - Post-publish monitoring and support triage checklists are available under `qa/`.
-- The `0.1.8` package keeps the current Dictozy icons consistent across the toolbar, popup, and Chrome extensions page.
+- Release packages keep the current Dictozy icons consistent across the toolbar, popup, and Chrome extensions page.
 
 ## Local Development
 

@@ -14,6 +14,8 @@ async function installChromeMocks(page) {
     const storageListeners = [];
     const pendingResponses = new Map();
     const pendingMicrophones = [];
+    const microphoneErrorNames = [];
+    const recorderErrorNames = [];
     const defaultStorage = {
       extensionEnabled: true,
       recordingDurationMs: 10000,
@@ -117,6 +119,12 @@ async function installChromeMocks(page) {
           delay: options.delay || 0,
           response,
         });
+      },
+      queueMicrophoneError(errorName) {
+        microphoneErrorNames.push(errorName);
+      },
+      queueRecorderError(errorName) {
+        recorderErrorNames.push(errorName);
       },
       resolveRequest(requestId, response) {
         const callback = pendingResponses.get(requestId);
@@ -268,6 +276,12 @@ async function installChromeMocks(page) {
       }
 
       constructor(stream, options = {}) {
+        const errorName = recorderErrorNames.shift();
+
+        if (errorName) {
+          throw new DOMException("private recorder detail", errorName);
+        }
+
         this.listeners = new Map();
         this.mimeType = options.mimeType || "audio/webm";
         this.state = "inactive";
@@ -313,6 +327,12 @@ async function installChromeMocks(page) {
       configurable: true,
       value: {
         getUserMedia() {
+          const errorName = microphoneErrorNames.shift();
+
+          if (errorName) {
+            return Promise.reject(new DOMException("private microphone detail", errorName));
+          }
+
           if (testState.deferMicrophone) {
             return new Promise((resolve) => {
               pendingMicrophones.push(resolve);
@@ -390,6 +410,137 @@ test("shows the control only for supported fields", async ({ page }) => {
 
   await page.locator("#plainTextarea").focus();
   await expect(page.locator(MIC_BUTTON)).toBeVisible();
+});
+
+const microphoneFailureCases = [
+  {
+    errorName: "NotAllowedError",
+    message: "Microphone access is blocked. Allow it in your browser's site settings, then try again.",
+  },
+  {
+    errorName: "NotFoundError",
+    message: "No microphone was found. Connect or enable a microphone, then try again.",
+  },
+  {
+    errorName: "DevicesNotFoundError",
+    message: "No microphone was found. Connect or enable a microphone, then try again.",
+  },
+  {
+    errorName: "NotReadableError",
+    message: "The microphone is unavailable or in use by another app. Close other recording apps and try again.",
+  },
+  {
+    errorName: "TrackStartError",
+    message: "The microphone is unavailable or in use by another app. Close other recording apps and try again.",
+  },
+  {
+    errorName: "AbortError",
+    message: "The microphone is unavailable or in use by another app. Close other recording apps and try again.",
+  },
+  {
+    errorName: "SecurityError",
+    message: "Recording is not available on this page. Open a regular HTTPS page and try again.",
+  },
+  {
+    errorName: "UnknownError",
+    message: "Could not start the microphone. Check your browser's microphone settings and try again.",
+  },
+];
+
+for (const { errorName, message } of microphoneFailureCases) {
+  test(`shows safe retry guidance for ${errorName} microphone failures`, async ({ page }) => {
+    await loadContentScript(page);
+    await focusFirstTextField(page);
+    await page.evaluate((name) => window.__dictozyTest.queueMicrophoneError(name), errorName);
+
+    await page.locator(MIC_BUTTON).click();
+
+    await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "error");
+    await expect(page.locator(STATUS_MESSAGE)).toHaveText(message);
+    await expect(page.locator(STATUS_MESSAGE)).not.toContainText("Reference:");
+    await expect.poll(() => page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+    await expect.poll(() => page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
+  });
+}
+
+test("shows blocked-page guidance when the microphone API is unavailable", async ({ page }) => {
+  await loadContentScript(page);
+  await focusFirstTextField(page);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: undefined,
+    });
+  });
+
+  await page.locator(MIC_BUTTON).click();
+
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "error");
+  await expect(page.locator(STATUS_MESSAGE)).toHaveText(
+    "Recording is not available on this page. Open a regular HTTPS page and try again.",
+  );
+  await expect(page.locator(STATUS_MESSAGE)).not.toContainText("Reference:");
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+});
+
+test("shows blocked-page guidance when Permissions Policy denies microphone access", async ({ page }) => {
+  await loadContentScript(page);
+  await focusFirstTextField(page);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "permissionsPolicy", {
+      configurable: true,
+      value: {
+        allowsFeature(feature) {
+          return feature !== "microphone";
+        },
+      },
+    });
+  });
+
+  await page.locator(MIC_BUTTON).click();
+
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "error");
+  await expect(page.locator(STATUS_MESSAGE)).toHaveText(
+    "Recording is not available on this page. Open a regular HTTPS page and try again.",
+  );
+  await expect(page.locator(STATUS_MESSAGE)).not.toContainText("Reference:");
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+});
+
+test("retries microphone access with fresh audio after a local failure", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => {
+    window.__dictozyTest.queueMicrophoneError("NotAllowedError");
+    window.__dictozyTest.queueResponse({ ok: true, transcript: "Microphone retry succeeded" });
+  });
+
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "error");
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+  await page.locator(MIC_BUTTON).click();
+
+  await expect(field).toHaveValue("Microphone retry succeeded");
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.requests.length)).toBe(1);
+});
+
+test("releases the microphone when recorder initialization fails", async ({ page }) => {
+  await loadContentScript(page);
+  await focusFirstTextField(page);
+  await page.evaluate(() => window.__dictozyTest.queueRecorderError("NotReadableError"));
+
+  await page.locator(MIC_BUTTON).click();
+
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "error");
+  await expect(page.locator(STATUS_MESSAGE)).toHaveText(
+    "The microphone is unavailable or in use by another app. Close other recording apps and try again.",
+  );
+  await expect(page.locator(STATUS_MESSAGE)).not.toContainText("Reference:");
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
 });
 
 test("excludes common payment metadata without blocking safe near-misses", async ({ page }) => {
@@ -1109,7 +1260,8 @@ test("keeps errors visible and retries with fresh audio and request identity", a
   const field = await focusFirstTextField(page);
   await page.evaluate(() => {
     window.__dictozyTest.queueResponse({
-      message: "Speech-to-text failed. Please try again.",
+      errorCode: "provider_failure",
+      message: "Speech-to-text is temporarily unavailable. Please record again.",
       ok: false,
       requestId: "backend-error-1234",
     });
@@ -1134,6 +1286,23 @@ test("keeps errors visible and retries with fresh audio and request identity", a
   expect(requests[1].audioDataUrl).not.toBe(requests[0].audioDataUrl);
 });
 
+test("rejects a malformed background response with a safe request reference", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({ ok: true });
+  });
+
+  await recordAndStop(page);
+
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "error");
+  await expect(page.locator(STATUS_MESSAGE)).toContainText(
+    "Dictozy received an invalid transcription response. Please record again.",
+  );
+  await expect(page.locator(STATUS_MESSAGE)).toContainText("Reference:");
+  await expect(field).toHaveValue("");
+});
+
 test("recovers from a transcription timeout with an actionable reference", async ({ page }) => {
   await loadContentScript(page);
   await page.clock.install();
@@ -1148,7 +1317,9 @@ test("recovers from a transcription timeout with an actionable reference", async
   await page.clock.fastForward(55001);
 
   await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "error");
-  await expect(page.locator(STATUS_MESSAGE)).toContainText("Transcription timed out.");
+  await expect(page.locator(STATUS_MESSAGE)).toContainText(
+    "Transcription took too long. Check your connection and record again.",
+  );
   await expect(page.locator(STATUS_MESSAGE)).toContainText("Reference:");
   await expect.poll(() => page.evaluate(() => window.__dictozyTest.cancellations.length)).toBe(1);
 });

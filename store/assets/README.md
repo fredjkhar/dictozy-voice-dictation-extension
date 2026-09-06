@@ -8,7 +8,7 @@
 
 The deterministic HTML sources live in `../source/`. Re-render them at their exact viewport sizes after changing listing visuals.
 
-For Dictozy `0.1.10`, the settings screenshot is regenerated to show the simplified production popup truthfully. The assets show Dictozy branding, the global and current-site toggles, English language formatting, the current shortcut assignment, the 10-second default recording limit, microphone/stop icon controls, Reset Site Preferences, and no backend or development-only controls. Cancellation and transient error states are verified in QA rather than represented as permanent screenshot states.
+The settings screenshot shows the simplified production popup truthfully. The assets show Dictozy branding, the global and current-site toggles, English language formatting, the current shortcut assignment, the 10-second default recording limit, microphone/stop icon controls, Reset Site Preferences, and no backend or development-only controls. Cancellation and transient error states are verified in QA rather than represented as permanent screenshot states.
 
 For the Phase 31 listing update, keep `screenshot-dictation-1280x800.png` first because it shows the core voice-typing workflow. Keep `screenshot-settings-1280x800.png` second to explain global, current-site, language, shortcut, and recording controls. The raster files remain accurate and are not regenerated for the metadata-only update.
 

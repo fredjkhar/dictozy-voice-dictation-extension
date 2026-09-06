@@ -1,6 +1,6 @@
 # Post-Publish Monitoring
 
-Use this checklist after a Chrome Web Store release is live. At the Phase 36 website update, Dictozy `0.1.9` is public and `0.1.10` is under review. The published extension ID is:
+Use this checklist after a Chrome Web Store release is live. Dictozy `0.1.11` is the current published baseline while `0.1.12` is prepared. The published extension ID is:
 
 ```text
 folpeencabfejhjokmldikaelonphmma
