@@ -82,6 +82,11 @@ test("internal links resolve and installation actions use the published Store it
     await page.goto(path);
     const hrefs = await page.locator("a[href]").evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href")));
 
+    expect(
+      hrefs.filter((href) => /^\.?\/?index\.html(?:[?#]|$)/.test(href)),
+      `${path} should link to the canonical homepage URL`,
+    ).toEqual([]);
+
     for (const href of hrefs) {
       const destination = new URL(href, page.url());
       if (destination.origin !== baseURL) {
@@ -292,8 +297,8 @@ test("section and page navigation preserves clear destinations and browser histo
   await expect.poll(() => new URL(page.url()).hash).toBe("#faq");
   await expect(page.locator("#faq")).toBeInViewport();
 
-  await page.locator('.primary-nav a[href="index.html#how-it-works"]').click();
-  await expect(page).toHaveURL(/\/index\.html#how-it-works$/);
+  await page.locator('.primary-nav a[href="/#how-it-works"]').click();
+  await expect(page).toHaveURL(/\/#how-it-works$/);
   await expect(page.locator("#how-it-works")).toBeInViewport();
 
   await page.goBack();

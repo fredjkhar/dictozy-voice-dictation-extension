@@ -219,7 +219,10 @@ def local_target(page_path: Path, reference: str) -> tuple[Path, str] | None:
         return None
 
     relative_path = unquote(parsed.path)
-    target = page_path if not relative_path else page_path.parent / relative_path
+    if relative_path.startswith("/"):
+        target = SITE_DIR / relative_path.lstrip("/")
+    else:
+        target = page_path if not relative_path else page_path.parent / relative_path
     if target.is_dir():
         target = target / "index.html"
     return target.resolve(), parsed.fragment
@@ -286,6 +289,9 @@ def validate_references(pages: dict[str, ParsedPage], errors: list[str]) -> None
 
     for name, page in pages.items():
         for reference in page.links:
+            if unquote(urlsplit(reference).path) in {"index.html", "./index.html", "/index.html"}:
+                errors.append(f"{name}: internal homepage link must use the canonical root URL: {reference}")
+
             target_info = local_target(page.path, reference)
             if target_info is None:
                 continue
@@ -462,7 +468,7 @@ def validate_sitemap_and_404(pages: dict[str, ParsedPage], errors: list[str]) ->
         errors.append("404.html: robots noindex is required")
     if sum(tag == "h1" for tag, _ in not_found.headings) != 1:
         errors.append("404.html: expected exactly one H1")
-    for required_link in ("index.html", "support.html", STORE_URL):
+    for required_link in ("/", "support.html", STORE_URL):
         if required_link not in not_found.links:
             errors.append(f"404.html: required destination is missing: {required_link}")
 
