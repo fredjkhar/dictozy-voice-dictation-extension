@@ -125,3 +125,25 @@ One completed transcript per page may be recovered for 60 seconds without persis
 Conservative refusal can increase recovery frequency in dynamic rich-text editors; this is safer
 than silent replacement. Default/max recording settings remain 10/30 seconds. Source version,
 manifest permissions, language settings and architecture remain unchanged.
+
+## Phase 2 — authorized implementation (In progress)
+
+Authorization received after Phase 1 review. Branch: `codex/phase-2-first-use-feedback`,
+starting at `9ea6918`. Before changes, all **257** Phase 1 tests passed again (53 unit,
+88 browser, 95 backend, 21 website). No critical regression was found in that review.
+Phase 1 implementation is accepted as the local baseline; testing and production readiness
+remain incomplete. The six open gates are real Render proxy/worker/replica/ingress verification,
+durable cross-restart/multi-instance usage enforcement, physical microphone/manual installed
+acceptance, real editor compatibility, production logs/deployment validation, and coordinated
+privacy publication. No gate is closed by the passing automated suites.
+
+| Priority / scope | Minimum implementation | Acceptance / regression tests | Risk | Status |
+|---|---|---|---|---|
+| 1 / optional practice | Packaged practice page linked prominently from popup; reuse dictation engine; instructions, actual shortcut, permission/privacy/help guidance | No capture on open/Try focus action; explicit microphone activation completes practice; Undo; master toggle; safe denied permission; packaged page present | Extension-origin behavior and shortcut delivery need unpacked MV3 tests | Pending |
+| 2 / recording feedback | Elapsed/remaining time and small activity label in existing status UI; visible Stop/Discard; reuse existing sampler | 10s default/30s cap unchanged; trusted mouse/Enter/Space; discard sends nothing; timers and resources cleared; no loss of selection | Controls must not trigger unsafe-focus cancellation or obscure Stop | Pending |
+| 3 / recovery refinement | Explain refusal reason; keyboard focus on removal; copy/discard/expiry announcements; clear clipboard retry | One result/60s/memory only; stale copy promises cannot erase new result; no content in DOM; no editor overwrite/focus theft | Async clipboard and expiry transitions | Pending |
+| 4 / accessibility | Separate live status from rapidly changing feedback; explicit labels, focus rings, contrast and reduced motion | Keyboard paths, accessible names, constrained viewport/reduced-motion checks; human screen reader remains pending | Avoid repetitive announcements and cursor movement | Pending |
+
+Phase 2 completion requires focused and full suites, package/syntax/permission checks, visual
+inspection, updated manual acceptance and a final report. Phases 3–4, production deployment,
+Store publication, merging and infrastructure changes remain deferred pending separate approval.
