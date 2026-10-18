@@ -9,10 +9,10 @@ This guide prepares the FastAPI backend for deployment. It does not cover a spec
 - `APP_ENV`: set to `production` in deployed environments.
 - `BACKEND_CORS_ORIGINS`: comma-separated origins allowed to call the backend.
 - `TRANSCRIPTION_ENABLED`: set to `true` for normal operation. Set to `false` as the global emergency cutoff. Invalid non-empty values stop startup with a configuration error.
-- `TRANSCRIBE_MAX_CONCURRENT_REQUESTS`: maximum in-process `/api/transcribe` requests allowed at once. Set to `0` to disable the guard.
-- `TRANSCRIBE_RATE_LIMIT_REQUESTS`: maximum `/api/transcribe` requests per in-memory rate-limit window. Set to `0` to disable the guard.
+- `TRANSCRIBE_MAX_CONCURRENT_REQUESTS`: maximum in-process `/api/transcribe` requests allowed at once. Must remain positive in production.
+- `TRANSCRIBE_RATE_LIMIT_REQUESTS`: maximum `/api/transcribe` requests per in-memory rate-limit window. Must remain positive in production.
 - `TRANSCRIBE_RATE_LIMIT_WINDOW_SECONDS`: rate-limit window length.
-- `MAX_TRANSCRIBE_CONTENT_LENGTH_BYTES`: early multipart upload content-length guard. Defaults to 11 MiB to allow multipart overhead while app validation keeps the uploaded audio file capped at 10 MiB.
+- `MAX_TRANSCRIBE_CONTENT_LENGTH_BYTES`: multipart body-size guard (declared and actual bytes, including chunked uploads). Defaults to 11 MiB to allow multipart overhead while app validation keeps the uploaded audio file capped at 10 MiB.
 
 Never place a real `XAI_API_KEY` in source control, Docker images, frontend code, or Chrome extension files.
 
@@ -125,20 +125,20 @@ The backend includes launch guardrails for `/api/transcribe`:
 
 - A global kill switch: set `TRANSCRIPTION_ENABLED=false` and redeploy or restart the service to stop transcription calls immediately. `/health` remains available.
 - In-process concurrency limiting: extra simultaneous transcription requests return `429` before calling xAI.
-- In-memory rate limiting: repeated requests from the same client key return `429` before calling xAI. Expired client buckets are pruned periodically. The client key may use forwarded request metadata in memory, but it is not written to logs.
+- In-memory rate limiting: repeated requests from the same client key return `429` before calling xAI. Expired client buckets are pruned periodically. The client key uses only the server-resolved client address, never raw forwarding headers; it is not written to application logs.
 - Request IDs: every response includes `X-Request-ID`. Backend request logs include request ID, method, path, status, and latency only.
 
-These guards are intentionally simple for the MVP. They reset when the process restarts and are per-process if the service is scaled horizontally. Use provider-level or edge-level controls before broader public rollout.
+These guards reset when the process restarts. Keep exactly one worker and one replica for the aggregate allowance to apply to the running service. Do not treat this as a durable billing cap; see the Phase 1 deployment gate below.
 
 ## Upload Limits
 
-The app keeps the uploaded audio file limit at 10 MiB and accepts only known audio MIME types. It also rejects `/api/transcribe` requests early when `Content-Length` exceeds `MAX_TRANSCRIBE_CONTENT_LENGTH_BYTES`.
+The app keeps the uploaded audio file limit at 10 MiB and accepts only known audio MIME types. It rejects `/api/transcribe` requests when either declared or actual body bytes exceed `MAX_TRANSCRIBE_CONTENT_LENGTH_BYTES`. A bounded in-memory receive stage checks actual bytes before multipart parsing, limits concurrent uploads, and times out incomplete uploads after 15 seconds.
 
 Render's public docs do not expose a simple per-service request-body-size setting for this web service. Keep the app-level guard enabled, and add an upstream proxy or edge rule later if you need a hard platform-level request body cap before traffic reaches FastAPI.
 
 ## Audio Normalization
 
-Before calling xAI Speech-to-Text, the backend converts accepted browser audio to mono 16 kHz WAV in memory. It checks privacy-safe signal metrics first, rejects silent or near-silent uploads before they reach xAI, then applies speech-focused filtering and dynamic normalization to usable audio. This keeps the extension package unchanged while giving the provider a stable, speech-friendly input format. The conversion uses the pinned `imageio-ffmpeg` Python package and does not write uploaded audio to disk.
+Before calling xAI Speech-to-Text, the backend converts accepted browser audio to mono 16 kHz WAV in memory. It checks privacy-safe signal metrics first, rejects silent or near-silent uploads before they reach xAI, then applies speech-focused filtering and dynamic normalization to usable audio. This keeps the extension package unchanged while giving the provider a stable, speech-friendly input format. The conversion uses the pinned `imageio-ffmpeg` Python package and pipes bytes in memory. Multipart parsing may spool uploads over 1 MiB into automatically cleaned temporary files before normalization. This is temporary processing, not an audio archive.
 
 If normalization fails, `/api/transcribe` returns a safe `400` response without logging audio bytes, transcripts, ffmpeg stderr, API keys, or provider response bodies. If no speech signal is detected, `/api/transcribe` returns a safe `400` asking the user to check the microphone and try again.
 
@@ -201,3 +201,50 @@ Minimum ongoing checks:
 - Confirm logs do not include audio, transcripts, API keys, raw IPs when avoidable, or full upstream response bodies.
 - Review xAI Console usage and spend for unexpected spikes.
 - Use `TRANSCRIPTION_ENABLED=false` only when intentionally cutting off transcription, then restore `true` after the incident is resolved.
+
+
+## Phase 1 deployment gate (unpublished changes)
+
+Do not deploy or modify production settings without approval. The code has been tested locally;
+Render ingress trust, replica count, real provider behavior and production logs remain deployment checks.
+
+- `TRANSCRIBE_AUDIO_BUDGET_SECONDS=3600` reserves at most one hour of decoded audio across all
+  clients in each rolling `TRANSCRIBE_AUDIO_BUDGET_WINDOW_SECONDS=86400` window. Reservations
+  round each attempt up to a whole second and are atomic. Provider failures/cancellations are
+  not refunded. Exhaustion returns safe `429` before xAI is called. This is a **per-running-worker
+  usage cap**, not a dollar-denominated or restart-proof spending limit.
+- Docker explicitly runs `--workers 1`. Keep one replica. Scaling/restarting/redeploying resets or
+  multiplies in-memory quotas. A durable cross-restart/global cap needs an approved shared store
+  (for example managed Redis) or a verified provider/edge hard limit. No such infrastructure or
+  production billing setting has been introduced or changed.
+- Uvicorn resolves forwarding headers only from trusted immediate proxy peers. Export
+  `FORWARDED_ALLOW_IPS` in the server's environment with verified ingress IPs/networks; do not
+  rely on application `.env` loading to configure the server. The default trusts loopback only.
+  Production startup rejects `*`, whole-internet networks and malformed entries. Do not override
+  this with an unsafe Uvicorn command-line setting. See [Uvicorn settings](https://uvicorn.dev/settings/).
+- Do not guess Render ingress ranges or use its **outbound** IP list as an ingress trust list.
+  Verify the actual proxy chain with the host before configuring it. Until then requests share
+  the untrusted proxy's transport address for quotas; this fails safely but may group legitimate users.
+  Test both a normal request and one with a forged leftmost forwarding header after approval.
+- CORS is not authentication. Clients outside the extension can call this public API; concurrency,
+  per-client rate and aggregate duration limits reduce abuse but do not eliminate distributed denial
+  of service. Keep the existing emergency cutoff and provider usage review.
+- The body guard buffers at most the configured request size per admitted upload before multipart
+  parsing. Upload admission is held through request completion, so the default two concurrent
+  requests bound this extra buffer. ASGI disconnects, oversize bodies and 15-second receive timeouts
+  release the slot; hosting-level request limits are still useful.
+- The parser can spool audio above 1 MiB to temporary files, which FastAPI closes at completion,
+  including handled errors. No persistent recording/transcript history is added. Publish the
+  revised privacy disclosure with the approved release. Abrupt host failure follows platform
+  temporary-storage cleanup; no filesystem persistence guarantee is claimed.
+- Audio duration comes from actual decoded mono 16 kHz samples. Clips below 0.25 seconds or above
+  60 seconds are rejected; long inputs are not silently truncated. FFmpeg has a 20-second timeout
+  per pass, bounded output duration and probing, one decoder/filter thread, and pipe-only input
+  protocols. Final WAV headers reflect the actual samples.
+- `app.requests` emits structured INFO request IDs/status/latency regardless of Uvicorn's root
+  logger level. Unmatched paths are redacted and unexpected exceptions return safe JSON without
+  logging exception strings/tracebacks. Docker disables Uvicorn access logs, which otherwise include
+  client addresses. Configure host-level access logs separately. Never log raw audio or transcripts.
+- `/health` remains a liveness endpoint, not proof that xAI or billing is available. Use approved
+  non-sensitive smoke tests to validate the whole path; cancellation does not guarantee provider
+  processing or billing stops.
