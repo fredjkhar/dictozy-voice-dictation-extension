@@ -147,3 +147,27 @@ See [Phase 1 manual acceptance](../qa/phase-1-acceptance.md) and
 [implementation tracking](../docs/IMPROVEMENT_ROADMAP.md). `npm run test:browser` includes ordinary
 page tests with Chrome/media mocks and separate unpacked-MV3 Chromium tests using a synthetic
 microphone and stubbed backend. Neither establishes physical-microphone or named-site compatibility.
+
+## Phase 2 first use and feedback (unpublished)
+
+Open **Try dictation** in the popup to revisit the optional bundled practice page. Its Try action
+focuses a practice textarea; microphone capture still requires explicit activation of the ordinary
+microphone control or assigned shortcut. The page reuses the existing engine and backend, respects
+the master toggle, shows the assigned shortcut, and includes permission/privacy/help guidance.
+It does not add an install-time tab, onboarding tracking, permissions, account or stored practice text.
+
+During recording, the existing status area shows elapsed/remaining seconds, a small current-activity
+indicator, and Stop/Discard buttons. Timing uses the existing recording loop and activity uses the
+existing sampler. The default/max remain 10/30 seconds. Status announcements are separate from the
+non-live timer/activity text. While recording, Tab from the editor reaches its Stop icon, then Stop
+and Discard; Shift+Tab from the icon returns to the editor. Editor handlers that prevent Tab are
+respected. Keyboard focus returns to the original editor when stopping or discarding.
+
+Recovery remains one in-memory result per page for 60 seconds. It now explains refusal, confirms
+Copy/Discard/expiry, supports retry after clipboard denial, and returns focus only when removing a
+focused recovery control. It never automatically pastes or rebases stale offsets. A late copy result
+cannot remove a newer result; a clipboard operation already handed to the browser cannot be revoked.
+
+See [Phase 2 manual acceptance](../qa/phase-2-acceptance.md) and the
+[Phase 2 report](../docs/PHASE_2_REPORT.md). Physical microphone, screen-reader, live-editor and
+production validation remain open; bundled Chromium/synthetic audio is a separate test method.

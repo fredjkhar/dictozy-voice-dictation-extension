@@ -2,6 +2,15 @@
 
 These notes preserve the release history without placing every prior version in the Chrome Web Store sales description.
 
+## Unreleased — Phase 2
+
+- Added optional bundled practice with permission, shortcut, privacy and help guidance.
+- Added elapsed/remaining time, subtle microphone activity and explicit Stop/Discard controls.
+- Clarified temporary recovery and keyboard focus/announcement behavior; kept the 60-second lifetime.
+- Preserved the 10-second default, 30-second maximum and existing permissions/preferences/Undo.
+- Not deployed or published. Physical microphone, screen-reader and live-app validation remain open.
+  See [Phase 2 report](../docs/PHASE_2_REPORT.md).
+
 ## Unreleased — Phase 1
 
 - Stop and discard unsafe/hidden recording sessions; reject synthetic page activation.

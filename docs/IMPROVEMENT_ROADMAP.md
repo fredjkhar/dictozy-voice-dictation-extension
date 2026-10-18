@@ -5,7 +5,8 @@ Working branch: `codex/phase-1-correctness-trust`.
 
 ## Scope and approval gates
 
-Phase 0 and Phase 1 are authorized. Stop for user review after Phase 1.
+Phase 0 and Phase 1 implementation are complete and reviewed. Phase 2 is authorized.
+Stop for user review after Phase 2; implementation acceptance does not establish production readiness.
 Do not deploy, publish, change production configuration/secrets, or begin later phases.
 Keep plain JavaScript, Manifest V3, FastAPI, backend-only xAI access, existing preferences,
 shortcuts, supported fields, native Undo, and browser permissions.
@@ -33,7 +34,7 @@ Statuses: **Pending**, **In progress**, **Implemented**, **Tested**, **Blocked**
   checked on this assessment date shows **0.1.12**, updated **September 7, 2026**. This verifies
   public metadata, not byte-for-byte equality with the checkout. No release is being published.
 
-## Phase 1 — correctness, security, trust (Tested locally; awaiting review)
+## Phase 1 — correctness, security, trust (Implementation accepted; release gates open)
 
 | ID / priority | Problem and user impact | Components | Proposed correction | Complexity / risk / dependencies | Regression and acceptance | Status |
 |---|---|---|---|---|---|---|
@@ -67,7 +68,7 @@ deployment dependency in the Phase 1 report; do not silently introduce infrastru
 5. Deployment-only checks: approved ingress trust chain, one worker/replica, structured logs,
    aggregate limit, request-body bounds, real microphone/provider behavior. No production changes.
 
-## Phase 2 — first use and recovery UX (Deferred; approval required)
+## Phase 2 — first use and recovery UX (Authorized; see current tracking below)
 
 Scope/checklist: build on P1-BR recovery; explicit recording discard; elapsed/remaining time;
 restrained activity feedback; optional practice/onboarding/help; keyboard/screen-reader review.
@@ -118,7 +119,7 @@ Render, or Store-installed verification was performed. No deployment, publishing
 | Real ingress trust, service replica count and production logs | Pending | Approved deployment access; confirm trust chain and one worker/replica |
 | Durable aggregate spending protection across restarts/replicas | Deferred | Approval for a shared durable store or verified provider/edge hard cap; current cap is per running worker |
 | Publish privacy revision and new extension version | Deferred | Separate release approval; do not reuse public 0.1.12 |
-| Phase 2 implementation | Deferred | Explicit user approval after reviewing Phase 1 |
+| Phase 2 implementation | Tested locally | 277 tests pass; user review and manual acceptance remain pending |
 
 The implementation intentionally rejects changed editor contents instead of rebasing stale offsets.
 One completed transcript per page may be recovered for 60 seconds without persistent history.
@@ -126,7 +127,7 @@ Conservative refusal can increase recovery frequency in dynamic rich-text editor
 than silent replacement. Default/max recording settings remain 10/30 seconds. Source version,
 manifest permissions, language settings and architecture remain unchanged.
 
-## Phase 2 — authorized implementation (In progress)
+## Phase 2 — authorized implementation (Tested locally; awaiting review)
 
 Authorization received after Phase 1 review. Branch: `codex/phase-2-first-use-feedback`,
 starting at `9ea6918`. Before changes, all **257** Phase 1 tests passed again (53 unit,
@@ -139,11 +140,27 @@ privacy publication. No gate is closed by the passing automated suites.
 
 | Priority / scope | Minimum implementation | Acceptance / regression tests | Risk | Status |
 |---|---|---|---|---|
-| 1 / optional practice | Packaged practice page linked prominently from popup; reuse dictation engine; instructions, actual shortcut, permission/privacy/help guidance | No capture on open/Try focus action; explicit microphone activation completes practice; Undo; master toggle; safe denied permission; packaged page present | Extension-origin behavior and shortcut delivery need unpacked MV3 tests | Pending |
-| 2 / recording feedback | Elapsed/remaining time and small activity label in existing status UI; visible Stop/Discard; reuse existing sampler | 10s default/30s cap unchanged; trusted mouse/Enter/Space; discard sends nothing; timers and resources cleared; no loss of selection | Controls must not trigger unsafe-focus cancellation or obscure Stop | Pending |
-| 3 / recovery refinement | Explain refusal reason; keyboard focus on removal; copy/discard/expiry announcements; clear clipboard retry | One result/60s/memory only; stale copy promises cannot erase new result; no content in DOM; no editor overwrite/focus theft | Async clipboard and expiry transitions | Pending |
-| 4 / accessibility | Separate live status from rapidly changing feedback; explicit labels, focus rings, contrast and reduced motion | Keyboard paths, accessible names, constrained viewport/reduced-motion checks; human screen reader remains pending | Avoid repetitive announcements and cursor movement | Pending |
+| 1 / optional practice | Packaged practice page linked prominently from popup; reuse dictation engine; instructions, actual shortcut, permission/privacy/help guidance | No capture on open/Try focus action; explicit microphone activation completes practice; Undo; master toggle; safe denied permission; packaged page present | Extension-origin behavior and shortcut delivery need unpacked MV3 tests | Tested locally |
+| 2 / recording feedback | Elapsed/remaining time and small activity label in existing status UI; visible Stop/Discard; reuse existing sampler | 10s default/30s cap unchanged; trusted mouse/Enter/Space; discard sends nothing; timers and resources cleared; no loss of selection | Controls must not trigger unsafe-focus cancellation or obscure Stop | Tested locally |
+| 3 / recovery refinement | Explain refusal reason; keyboard focus on removal; copy/discard/expiry announcements; clear clipboard retry | One result/60s/memory only; stale copy promises cannot erase new result; no content in DOM; no editor overwrite/focus theft | Async clipboard and expiry transitions | Tested locally |
+| 4 / accessibility | Separate live status from rapidly changing feedback; explicit labels, focus rings, contrast and reduced motion | Keyboard paths, accessible names, constrained viewport/reduced-motion checks; human screen reader remains pending | Avoid repetitive announcements and cursor movement | Tested locally |
 
 Phase 2 completion requires focused and full suites, package/syntax/permission checks, visual
 inspection, updated manual acceptance and a final report. Phases 3–4, production deployment,
 Store publication, merging and infrastructure changes remain deferred pending separate approval.
+
+### Phase 2 completion
+
+The [Phase 2 implementation report](PHASE_2_REPORT.md) records all changed files, decisions,
+validation methods, accessibility findings and risks. Final counts: **54 unit + 107 browser
+(102 mocked, 5 unpacked MV3) + 95 backend + 21 website = 277 passing tests**, zero final failures
+or skips. The 20 new cases cover practice, recording feedback, keyboard navigation and recovery.
+Manifest/endpoint/backend/permissions/default duration/max duration remain unchanged. The existing
+sampler and recovery mechanism were extended; no new storage, analytics or dependencies were added.
+
+The [manual acceptance checklist](../qa/phase-2-acceptance.md) remains pending for physical speech,
+real permission dialogs, OS shortcuts and screen readers. Screenshot inspection and source-palette
+contrast checks were performed; these are not a complete accessibility certification. All six
+Phase 1 release gates above remain open. No production readiness, deployment or publication is claimed.
+
+**Stop for user review. Phase 3 and Phase 4 remain Deferred.**
