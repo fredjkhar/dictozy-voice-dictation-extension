@@ -98,6 +98,9 @@ async function installChromeMocks(page) {
       createdTabs: [],
       deferMicrophone: false,
       recordingStarts: 0,
+      microphoneRequests: 0,
+      deferRecorderStop: false,
+      pendingStops: [],
       requests: [],
       trackStops: 0,
       dispatchRuntimeMessage(message) {
@@ -314,11 +317,16 @@ async function installChromeMocks(page) {
         }
 
         this.state = "inactive";
-        queueMicrotask(() => {
+        const finish = () => {
           const data = new Blob([`recording-${this.recordingNumber}`], { type: this.mimeType });
           this.dispatch("dataavailable", { data });
           this.dispatch("stop");
-        });
+        };
+        if (testState.deferRecorderStop) {
+          testState.pendingStops.push(finish);
+        } else {
+          queueMicrotask(finish);
+        }
       }
     }
 
@@ -327,6 +335,7 @@ async function installChromeMocks(page) {
       configurable: true,
       value: {
         getUserMedia() {
+          testState.microphoneRequests += 1;
           const errorName = microphoneErrorNames.shift();
 
           if (errorName) {
@@ -1632,4 +1641,262 @@ test("popup shows assigned and unassigned shortcut states and opens Chrome setti
   await expect.poll(() => page.evaluate(() => window.__dictozyTest.createdTabs[0]?.url)).toBe(
     "chrome://extensions/shortcuts",
   );
+});
+
+// Phase 1: these exercise real DOM events but mocked Chrome/media/provider APIs.
+test("rejects synthetic microphone activation before requesting permission", async ({ page }) => {
+  await loadContentScript(page);
+  await focusFirstTextField(page);
+  for (const method of ["click", "dispatch"]) {
+    await page.locator(MIC_BUTTON).evaluate((button, method) => {
+      if (method === "click") button.click();
+      else button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    }, method);
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    expect(await page.evaluate(() => window.__dictozyTest.microphoneRequests)).toBe(0);
+  }
+  expect(await page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
+});
+
+for (const key of ["Enter", "Space"]) {
+  test(`microphone supports native ${key} activation`, async ({ page }) => {
+    await loadContentScript(page);
+    const field = await focusFirstTextField(page);
+    await page.locator(MIC_BUTTON).focus();
+    await page.keyboard.press(key);
+    await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+    await page.locator(MIC_BUTTON).focus();
+    await page.keyboard.press(key);
+    await expect(field).toHaveValue("Default transcript");
+    await expect(field).toBeFocused();
+    await undoLastEdit(page);
+    await expect(field).toHaveValue("");
+  });
+}
+
+for (const reason of ["password", "blank", "hidden", "pagehide", "removed-control", "hidden-control"]) {
+  test(`discards recording immediately on ${reason}`, async ({ page }) => {
+    await loadContentScript(page);
+    await focusFirstTextField(page);
+    await page.locator(MIC_BUTTON).click();
+    await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+    await page.evaluate((reason) => {
+      if (reason === "password") document.querySelector('input[type="password"]').focus();
+      if (reason === "blank") document.activeElement.blur();
+      if (reason === "hidden") {
+        Object.defineProperty(document, "hidden", { configurable: true, value: true });
+        document.dispatchEvent(new Event("visibilitychange"));
+      }
+      if (reason === "pagehide") window.dispatchEvent(new Event("pagehide"));
+      if (reason === "removed-control") document.querySelector(".voice-dictation-mic-button").remove();
+      if (reason === "hidden-control") document.querySelector(".voice-dictation-mic-button").style.display = "none";
+    }, reason);
+    await expect.poll(() => page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+    expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+    await expect(page.getByRole("button", { name: "Copy transcript", exact: true })).toHaveCount(0);
+  });
+}
+
+test("late permission after hidden page stops the stream without capture", async ({ page }) => {
+  await loadContentScript(page);
+  await focusFirstTextField(page);
+  await page.evaluate(() => { window.__dictozyTest.deferMicrophone = true; });
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "requesting");
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { configurable: true, value: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+    window.__dictozyTest.resolveMicrophone();
+  });
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+  expect(await page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
+  expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+});
+
+test("cancelled recorder events cannot stop or upload a newer recording", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => { window.__dictozyTest.deferRecorderStop = true; });
+  await page.locator(MIC_BUTTON).click();
+  await page.locator('input[type="password"]').focus();
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+  await field.focus();
+  await page.locator(MIC_BUTTON).click();
+  await page.evaluate(() => {
+    window.__dictozyTest.pendingStops.splice(0).forEach((finish) => finish());
+    window.__dictozyTest.deferRecorderStop = false;
+  });
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+  expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+  expect(await page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+  await page.locator(MIC_BUTTON).click();
+  await expect(field).toHaveValue("Default transcript");
+  const audio = await page.evaluate(() => window.__dictozyTest.requests[0].audioDataUrl);
+  expect(Buffer.from(audio.split(",")[1], "base64").toString()).toBe("recording-2");
+});
+
+async function resolveLatestTranscript(page, transcript = "private dictated result") {
+  await page.evaluate((transcript) => {
+    const id = window.__dictozyTest.requests.at(-1).requestId;
+    window.__dictozyTest.resolveRequest(id, { ok: true, requestId: id, transcript });
+  }, transcript);
+}
+
+for (const selector of ["#plainTextInput", "textarea", "#nestedEditor"]) {
+  test(`preserves edits and offers private temporary recovery in ${selector}`, async ({ page }) => {
+    await loadContentScript(page);
+    const field = page.locator(selector).first();
+    await field.fill("Alpha Beta");
+    await field.evaluate((element) => {
+      element.focus();
+      if ("value" in element) element.setSelectionRange(6, 10);
+      else {
+        const range = document.createRange();
+        range.setStart(element.firstChild, 6);
+        range.setEnd(element.firstChild, 10);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+      }
+      window.__dictozyTest.queueResponse({}, { defer: true });
+      window.__copied = [];
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true, value: { writeText: async (text) => window.__copied.push(text) },
+      });
+    });
+    await recordAndStop(page);
+    await waitForRequestCount(page, 1);
+    await field.evaluate((element) => {
+      // No input event: script/framework changes must also be detected.
+      if ("value" in element) element.value = "Dear Alpha Beta";
+      else element.innerHTML = "<strong>Dear Alpha Beta</strong>";
+    });
+    await resolveLatestTranscript(page);
+    const copy = page.getByRole("button", { name: "Copy transcript", exact: true });
+    await expect(copy).toBeVisible();
+    expect(await field.evaluate((el) => "value" in el ? el.value : el.textContent)).toBe("Dear Alpha Beta");
+    expect(await page.locator("html").innerHTML()).not.toContain("private dictated result");
+    await copy.evaluate((button) => button.click());
+    expect(await page.evaluate(() => window.__copied)).toEqual([]);
+    await copy.click();
+    expect(await page.evaluate(() => window.__copied)).toEqual(["private dictated result"]);
+    await expect(copy).toHaveCount(0);
+  });
+}
+
+for (const selector of ["#plainTextInput", "#nestedEditor"]) {
+  test(`does not overwrite changes made by beforeinput in ${selector}`, async ({ page }) => {
+    await loadContentScript(page);
+    const field = page.locator(selector);
+    await field.fill("Original");
+    await field.evaluate((el) => el.addEventListener("beforeinput", () => {
+      if ("value" in el) el.value = "User edit";
+      else el.textContent = "User edit";
+    }, { once: true }));
+    await recordAndStop(page);
+    await expect(page.getByRole("button", { name: "Copy transcript", exact: true })).toBeVisible();
+    expect(await field.evaluate((el) => "value" in el ? el.value : el.textContent)).toBe("User edit");
+  });
+}
+
+for (const action of ["discard", "expire", "disable", "pagehide", "new-recording"]) {
+  test(`recovery clears on ${action}`, async ({ page }) => {
+    if (action === "expire") await page.clock.install();
+    await loadContentScript(page);
+    const field = await focusFirstTextField(page);
+    await page.evaluate(() => window.__dictozyTest.queueResponse({}, { defer: true }));
+    await recordAndStop(page);
+    await waitForRequestCount(page, 1);
+    await page.locator('input[type="search"]').focus();
+    await resolveLatestTranscript(page);
+    const copy = page.getByRole("button", { name: "Copy transcript", exact: true });
+    await expect(copy).toBeVisible();
+    if (action === "discard") await page.getByRole("button", { name: "Discard transcript", exact: true }).click();
+    if (action === "expire") {
+      await page.clock.fastForward(61000);
+    }
+    if (action === "disable") await page.evaluate(() => window.__dictozyTest.setStorage({ extensionEnabled: false }));
+    if (action === "pagehide") await page.evaluate(() => window.dispatchEvent(new Event("pagehide")));
+    if (action === "new-recording") {
+      await field.focus();
+      await page.locator(MIC_BUTTON).click();
+      await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+    }
+    await expect(copy).toHaveCount(0);
+  });
+}
+
+for (const target of ["readonly", "removed", "other-field"]) {
+  test(`beforeinput ${target} cannot redirect insertion`, async ({ page }) => {
+    await loadContentScript(page);
+    const field = await focusFirstTextField(page);
+    await field.fill("Original");
+    await field.evaluate((el, target) => el.addEventListener("beforeinput", () => {
+      if (target === "readonly") el.readOnly = true;
+      if (target === "removed") el.remove();
+      if (target === "other-field") document.querySelector('input[type="search"]').focus();
+    }, { once: true }), target);
+    await recordAndStop(page);
+    await expect(page.getByRole("button", { name: "Copy transcript", exact: true })).toBeVisible();
+    if (target !== "removed") await expect(field).toHaveValue("Original");
+    await expect(page.locator('input[type="search"]')).toHaveValue("");
+  });
+}
+
+test("failed clipboard copy can retry without displaying private content", async ({ page }, testInfo) => {
+  await loadContentScript(page);
+  await focusFirstTextField(page);
+  await page.evaluate(() => window.__dictozyTest.queueResponse({}, { defer: true }));
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+  await page.locator('input[type="search"]').focus();
+  await resolveLatestTranscript(page);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true,
+      value: { writeText: async () => { throw new Error("private error"); } } });
+  });
+  const copy = page.getByRole("button", { name: "Copy transcript", exact: true });
+  await copy.click();
+  await expect(page.getByRole("region", { name: "Transcript recovery" })).toContainText("Clipboard unavailable");
+  await page.screenshot({ path: testInfo.outputPath("recovery.png") });
+  await expect(copy).toBeVisible();
+  await page.evaluate(() => {
+    navigator.clipboard.writeText = async (text) => { window.__copied = text; };
+  });
+  await copy.focus();
+  await page.keyboard.press("Enter");
+  expect(await page.evaluate(() => window.__copied)).toBe("private dictated result");
+  await expect(copy).toHaveCount(0);
+});
+
+test("normal stop survives the duration deadline while browser completion is delayed", async ({ page }) => {
+  await loadContentScript(page);
+  await page.clock.install();
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => { window.__dictozyTest.deferRecorderStop = true; });
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "processing");
+  expect(await page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+  await page.clock.fastForward(10001);
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "processing");
+  await page.evaluate(() => window.__dictozyTest.pendingStops.splice(0).forEach((finish) => finish()));
+  await expect(field).toHaveValue("Default transcript");
+  expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(1);
+});
+
+test("late microphone permission cannot start recording in an unfocused window", async ({ page }) => {
+  await loadContentScript(page);
+  await focusFirstTextField(page);
+  await page.evaluate(() => { window.__dictozyTest.deferMicrophone = true; });
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "requesting");
+  await page.evaluate(() => {
+    document.hasFocus = () => false;
+    window.dispatchEvent(new Event("blur"));
+    window.__dictozyTest.resolveMicrophone();
+  });
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+  expect(await page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
+  expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
 });

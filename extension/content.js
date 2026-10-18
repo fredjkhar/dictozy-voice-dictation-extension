@@ -10,6 +10,7 @@
   const MAX_RECORDING_DURATION_MS = 30000;
   const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
   const TRANSCRIPTION_RESPONSE_TIMEOUT_MS = 55000;
+  const RECOVERY_LIFETIME_MS = 60000;
   const MIC_BUTTON_ICONS = Object.freeze({
     busy: `
       <svg class="voice-dictation-mic-icon voice-dictation-mic-icon--spin" aria-hidden="true" viewBox="0 0 24 24">
@@ -120,7 +121,10 @@
   let mediaRecorder = null;
   let recordingStream = null;
   let recordingSignalMonitor = null;
+  let recordingSignalResult = null;
   let recordingTimeoutId = null;
+  let recordingSafetyIntervalId = null;
+  let removeTrackListeners = null;
   let recordingAttempt = 0;
   let recordingTargetField = null;
   let recordingTargetSelection = null;
@@ -133,6 +137,9 @@
   let currentMicButtonState = "idle";
   let transcriptionTargetField = null;
   let transcriptionTargetSelection = null;
+  let recovery = null;
+  let recoveryElement = null;
+  let recoveryTimeoutId = null;
   const requestLifecycle = createRequestLifecycle();
   const currentOrigin = normalizeOrigin(window.location.origin);
 
@@ -157,6 +164,10 @@
   function getCurrentEditableField() {
     const focused = document.activeElement;
 
+    if (micButton?.contains(focused) || statusBubble?.contains(focused)) {
+      return getUsableField(activeField);
+    }
+
     if (focused?.shadowRoot?.activeElement) {
       return getEditableField(focused.shadowRoot.activeElement);
     }
@@ -175,7 +186,9 @@
       event.preventDefault();
     });
 
-    button.addEventListener("click", handleDictationToggle);
+    button.addEventListener("click", (event) => {
+      if (event.isTrusted) void handleDictationToggle();
+    });
 
     document.documentElement.append(button);
     return button;
@@ -234,6 +247,7 @@
   }
 
   function hideMicButton({ forceStatus = false } = {}) {
+    if (recordingTargetField) cancelRecording();
     if (micButton) {
       micButton.hidden = true;
     }
@@ -351,7 +365,81 @@
     return getUsableField(getCurrentEditableField());
   }
 
+  function isRecordingContextSafe() {
+    return !document.hidden && document.hasFocus?.() !== false && getUsableField(recordingTargetField) &&
+      getFocusedSupportedField() === recordingTargetField;
+  }
+
+  function hasVisibleRecordingControl() {
+    if (!micButton?.isConnected || micButton.hidden || !micButton.getClientRects().length) return false;
+    if (micButton.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) return false;
+    const style = window.getComputedStyle(micButton);
+    const rect = micButton.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    return style.display !== "none" && style.visibility === "visible" && Number(style.opacity) > 0 &&
+      (hit === micButton || micButton.contains(hit));
+  }
+
+  function clearRecovery() {
+    if (recoveryTimeoutId) window.clearTimeout(recoveryTimeoutId);
+    recoveryTimeoutId = null;
+    if (recovery) recovery.text = "";
+    recovery = null;
+    recoveryElement?.remove();
+    recoveryElement = null;
+  }
+
+  function offerRecovery(text) {
+    clearRecovery();
+    if (!isDictationEnabled() || document.hidden) return;
+    recovery = { text, expiresAt: Date.now() + RECOVERY_LIFETIME_MS };
+    const panel = document.createElement("section");
+    panel.className = "voice-dictation-recovery";
+    panel.setAttribute("aria-label", "Transcript recovery");
+    const message = document.createElement("span");
+    message.setAttribute("role", "status");
+    message.textContent = "Transcript not inserted. Copy within 60 seconds or discard.";
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.textContent = "Copy transcript";
+    copy.addEventListener("click", async (event) => {
+      if (!event.isTrusted || !recovery) return;
+      if (Date.now() >= recovery.expiresAt) { clearRecovery(); return; }
+      const pending = recovery;
+      try {
+        await navigator.clipboard.writeText(pending.text);
+        if (recovery === pending) clearRecovery();
+      } catch (_error) {
+        if (recovery === pending) message.textContent = "Clipboard unavailable. Try Copy again before the transcript expires.";
+      }
+    });
+    const discard = document.createElement("button");
+    discard.type = "button";
+    discard.textContent = "Discard transcript";
+    discard.addEventListener("click", (event) => { if (event.isTrusted) clearRecovery(); });
+    panel.append(message, copy, discard);
+    recoveryElement = panel;
+    document.documentElement.append(panel);
+    recoveryTimeoutId = window.setTimeout(clearRecovery, RECOVERY_LIFETIME_MS);
+  }
+
+  function handlePageHidden() {
+    if (!document.hidden) { updateMicButton(); return; }
+    handlePageExit();
+  }
+
+  function handlePageExit() {
+    clearRecovery();
+    clearTransientStateTimeout();
+    cancelActiveWork();
+    clearActiveField();
+    hideMicButton({ forceStatus: true });
+  }
+
   function reconcileTrackedFields(mutations = []) {
+    if (recordingTargetField && (!isRecordingContextSafe() || !hasVisibleRecordingControl())) {
+      cancelRecording();
+    }
     const onlyDictozyMutations = mutations.length > 0 && mutations.every(({ target }) => (
       target === micButton ||
       target === statusBubble ||
@@ -432,6 +520,8 @@
 
     const field = getEditableFieldFromEvent(event);
 
+    if (recordingTargetField && field !== recordingTargetField) cancelRecording();
+
     if (getUsableField(field)) {
       if (field !== activeField && currentMicButtonState === "error") {
         setMicButtonState("idle");
@@ -452,6 +542,7 @@
     }
 
     window.setTimeout(() => {
+      if (recordingTargetField && !isRecordingContextSafe()) cancelRecording();
       if (!getFocusedSupportedField()) {
         clearActiveField();
         hideMicButton();
@@ -519,7 +610,20 @@
     }
 
     const range = getRichTextInsertionRange(element);
-    return range ? Object.freeze({ kind: "rich-text", range }) : null;
+    return range ? Object.freeze({
+      kind: "rich-text", range, html: element.innerHTML,
+      startContainer: range.startContainer, startOffset: range.startOffset,
+      endContainer: range.endContainer, endOffset: range.endOffset,
+    }) : null;
+  }
+
+  function isCapturedSelectionCurrent(element, captured) {
+    if (!captured) return false;
+    if (captured.kind === "form") return element.value === captured.value;
+    const { range } = captured;
+    return element.innerHTML === captured.html && isRangeInsideField(element, range) &&
+      range.startContainer === captured.startContainer && range.startOffset === captured.startOffset &&
+      range.endContainer === captured.endContainer && range.endOffset === captured.endOffset;
   }
 
   function getTextBeforeRange(element, range) {
@@ -575,7 +679,9 @@
       return false;
     }
 
-    if (!isRangeInsideField(element, insertionRange)) {
+    if (!isRangeInsideField(element, insertionRange) ||
+        !isCapturedSelectionCurrent(element, capturedSelection) ||
+        getTranscriptTargetField(element) !== element) {
       return false;
     }
 
@@ -640,12 +746,16 @@
       };
     }
 
+    if (!isCapturedSelectionCurrent(field, capturedSelection)) {
+      return { ok: false, message: "The field changed. Your existing text was not modified." };
+    }
+
     activeField = field;
     field.focus();
 
     try {
       const inserted = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement
-        ? insertIntoFormField(field, text, capturedSelection?.kind === "form" ? capturedSelection : null)
+        ? insertIntoFormField(field, text, capturedSelection, () => getTranscriptTargetField(field) === field)
         : insertIntoRichTextField(
           field,
           text,
@@ -672,6 +782,10 @@
   }
 
   function clearRecordingResources() {
+    if (recordingSafetyIntervalId) window.clearInterval(recordingSafetyIntervalId);
+    recordingSafetyIntervalId = null;
+    removeTrackListeners?.();
+    removeTrackListeners = null;
     if (recordingTimeoutId) {
       window.clearTimeout(recordingTimeoutId);
       recordingTimeoutId = null;
@@ -688,6 +802,7 @@
     }
 
     mediaRecorder = null;
+    recordingSignalResult = null;
     recordingChunks = [];
   }
 
@@ -706,11 +821,12 @@
       try {
         mediaRecorder.stop();
       } catch (_error) {
-        clearRecordingResources();
+        // Tracks still need to stop even if the recorder rejects stop().
       }
-    } else {
-      clearRecordingResources();
     }
+
+    // Do not wait for an asynchronous stop event to release the microphone.
+    clearRecordingResources();
 
     setMicButtonState("idle");
   }
@@ -848,7 +964,7 @@
   }
 
   async function startRecording() {
-    if (!isDictationEnabled()) {
+    if (!isDictationEnabled() || document.hidden) {
       hideMicButton();
       return;
     }
@@ -870,6 +986,7 @@
     }
 
     clearTransientStateTimeout();
+    clearRecovery();
     recordingAttempt += 1;
     const attempt = recordingAttempt;
     activeField = field;
@@ -885,14 +1002,16 @@
     try {
       const recordingDurationMs = await getRecordingDurationMs();
 
-      if (!isDictationEnabled() || attempt !== recordingAttempt) {
+      if (!isDictationEnabled() || attempt !== recordingAttempt || !isRecordingContextSafe()) {
+        if (attempt === recordingAttempt) cancelRecording();
         return;
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      if (!isDictationEnabled() || attempt !== recordingAttempt) {
+      if (!isDictationEnabled() || attempt !== recordingAttempt || !isRecordingContextSafe()) {
         stream.getTracks().forEach((track) => track.stop());
+        if (attempt === recordingAttempt) cancelRecording();
         return;
       }
 
@@ -905,22 +1024,46 @@
       };
 
       recordingChunks = [];
-      mediaRecorder = new MediaRecorder(recordingStream, options);
+      const recorder = new MediaRecorder(recordingStream, options);
+      mediaRecorder = recorder;
 
-      mediaRecorder.addEventListener("dataavailable", (event) => {
-        if (event.data.size > 0) {
+      recorder.addEventListener("dataavailable", (event) => {
+        if (attempt === recordingAttempt && recorder === mediaRecorder && event.data.size > 0) {
           recordingChunks.push(event.data);
         }
       });
 
-      mediaRecorder.addEventListener("stop", finishRecording, { once: true });
-      mediaRecorder.start();
+      recorder.addEventListener("stop", () => {
+        if (attempt === recordingAttempt && recorder === mediaRecorder) void finishRecording();
+      }, { once: true });
+      recorder.addEventListener("error", () => {
+        if (attempt !== recordingAttempt || recorder !== mediaRecorder) return;
+        cancelRecording();
+        showErrorState("Recording failed. Check your microphone and try again.");
+      }, { once: true });
+      recorder.start();
       setMicButtonState("recording", "Recording");
+
+      const handleTrackEnded = () => {
+        if (attempt === recordingAttempt && recorder === mediaRecorder) {
+          cancelRecording();
+          showErrorState("Microphone stopped. Check your input and record again.");
+        }
+      };
+      const tracks = stream.getTracks();
+      tracks.forEach((track) => track.addEventListener?.("ended", handleTrackEnded));
+      removeTrackListeners = () => tracks.forEach((track) => track.removeEventListener?.("ended", handleTrackEnded));
+      // Covers CSS/layout changes that don't generate DOM mutations. Hidden-page
+      // and focus transitions use immediate event-driven cancellation above.
+      recordingSafetyIntervalId = window.setInterval(() => {
+        if (!isRecordingContextSafe() || !hasVisibleRecordingControl()) cancelRecording();
+      }, 100);
 
       recordingTimeoutId = window.setTimeout(() => {
         stopRecording();
       }, recordingDurationMs);
     } catch (error) {
+      if (attempt !== recordingAttempt) return;
       clearRecordingResources();
 
       if (isDictationEnabled() && attempt === recordingAttempt) {
@@ -935,16 +1078,31 @@
   }
 
   function stopRecording() {
+    if (recordingTargetField && !isRecordingContextSafe()) {
+      cancelRecording();
+      return;
+    }
     if (!mediaRecorder || mediaRecorder.state === "inactive") {
       clearRecordingResources();
       setMicButtonState("idle");
       return;
     }
 
+    // Disabling a keyboard-focused button moves browser focus to the page body.
+    // Restore the original editor first, so completion still has a safe target.
+    recordingTargetField?.focus();
     setMicButtonState("processing", "Preparing transcription");
+    // A duration timer must not clear a normal stop while its final data event
+    // is still queued by the browser.
+    if (recordingTimeoutId) window.clearTimeout(recordingTimeoutId);
+    recordingTimeoutId = null;
 
     try {
+      // Signal inspection checks track availability. Snapshot it before stopping
+      // tracks immediately; inspecting an intentionally ended track looks silent.
+      recordingSignalResult = recordingSignalMonitor?.getResult() || "unknown";
       mediaRecorder.stop();
+      recordingStream?.getTracks().forEach((track) => track.stop());
     } catch (_error) {
       clearRecordingResources();
       recordingTargetField = null;
@@ -1091,7 +1249,7 @@
         return;
       }
 
-      const signalResult = recordingSignalMonitor?.getResult() || "unknown";
+      const signalResult = recordingSignalResult || recordingSignalMonitor?.getResult() || "unknown";
       const mimeType = mediaRecorder?.mimeType || "audio/webm";
       const targetField = getTranscriptTargetField(recordingTargetField);
       const targetSelection = recordingTargetSelection;
@@ -1160,6 +1318,7 @@
       const insertion = insertTranscript(result.transcript, expectedField, expectedSelection);
       if (!insertion.ok) {
         showFieldFailureState(insertion.message, result.requestId || operation.requestId);
+        offerRecovery(result.transcript);
         return;
       }
 
@@ -1247,6 +1406,7 @@
     }
 
     if (!enabled) {
+      clearRecovery();
       clearTransientStateTimeout();
       cancelActiveWork();
       clearActiveField();
@@ -1287,6 +1447,10 @@
   document.addEventListener("selectionchange", rememberTextRange);
   window.addEventListener("scroll", updateMicButton, true);
   window.addEventListener("resize", updateMicButton);
+  document.addEventListener("visibilitychange", handlePageHidden);
+  window.addEventListener("pagehide", handlePageExit);
+  window.addEventListener("pageshow", updateMicButton);
+  window.addEventListener("blur", () => { if (mediaRecorder) cancelRecording(); });
   chrome.runtime.onMessage.addListener(handleRuntimeMessage);
   chrome.storage.onChanged.addListener(handleStorageChanges);
 

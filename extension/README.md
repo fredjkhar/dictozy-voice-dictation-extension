@@ -64,7 +64,7 @@ Configure the backend environment as documented in `../backend/.env.example`, th
 
 ```bash
 source .venv/bin/activate
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --no-access-log
 ```
 
 The production extension does not connect to localhost. Test a local backend directly with `python scripts/smoke_test.py http://127.0.0.1:8000 --allow-http`; mocked extension browser tests exercise the fixed production endpoint without contacting production.
@@ -122,3 +122,28 @@ For structured QA, use the checklist and local test page in `../qa/`.
 - If transcription fails, check the FastAPI terminal logs first. The extension intentionally shows safe, generic error messages.
 - If the production backend is unavailable, open its `/health` URL directly and check the hosting provider logs, TLS certificate, and CORS configuration.
 - Canvas-based editors and custom widgets without a standard writable DOM input or contenteditable surface remain unsupported.
+
+
+## Phase 1 safety behavior (unpublished)
+
+- Only trusted mouse/keyboard clicks or extension commands can activate recording. Page scripts
+  cannot start recording by dispatching a click. Enter and Space on the microphone use the retained
+  supported field; successful insertion restores focus and retains native Undo.
+- Unsafe focus, a hidden tab, page exit, loss of the recording control, or loss of window focus
+  during active recording discards the recording and stops tracks. Pending permission results
+  and recorder events are tied to their originating session and cannot revive cancelled work.
+- Field contents and rich-text selection boundaries are captured temporarily in memory and
+  rechecked before insertion and after `beforeinput` page handlers. Caret-only movement remains
+  supported; intervening text/markup edits cause refusal rather than stale-offset replacement.
+- When a completed result cannot be safely inserted, a small Copy/Discard notice retains one
+  transcript per page in memory for at most 60 seconds. It never displays transcript content or
+  inserts into a different field. Copy requires an explicit trusted action and browser clipboard
+  availability; failure leaves the result available until expiry. Copy/discard/expiry/new recording,
+  disable, hidden tab and page exit clear it. Deliberately cancelled operations have no recovery.
+- No new permissions, storage keys, preferences, language options or duration changes were added.
+  Full recovery UX, timers, onboarding, editor expansion and longer clips remain later phases.
+
+See [Phase 1 manual acceptance](../qa/phase-1-acceptance.md) and
+[implementation tracking](../docs/IMPROVEMENT_ROADMAP.md). `npm run test:browser` includes ordinary
+page tests with Chrome/media mocks and separate unpacked-MV3 Chromium tests using a synthetic
+microphone and stubbed backend. Neither establishes physical-microphone or named-site compatibility.

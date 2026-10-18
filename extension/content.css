@@ -146,3 +146,30 @@
     transform: rotate(360deg);
   }
 }
+
+.voice-dictation-recovery {
+  position: fixed;
+  z-index: 2147483647;
+  bottom: 16px;
+  right: 16px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 12px;
+  border-radius: 8px;
+  background: #111827;
+  color: #fff;
+  font: 500 14px/1.4 system-ui, sans-serif;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 25%);
+}
+
+.voice-dictation-recovery > span { display: block; margin-bottom: 8px; }
+.voice-dictation-recovery > button {
+  font: inherit;
+  padding: 6px 8px;
+  margin: 2px;
+  cursor: pointer;
+  color: #111827;
+  background: #fff;
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+}
+.voice-dictation-recovery > button:focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
