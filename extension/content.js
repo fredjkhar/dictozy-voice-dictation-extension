@@ -118,6 +118,11 @@
   let statusMessageElement = null;
   let statusDismissButton = null;
   let statusIsStandalone = false;
+  let recordingFeedback = null;
+  let timingLabel = null;
+  let activityLabel = null;
+  let recordingStartedAt = 0;
+  let recordingLimitMs = DEFAULT_RECORDING_DURATION_MS;
   let mediaRecorder = null;
   let recordingStream = null;
   let recordingSignalMonitor = null;
@@ -140,8 +145,11 @@
   let recovery = null;
   let recoveryElement = null;
   let recoveryTimeoutId = null;
+  let announcementElement = null;
   const requestLifecycle = createRequestLifecycle();
   const currentOrigin = normalizeOrigin(window.location.origin);
+  const isPracticePage = window.location.protocol === "chrome-extension:" &&
+    window.location.host === chrome.runtime.id && window.location.pathname === "/practice.html";
 
   function isDictationEnabled() {
     return settingsLoaded && extensionEnabled && siteEnabled;
@@ -190,7 +198,7 @@
       if (event.isTrusted) void handleDictationToggle();
     });
 
-    document.documentElement.append(button);
+    (isPracticePage && document.querySelector("#practiceControls") || document.documentElement).append(button);
     return button;
   }
 
@@ -206,12 +214,15 @@
   function createStatusBubble() {
     const bubble = document.createElement("div");
     bubble.className = "voice-dictation-status";
-    bubble.setAttribute("role", "status");
-    bubble.setAttribute("aria-live", "polite");
+    bubble.setAttribute("role", "group");
+    bubble.setAttribute("aria-label", "Dictation controls");
     bubble.hidden = true;
 
     statusMessageElement = document.createElement("span");
     statusMessageElement.className = "voice-dictation-status__message";
+    statusMessageElement.setAttribute("role", "status");
+    statusMessageElement.setAttribute("aria-live", "polite");
+    statusMessageElement.setAttribute("aria-atomic", "true");
 
     statusDismissButton = document.createElement("button");
     statusDismissButton.type = "button";
@@ -225,8 +236,30 @@
     });
     statusDismissButton.addEventListener("click", dismissErrorState);
 
-    bubble.append(statusMessageElement, statusDismissButton);
-    document.documentElement.append(bubble);
+    recordingFeedback = document.createElement("div");
+    recordingFeedback.className = "voice-dictation-feedback";
+    recordingFeedback.hidden = true;
+    timingLabel = document.createElement("span");
+    timingLabel.className = "voice-dictation-timing";
+    timingLabel.setAttribute("aria-live", "off");
+    activityLabel = document.createElement("span");
+    activityLabel.className = "voice-dictation-activity";
+    activityLabel.setAttribute("aria-live", "off");
+    for (const [label, action] of [["Stop recording", stopRecording], ["Discard recording", discardRecording]]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "voice-dictation-feedback__button";
+      button.textContent = label === "Stop recording" ? "Stop" : "Discard";
+      button.setAttribute("aria-label", label);
+      button.addEventListener("mousedown", (event) => event.preventDefault());
+      button.addEventListener("click", (event) => {
+        if (event.isTrusted && currentMicButtonState === "recording") action();
+      });
+      recordingFeedback.append(button);
+    }
+    recordingFeedback.prepend(timingLabel, activityLabel);
+    bubble.append(statusMessageElement, statusDismissButton, recordingFeedback);
+    (isPracticePage && document.querySelector("#practiceControls") || document.documentElement).append(bubble);
     return bubble;
   }
 
@@ -257,6 +290,59 @@
     }
   }
 
+  function positionStatusBubble() {
+    if (!statusBubble || statusBubble.hidden || !micButton) return;
+    const rect = micButton.getBoundingClientRect();
+    const height = statusBubble.offsetHeight;
+    const top = rect.bottom + height + 6 <= window.innerHeight - BUTTON_EDGE_OFFSET
+      ? rect.bottom + 6 : Math.max(BUTTON_EDGE_OFFSET, rect.top - height - 6);
+    statusBubble.style.top = `${Math.round(top)}px`;
+    statusBubble.style.left = `${Math.round(Math.max(BUTTON_EDGE_OFFSET,
+      Math.min(rect.left, window.innerWidth - statusBubble.offsetWidth - BUTTON_EDGE_OFFSET)))}px`;
+    statusBubble.style.right = "auto";
+  }
+
+  function updateRecordingFeedback() {
+    if (!recordingFeedback) return;
+    recordingFeedback.hidden = false;
+    const elapsed = Math.min(recordingLimitMs, Math.max(0, performance.now() - recordingStartedAt));
+    const text = `${Math.floor(elapsed / 1000)}s elapsed · ${Math.ceil((recordingLimitMs - elapsed) / 1000)}s left`;
+    if (timingLabel.textContent !== text) timingLabel.textContent = text;
+    const activity = recordingSignalMonitor?.getActivity?.();
+    const label = activity == null ? "Activity unavailable" : activity ? "Mic activity" : "Quiet";
+    if (activityLabel.textContent !== label) activityLabel.textContent = label;
+    if (activityLabel.dataset.active !== String(activity === true)) {
+      activityLabel.dataset.active = String(activity === true);
+    }
+    positionStatusBubble();
+  }
+
+  function handleRecordingTab(event) {
+    if (!event.isTrusted || event.defaultPrevented || event.key !== "Tab" ||
+        event.ctrlKey || event.altKey || event.metaKey || currentMicButtonState !== "recording" ||
+        !isRecordingContextSafe() || !hasVisibleRecordingControl()) return;
+    // Controls are appended outside the site's editor. While recording, make
+    // them reachable without crossing unrelated fields (which safely cancels).
+    // Honor editor-owned Tab handlers, and never trap focus in these controls.
+    if (!event.shiftKey && getEditableFieldFromEvent(event) === recordingTargetField) {
+      event.preventDefault();
+      micButton.focus();
+    } else if (event.shiftKey && micButton.contains(event.target)) {
+      event.preventDefault();
+      recordingTargetField.focus();
+    }
+  }
+
+  function discardRecording() {
+    const field = getUsableField(recordingTargetField);
+    // Restore focus before removing keyboard-focused controls, without restoring
+    // an old range or changing the user's current selection.
+    field?.focus();
+    cancelRecording();
+    flashMicButtonState("idle", "Recording discarded");
+    updateMicButton();
+  }
+
   function setStatusMessage(message, { dismissible = false, standalone = false } = {}) {
     const bubble = getStatusBubble();
     statusIsStandalone = standalone;
@@ -269,10 +355,7 @@
       bubble.style.right = "16px";
       bubble.style.left = "auto";
     } else if (micButton && !micButton.hidden) {
-      const buttonRect = micButton.getBoundingClientRect();
-      bubble.style.top = `${Math.round(buttonRect.bottom + 6)}px`;
-      bubble.style.left = `${Math.round(buttonRect.left)}px`;
-      bubble.style.right = "auto";
+      positionStatusBubble();
     }
   }
 
@@ -295,6 +378,8 @@
     button.classList.toggle("voice-dictation-mic-button--error", state === "error");
     button.disabled = state === "requesting" || state === "processing" || !isDictationEnabled();
     setMicButtonVisual(button, state);
+
+    if (recordingFeedback) recordingFeedback.hidden = state !== "recording";
 
     if (message || visual.status) {
       setStatusMessage(message || visual.status, { dismissible });
@@ -380,47 +465,81 @@
       (hit === micButton || micButton.contains(hit));
   }
 
-  function clearRecovery() {
+  function announce(message) {
+    if (!announcementElement?.isConnected) {
+      announcementElement = document.createElement("div");
+      announcementElement.className = "voice-dictation-announcement";
+      announcementElement.setAttribute("role", "status");
+      announcementElement.setAttribute("aria-live", "polite");
+      announcementElement.setAttribute("aria-atomic", "true");
+      document.documentElement.append(announcementElement);
+    }
+    announcementElement.textContent = message;
+  }
+
+  function clearRecovery(message = "") {
+    const restoreFocus = recoveryElement?.contains(document.activeElement);
+    const returnFocus = recovery?.returnFocus;
     if (recoveryTimeoutId) window.clearTimeout(recoveryTimeoutId);
     recoveryTimeoutId = null;
     if (recovery) recovery.text = "";
     recovery = null;
     recoveryElement?.remove();
     recoveryElement = null;
+    // Only return focus if its control was removed. Never move a typing user's caret.
+    if (restoreFocus && !document.hidden && document.hasFocus?.() !== false && getUsableField(returnFocus)) {
+      returnFocus.focus();
+    }
+    if (message) announce(message);
   }
 
-  function offerRecovery(text) {
+  function offerRecovery(text, reason) {
     clearRecovery();
     if (!isDictationEnabled() || document.hidden) return;
-    recovery = { text, expiresAt: Date.now() + RECOVERY_LIFETIME_MS };
+    announce("");
+    recovery = { text, expiresAt: Date.now() + RECOVERY_LIFETIME_MS, returnFocus: getFocusedSupportedField(), copying: false };
     const panel = document.createElement("section");
     panel.className = "voice-dictation-recovery";
     panel.setAttribute("aria-label", "Transcript recovery");
     const message = document.createElement("span");
-    message.setAttribute("role", "status");
-    message.textContent = "Transcript not inserted. Copy within 60 seconds or discard.";
+    message.textContent = `${reason} Copy within 60 seconds or discard. The transcript is not shown here.`;
     const copy = document.createElement("button");
     copy.type = "button";
     copy.textContent = "Copy transcript";
+    copy.setAttribute("aria-label", "Copy transcript");
     copy.addEventListener("click", async (event) => {
-      if (!event.isTrusted || !recovery) return;
-      if (Date.now() >= recovery.expiresAt) { clearRecovery(); return; }
+      if (!event.isTrusted || !recovery || recovery.copying) return;
+      if (Date.now() >= recovery.expiresAt) { clearRecovery("Transcript expired. Record again when ready."); return; }
       const pending = recovery;
+      pending.copying = true;
+      copy.setAttribute("aria-disabled", "true");
+      copy.textContent = "Copying…";
       try {
         await navigator.clipboard.writeText(pending.text);
-        if (recovery === pending) clearRecovery();
+        if (recovery === pending) clearRecovery("Transcript copied. Paste it where you want.");
       } catch (_error) {
-        if (recovery === pending) message.textContent = "Clipboard unavailable. Try Copy again before the transcript expires.";
+        if (recovery === pending) {
+          pending.copying = false;
+          copy.setAttribute("aria-disabled", "false");
+          copy.textContent = "Copy transcript";
+          message.textContent = "Clipboard unavailable. Keep this page active and try Copy again before the transcript expires. Nothing was inserted.";
+          announce(message.textContent);
+        }
       }
     });
     const discard = document.createElement("button");
     discard.type = "button";
     discard.textContent = "Discard transcript";
-    discard.addEventListener("click", (event) => { if (event.isTrusted) clearRecovery(); });
+    discard.addEventListener("click", (event) => { if (event.isTrusted) clearRecovery("Transcript discarded."); });
+    panel.addEventListener("focusin", (event) => {
+      if (recovery && getUsableField(event.relatedTarget)) recovery.returnFocus = event.relatedTarget;
+    });
     panel.append(message, copy, discard);
     recoveryElement = panel;
     document.documentElement.append(panel);
-    recoveryTimeoutId = window.setTimeout(clearRecovery, RECOVERY_LIFETIME_MS);
+    if (statusBubble) statusBubble.hidden = true;
+    announce(message.textContent);
+    recoveryTimeoutId = window.setTimeout(() => clearRecovery("Transcript expired. Record again when ready."), RECOVERY_LIFETIME_MS);
   }
 
   function handlePageHidden() {
@@ -430,6 +549,7 @@
 
   function handlePageExit() {
     clearRecovery();
+    if (announcementElement) announcementElement.textContent = "";
     clearTransientStateTimeout();
     cancelActiveWork();
     clearActiveField();
@@ -501,9 +621,7 @@
 
     if (statusBubble && !statusBubble.hidden) {
       statusIsStandalone = false;
-      statusBubble.style.top = `${Math.round(top + buttonSize + 6)}px`;
-      statusBubble.style.left = `${Math.round(left)}px`;
-      statusBubble.style.right = "auto";
+      positionStatusBubble();
     }
   }
 
@@ -742,7 +860,7 @@
     if (!field) {
       return {
         ok: false,
-        message: "Focus moved before insertion. Try again.",
+        message: "Focus moved before insertion. Your writing was not replaced.",
       };
     }
 
@@ -765,13 +883,13 @@
       if (!inserted) {
         return {
           ok: false,
-          message: "Could not insert the transcript. Record again in a supported field.",
+          message: "Could not insert the transcript. The editor could not accept it safely.",
         };
       }
     } catch (_error) {
       return {
         ok: false,
-        message: "Could not insert the transcript. Record again in a supported field.",
+        message: "Could not insert the transcript. The editor could not accept it safely.",
       };
     }
 
@@ -784,6 +902,8 @@
   function clearRecordingResources() {
     if (recordingSafetyIntervalId) window.clearInterval(recordingSafetyIntervalId);
     recordingSafetyIntervalId = null;
+    if (recordingFeedback) recordingFeedback.hidden = true;
+    recordingStartedAt = 0;
     removeTrackListeners?.();
     removeTrackListeners = null;
     if (recordingTimeoutId) {
@@ -1042,7 +1162,10 @@
         showErrorState("Recording failed. Check your microphone and try again.");
       }, { once: true });
       recorder.start();
+      recordingStartedAt = performance.now();
+      recordingLimitMs = recordingDurationMs;
       setMicButtonState("recording", "Recording");
+      updateRecordingFeedback();
 
       const handleTrackEnded = () => {
         if (attempt === recordingAttempt && recorder === mediaRecorder) {
@@ -1057,6 +1180,7 @@
       // and focus transitions use immediate event-driven cancellation above.
       recordingSafetyIntervalId = window.setInterval(() => {
         if (!isRecordingContextSafe() || !hasVisibleRecordingControl()) cancelRecording();
+        else if (currentMicButtonState === "recording") updateRecordingFeedback();
       }, 100);
 
       recordingTimeoutId = window.setTimeout(() => {
@@ -1318,7 +1442,7 @@
       const insertion = insertTranscript(result.transcript, expectedField, expectedSelection);
       if (!insertion.ok) {
         showFieldFailureState(insertion.message, result.requestId || operation.requestId);
-        offerRecovery(result.transcript);
+        offerRecovery(result.transcript, insertion.message);
         return;
       }
 
@@ -1358,13 +1482,13 @@
       });
 
       extensionEnabled = settings.extensionEnabled !== false;
-      siteEnabled = Boolean(currentOrigin) && !isOriginDisabled(
+      siteEnabled = isPracticePage || Boolean(currentOrigin) && !isOriginDisabled(
         settings[DISABLED_ORIGINS_STORAGE_KEY],
         currentOrigin,
       );
     } catch (_error) {
       extensionEnabled = DEFAULT_EXTENSION_ENABLED;
-      siteEnabled = Boolean(currentOrigin);
+      siteEnabled = isPracticePage || Boolean(currentOrigin);
     }
 
     settingsLoaded = true;
@@ -1393,7 +1517,7 @@
     }
 
     if (changes[DISABLED_ORIGINS_STORAGE_KEY]) {
-      siteEnabled = Boolean(currentOrigin) && !isOriginDisabled(
+      siteEnabled = isPracticePage || Boolean(currentOrigin) && !isOriginDisabled(
         changes[DISABLED_ORIGINS_STORAGE_KEY].newValue,
         currentOrigin,
       );
@@ -1443,6 +1567,7 @@
   document.addEventListener("focusin", rememberActiveField, true);
   document.addEventListener("focusout", forgetActiveFieldAfterBlur, true);
   document.addEventListener("keyup", rememberActiveField, true);
+  document.addEventListener("keydown", handleRecordingTab);
   document.addEventListener("mouseup", rememberActiveField, true);
   document.addEventListener("selectionchange", rememberTextRange);
   window.addEventListener("scroll", updateMicButton, true);
@@ -1479,5 +1604,6 @@
     subtree: true,
   });
 
+  announce("");
   loadExtensionState();
 })();

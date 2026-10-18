@@ -286,3 +286,13 @@ populateLanguageOptions();
 loadSettings();
 loadShortcut();
 loadCurrentSite();
+
+// Optional practice opens only on request and never starts microphone capture.
+document.querySelector("#openPractice").addEventListener("click", async (event) => {
+  if (!event.isTrusted) return;
+  try {
+    await chrome.tabs.create({ url: chrome.runtime.getURL("practice.html") });
+  } catch (_error) {
+    setStatus("Could not open practice. Reopen the popup and try again.", "error");
+  }
+});

@@ -30,8 +30,9 @@
 }
 
 .voice-dictation-mic-button:focus-visible {
-  outline: 3px solid #38bdf8;
+  outline: 3px solid #0369a1;
   outline-offset: 2px;
+  box-shadow: 0 0 0 2px #fff;
 }
 
 .voice-dictation-mic-icon {
@@ -70,13 +71,13 @@
 }
 
 .voice-dictation-mic-button--success {
-  background: #059669;
-  border-color: #059669;
+  background: #047857;
+  border-color: #047857;
 }
 
 .voice-dictation-mic-button--error {
-  background: #d97706;
-  border-color: #d97706;
+  background: #92400e;
+  border-color: #92400e;
 }
 
 .voice-dictation-mic-button[hidden] {
@@ -173,3 +174,20 @@
   border-radius: 4px;
 }
 .voice-dictation-recovery > button:focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
+
+.voice-dictation-status { flex-wrap: wrap; max-width: min(280px, calc(100vw - 32px)); }
+.voice-dictation-feedback { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 3px 0; width: 100%; }
+.voice-dictation-feedback[hidden] { display: none; }
+.voice-dictation-timing { grid-column: 1 / -1; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.voice-dictation-activity { grid-column: 1 / -1; color: #cbd5e1; }
+.voice-dictation-activity::before { content: ""; display: inline-block; width: 8px; height: 8px; border: 1px solid currentColor; border-radius: 50%; margin-right: 6px; }
+.voice-dictation-activity[data-active="true"]::before { background: #5eead4; border-color: #5eead4; }
+.voice-dictation-feedback__button { min-height: 32px; padding: 5px 10px; margin: 0; border: 1px solid #94a3b8; border-radius: 5px; color: #111827; background: #fff; font: 600 13px/1.4 system-ui, sans-serif; cursor: pointer; }
+.voice-dictation-feedback__button:focus-visible { outline: 3px solid #7dd3fc; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .voice-dictation-mic-button { transition: none; }
+  .voice-dictation-mic-icon--spin { animation: none; }
+}
+.voice-dictation-announcement { position: fixed; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.voice-dictation-recovery button[aria-disabled="true"] { cursor: wait; }
+.voice-dictation-status, .voice-dictation-recovery { box-sizing: border-box; }

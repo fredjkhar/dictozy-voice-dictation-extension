@@ -173,6 +173,7 @@ async function installChromeMocks(page) {
 
     const runtime = {
       lastError: null,
+      getURL: (path) => `chrome-extension://test-extension/${path}`,
       onMessage: {
         addListener(listener) {
           runtimeListeners.push(listener);
@@ -1899,4 +1900,264 @@ test("late microphone permission cannot start recording in an unfocused window",
   await expect.poll(() => page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
   expect(await page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
   expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+});
+
+// Phase 2: recording feedback and safe interaction with the retained field.
+test("recording shows elapsed and remaining time without announcing each tick", async ({ page }) => {
+  await loadContentScript(page);
+  await page.clock.install();
+  await focusFirstTextField(page);
+  await page.locator(MIC_BUTTON).click();
+  const timing = page.locator(".voice-dictation-timing");
+  await expect(timing).toHaveText("0s elapsed · 10s left");
+  await expect(timing).toHaveAttribute("aria-live", "off");
+  await page.clock.fastForward(3100);
+  await expect(timing).toHaveText("3s elapsed · 7s left");
+  await expect(page.locator(STATUS_MESSAGE)).toHaveText("Recording");
+  await page.getByRole("button", { name: "Stop recording", exact: true }).click();
+  await expect(timing).toBeHidden();
+  await expect(page.locator('input[type="text"]').first()).toHaveValue("Default transcript");
+});
+
+for (const key of ["Enter", "Space"]) {
+  test(`recording Discard supports ${key} without uploading or moving the selection`, async ({ page }) => {
+    await loadContentScript(page);
+    const field = await focusFirstTextField(page);
+    await field.fill("Alpha Beta");
+    await field.evaluate((element) => element.setSelectionRange(6, 10));
+    await page.locator(MIC_BUTTON).click();
+    const discard = page.getByRole("button", { name: "Discard recording", exact: true });
+    await discard.focus();
+    await page.keyboard.press(key);
+    await expect(field).toBeFocused();
+    await expect(field).toHaveValue("Alpha Beta");
+    expect(await field.evaluate((element) => [element.selectionStart, element.selectionEnd])).toEqual([6, 10]);
+    expect(await page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+    expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+    await expect(page.getByRole("button", { name: "Copy transcript", exact: true })).toHaveCount(0);
+    await expect(page.locator(STATUS_MESSAGE)).toHaveText("Recording discarded");
+  });
+}
+
+test("synthetic Stop and Discard events cannot change recording state", async ({ page }) => {
+  await loadContentScript(page);
+  await focusFirstTextField(page);
+  await page.locator(MIC_BUTTON).click();
+  for (const label of ["Stop recording", "Discard recording"]) {
+    await page.getByRole("button", { name: label, exact: true }).evaluate((button) => button.click());
+  }
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+  expect(await page.evaluate(() => window.__dictozyTest.trackStops)).toBe(0);
+  await page.getByRole("button", { name: "Discard recording", exact: true }).click();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "idle");
+});
+
+for (const action of ["copy", "discard", "expire"]) {
+  test(`recovery ${action} explains refusal and returns keyboard focus safely`, async ({ page }) => {
+    await loadContentScript(page);
+    await page.clock.install();
+    const field = await focusFirstTextField(page);
+    await page.evaluate(() => window.__dictozyTest.queueResponse({}, { defer: true }));
+    await recordAndStop(page);
+    await waitForRequestCount(page, 1);
+    await field.fill("My new writing");
+    await resolveLatestTranscript(page);
+    const panel = page.getByRole("region", { name: "Transcript recovery" });
+    await expect(panel).toContainText("The field changed");
+    await expect(panel).not.toContainText("private dictated result");
+    await page.evaluate(() => Object.defineProperty(navigator, "clipboard", {
+      configurable: true, value: { writeText: async () => {} },
+    }));
+    const control = page.getByRole("button", { name: action === "discard" ? "Discard transcript" : "Copy transcript", exact: true });
+    await control.focus();
+    if (action === "expire") await page.clock.fastForward(60001);
+    else await page.keyboard.press("Enter");
+    await expect(panel).toHaveCount(0);
+    await expect(field).toBeFocused();
+    await expect(field).toHaveValue("My new writing");
+    await expect(page.locator(".voice-dictation-announcement")).toContainText(
+      action === "copy" ? "Transcript copied" : action === "discard" ? "Transcript discarded" : "Transcript expired",
+    );
+  });
+}
+
+test("recovery expiry does not steal editor focus", async ({ page }) => {
+  await loadContentScript(page);
+  await page.clock.install();
+  await focusFirstTextField(page);
+  await page.evaluate(() => window.__dictozyTest.queueResponse({}, { defer: true }));
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+  const other = page.locator('input[type="search"]');
+  await other.focus();
+  await resolveLatestTranscript(page);
+  await other.fill("Keep typing here");
+  await page.clock.fastForward(60001);
+  await expect(other).toBeFocused();
+  await expect(other).toHaveValue("Keep typing here");
+});
+
+test("recording limit remains clamped to 30 seconds with automatic stop", async ({ page }) => {
+  await loadContentScript(page);
+  await page.clock.install();
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => window.__dictozyTest.setStorage({ recordingDurationMs: 60000 }));
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(".voice-dictation-timing")).toHaveText("0s elapsed · 30s left");
+  await page.clock.fastForward(29000);
+  await expect(page.locator(".voice-dictation-timing")).toHaveText("29s elapsed · 1s left");
+  await page.clock.fastForward(1100);
+  await expect(field).toHaveValue("Default transcript");
+  expect(await page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+  expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(1);
+  await expect(page.locator(".voice-dictation-feedback")).toBeHidden();
+});
+
+for (const selector of ["#plainTextarea", "#nestedEditor"]) {
+  test(`feedback Stop preserves selection and Undo in ${selector}`, async ({ page }) => {
+    await loadContentScript(page);
+    const field = page.locator(selector);
+    await field.fill("Alpha Beta");
+    await field.evaluate((el) => {
+      if ("selectionStart" in el) el.setSelectionRange(6, 10);
+      else {
+        el.textContent = "Alpha Beta"; // Select text, not the nested fixture’s indentation node.
+        const range = document.createRange();
+        range.setStart(el.firstChild, 6); range.setEnd(el.firstChild, 10);
+        getSelection().removeAllRanges(); getSelection().addRange(range);
+      }
+    });
+    await page.locator(MIC_BUTTON).click();
+    await page.getByRole("button", { name: "Stop recording", exact: true }).focus();
+    await page.keyboard.press("Enter");
+    await expect.poll(() => field.evaluate((el) => "value" in el ? el.value : el.textContent)).toBe("Alpha Default transcript");
+    await expect(field).toBeFocused();
+    await undoLastEdit(page);
+    expect(await field.evaluate((el) => "value" in el ? el.value : el.textContent)).toBe("Alpha Beta");
+  });
+}
+
+test("late clipboard completion cannot clear a newer recoverable result", async ({ page }) => {
+  await loadContentScript(page);
+  await page.clock.install();
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({}, { defer: true });
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+      writeText: () => new Promise((resolve) => { window.__resolveCopy = resolve; }),
+    } });
+  });
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+  await field.fill("Edited first");
+  await resolveLatestTranscript(page, "First private transcript");
+  await page.getByRole("button", { name: "Copy transcript", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Copy transcript", exact: true })).toHaveAttribute("aria-disabled", "true");
+  await page.clock.fastForward(60001);
+  await field.focus();
+  await page.evaluate(() => window.__dictozyTest.queueResponse({}, { defer: true }));
+  await recordAndStop(page);
+  await waitForRequestCount(page, 2);
+  await field.fill("Edited second");
+  await resolveLatestTranscript(page, "Second private transcript");
+  await page.evaluate(() => window.__resolveCopy());
+  await expect(page.getByRole("button", { name: "Copy transcript", exact: true })).toBeVisible();
+  await page.evaluate(() => { navigator.clipboard.writeText = async (text) => { window.__copied = text; }; });
+  await page.getByRole("button", { name: "Copy transcript", exact: true }).click();
+  expect(await page.evaluate(() => window.__copied)).toBe("Second private transcript");
+  await expect(field).toHaveValue("Edited second");
+});
+
+test("compact feedback and recovery remain visible with reduced motion on a narrow page", async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await loadContentScript(page);
+  const field = page.locator("#plainTextarea");
+  await page.addStyleTag({ content: "* { box-sizing: content-box; }" });
+  await field.focus();
+  await page.evaluate(() => {
+    window.__dictozyTest.queueResponse({}, { defer: true });
+    window.__dictozyTest.deferMicrophone = true;
+  });
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "requesting");
+  expect(await page.locator(".voice-dictation-mic-icon--spin").evaluate((el) => getComputedStyle(el).animationName)).toBe("none");
+  await page.evaluate(() => window.__dictozyTest.resolveMicrophone());
+  const stop = page.getByRole("button", { name: "Stop recording", exact: true });
+  await expect(stop).toBeVisible();
+  await stop.focus();
+  const bounds = await page.locator(".voice-dictation-status").boundingBox();
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(320);
+  expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(568);
+  await page.screenshot({ path: testInfo.outputPath("recording-narrow.png") });
+  await page.keyboard.press("Space");
+  await waitForRequestCount(page, 1);
+  await field.fill("Keep these edits");
+  await resolveLatestTranscript(page);
+  const panel = page.getByRole("region", { name: "Transcript recovery" });
+  const recoveryBounds = await panel.boundingBox();
+  expect(recoveryBounds.x).toBeGreaterThanOrEqual(0);
+  expect(recoveryBounds.x + recoveryBounds.width).toBeLessThanOrEqual(320);
+  await page.screenshot({ path: testInfo.outputPath("recovery-narrow.png") });
+});
+
+test("popup practice is explicitly opened and can be revisited without changing preferences", async ({ page }) => {
+  await page.goto("/extension/popup.html");
+  await expect(page.locator("#status")).toHaveText("Ready.");
+  const before = await page.evaluate(() => window.__dictozyTest.storage());
+  const open = page.getByRole("button", { name: "Try dictation", exact: true });
+  await open.evaluate((button) => button.click());
+  expect(await page.evaluate(() => window.__dictozyTest.createdTabs.length)).toBe(0);
+  await open.focus();
+  await page.keyboard.press("Enter");
+  expect(await page.evaluate(() => window.__dictozyTest.createdTabs[0].url)).toBe("chrome-extension://test-extension/practice.html");
+  await page.reload();
+  await page.getByRole("button", { name: "Try dictation", exact: true }).click();
+  expect(await page.evaluate(() => window.__dictozyTest.createdTabs.length)).toBe(1);
+  expect(await page.evaluate(() => window.__dictozyTest.storage())).toEqual(before);
+});
+
+test("Tab reaches recording controls on ordinary pages and Shift Tab returns to the editor", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await field.fill("Alpha Beta");
+  await field.evaluate((el) => el.setSelectionRange(6, 10));
+  await page.locator(MIC_BUTTON).click();
+  await expect(field).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator(MIC_BUTTON)).toBeFocused();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+  await page.keyboard.press("Shift+Tab");
+  await expect(field).toBeFocused();
+  expect(await field.evaluate((el) => [el.selectionStart, el.selectionEnd])).toEqual([6, 10]);
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Stop recording", exact: true })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Discard recording", exact: true })).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(field).toBeFocused();
+  await expect(field).toHaveValue("Alpha Beta");
+  expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+});
+
+test("recording Tab navigation honors editor handlers and ignores synthetic keys", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await page.locator(MIC_BUTTON).click();
+  await field.evaluate((el) => {
+    el.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
+    el.addEventListener("keydown", (event) => event.preventDefault(), { once: true });
+  });
+  await expect(field).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(field).toBeFocused();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+  await page.keyboard.press("Tab");
+  await expect(page.locator(MIC_BUTTON)).toBeFocused();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Space");
+  await expect(field).toHaveValue("Default transcript");
 });

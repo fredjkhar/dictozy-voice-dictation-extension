@@ -61,6 +61,7 @@ jobs:
           node --check extension/content.js
           node --check extension/background.js
           node --check extension/popup.js
+          node --check extension/practice.js
           node --check extension/config.js
           node --check playwright.config.js
 

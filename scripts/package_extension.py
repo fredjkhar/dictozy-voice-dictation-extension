@@ -46,6 +46,9 @@ PACKAGE_FILES = (
     "background.js",
     "popup.html",
     "popup.js",
+    "practice.html",
+    "practice.js",
+    "practice.css",
     "icons/icon-16.png",
     "icons/icon-32.png",
     "icons/icon-48.png",
@@ -135,12 +138,13 @@ def validate_files() -> None:
             raise ValueError(f"{name} must be {expected_size[0]}x{expected_size[1]}, got {actual_size}")
 
     parser = ScriptSourceParser()
-    parser.feed((EXTENSION_DIR / "popup.html").read_text(encoding="utf-8"))
+    for page in ("popup.html", "practice.html"):
+        parser.feed((EXTENSION_DIR / page).read_text(encoding="utf-8"))
     for source in parser.script_sources:
         if "://" in source or source.startswith("//"):
-            raise ValueError(f"Remote popup script is not allowed: {source}")
+            raise ValueError(f"Remote extension page script is not allowed: {source}")
         if not (EXTENSION_DIR / source).is_file():
-            raise ValueError(f"Popup script does not exist: {source}")
+            raise ValueError(f"Extension page script does not exist: {source}")
 
     background = (EXTENSION_DIR / "background.js").read_text(encoding="utf-8")
     if 'importScripts("config.js")' not in background:
