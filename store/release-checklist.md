@@ -1,6 +1,8 @@
 # Chrome Web Store Release Checklist
 
-Dictozy `0.1.11` is published, and `0.1.12` is an unreleased reliability candidate. Do not replace or alter an active Store draft. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
+Dictozy `0.1.12` is published, verified 2026-10-17 (Store update date September 7, 2026). The checklist below is the historical 0.1.12 release checklist, not an instruction to resubmit that version or evidence that each checkbox was completed. Do not replace or alter an active Store draft. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
+
+Phase 1 changes are unpublished. Before a future approved release, assign a new version, regenerate its package, and complete [Phase 1 acceptance](../qa/phase-1-acceptance.md). Never upload the changed branch under the already-published 0.1.12 version.
 
 ## Package
 

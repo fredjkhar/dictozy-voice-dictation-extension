@@ -1,6 +1,6 @@
 # Privacy Policy
 
-Effective date: August 16, 2026
+Prepared update: October 17, 2026. Publish with the approved Phase 1 release; the live policy is unchanged until deployment.
 
 Dictozy: Voice Dictation helps you dictate short text into supported web fields. Recording starts only when you click the visible microphone button or press the assigned browser shortcut, and the returned transcript is inserted into the field you selected.
 
@@ -30,13 +30,17 @@ Audio, any selected explicit language code, and resulting transcript data are pr
 - The Dictozy FastAPI backend hosted on Render.
 - xAI, which provides the Speech-to-Text service.
 
-Render and xAI receive the user's IP address and may process other technical request metadata as part of normal network requests under their respective policies. The extension does not request or collect GPS coordinates or precise device location. No other third party receives audio or transcripts through the extension's application flow.
+Render receives the user's connection IP address. xAI receives the backend's connection IP address; application code does not forward the user's IP to xAI. Providers may process technical request metadata under their respective policies. The extension does not request or collect GPS coordinates or precise device location. No other third party receives audio or transcripts through the extension's application flow.
 
 ## Storage And Retention
 
 The extension stores the enabled state, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables in Chrome local extension storage. Site preferences are not synchronized to a backend and are not used for analytics, advertising, profiling, or browsing-history collection. These settings remain until the user changes or resets them, clears extension data, or removes the extension.
 
-The extension and backend application code do not intentionally persist raw audio or transcripts. Audio and transcripts are held in memory only as needed to complete a transcription request. Infrastructure and service providers may retain operational data according to their own policies.
+The extension and backend application code do not intentionally persist raw audio or transcripts as history. The server's upload parser may temporarily spool files larger than 1 MiB to operating-system temporary storage. These files are closed and removed at request completion, including handled errors; abrupt infrastructure termination follows the hosting platform's temporary-storage lifecycle. Audio normalization and transcription handling use memory, and the application does not create an audio archive. Infrastructure and service providers may retain operational data according to their own policies.
+
+The extension temporarily compares the selected field's contents in memory to avoid overwriting intervening edits. Those contents are not transmitted or saved. If a completed transcript cannot be inserted safely, the page may keep one result in memory for up to 60 seconds with explicit Copy and Discard controls. The recovery notice does not display the transcript. Copy, Discard, expiry, a new recording, disabling Dictozy, hiding the tab, or leaving the page clears the result. Deliberately cancelled work is not recoverable. Copy places text on the system clipboard at the user's request; clipboard retention is controlled by the operating system and user.
+
+The backend keeps temporary client-address rate-limit counters and aggregate usage counters in memory. Application request logs contain a bounded request identifier, method, route category, status and latency, not audio, transcripts, field contents or client IP addresses. Hosting-provider logs are governed separately.
 
 ## Security
 

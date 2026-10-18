@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.11` is currently published, and `0.1.12` is an unreleased reliability candidate. Do not replace or alter an active Store draft.
+Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.12` is published, verified from public Store metadata on 2026-10-17 (Store update date September 7, 2026). Phase 1 branch fixes are not part of that publication. Do not replace or alter an active Store draft.
 
 ## Dashboard Product Details
 
@@ -200,7 +200,7 @@ No test account or credentials are required.
 
 Use the existing Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
 
-Phase 38 changes only the release note in the Chrome Web Store listing. Confirm these existing values before submitting `0.1.12`:
+Historical Phase 38 submission notes for the now-published `0.1.12` release; retain these destinations for future approved updates:
 
 1. Homepage remains `https://dictozy.com/`.
 2. Privacy policy remains `https://dictozy.com/privacy.html`.
@@ -210,7 +210,7 @@ Phase 38 changes only the release note in the Chrome Web Store listing. Confirm 
 Fields and assets that remain unchanged:
 
 - Extension name, category, and language.
-- Published `0.1.11` package until the `0.1.12` update is reviewed and published.
+- Published `0.1.12` package until a future update is explicitly approved and published.
 - Store icon, dictation screenshot, and promotional tile.
 - Long description and short description, which remain accurate.
 - Published homepage, support, and privacy policy destinations.

@@ -26,7 +26,7 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.11` is published. Version `0.1.12` is an unreleased reliability candidate with clearer, privacy-safe microphone and transcription failure guidance.
+Version `0.1.12` is published (public Store metadata verified 2026-10-17; updated September 7, 2026). This branch contains unpublished Phase 1 fixes; its source version remains `0.1.12` until a separately approved release is prepared. See [the improvement roadmap](docs/IMPROVEMENT_ROADMAP.md).
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Recording starts only after an explicit microphone-button click or assigned browser shortcut.
@@ -78,7 +78,7 @@ cp .env.example .env
 Set `XAI_API_KEY` in `backend/.env`, then run:
 
 ```bash
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --no-access-log
 ```
 
 Extension setup:
@@ -212,3 +212,12 @@ Issue templates are available for:
 - Future feature requests
 
 Use hardening tasks for reliability, privacy, documentation, and QA work. Use feature requests for product scope changes.
+
+
+## Structured improvements
+
+Phase 1 work, acceptance criteria, evidence and deferred phases are tracked in
+[docs/IMPROVEMENT_ROADMAP.md](docs/IMPROVEMENT_ROADMAP.md). This branch is not deployed or published.
+Use [qa/phase-1-acceptance.md](qa/phase-1-acceptance.md) for human checks before a release decision.
+The browser suite distinguishes injected Chrome/media fixtures from an unpacked MV3 extension
+running in bundled Chromium with synthetic audio and a stubbed backend. Neither calls production.

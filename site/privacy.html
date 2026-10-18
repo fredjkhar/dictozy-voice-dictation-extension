@@ -73,7 +73,8 @@
             This policy explains what Dictozy handles to provide voice dictation, where that data goes,
             what stays in Chrome, and the controls available to you.
           </p>
-          <p class="page-meta">Effective date: August 16, 2026</p>
+          <!-- Prepared Phase 1 policy; publish only with the approved release. -->
+          <p class="page-meta">Policy revision: October 17, 2026</p>
         </div>
       </header>
 
@@ -135,8 +136,8 @@
               <li>xAI, which provides the Speech-to-Text service.</li>
             </ul>
             <p>
-              Render and xAI receive the user's IP address and may process other technical request metadata as part of normal
-              network requests under their respective policies. The extension does not request or collect GPS coordinates or
+              Render receives the user's connection IP address. xAI receives the backend's connection IP address; application code
+              does not forward the user's IP to xAI. Providers may process technical request metadata under their respective policies. The extension does not request or collect GPS coordinates or
               precise device location. No other third party receives audio or transcripts through the extension's application flow.
             </p>
           </section>
@@ -150,9 +151,23 @@
               until the user changes or resets them, clears extension data, or removes the extension.
             </p>
             <p>
-              The extension and backend application code do not intentionally persist raw audio or transcripts. Audio and transcripts
-              are held in memory only as needed to complete a transcription request. Infrastructure and service providers may retain
-              operational data according to their own policies.
+              The extension and backend application code do not intentionally persist raw audio or transcripts as history. The server's upload
+              parser may temporarily spool files larger than 1 MiB to operating-system temporary storage. These files are closed and removed
+              at request completion, including handled errors; abrupt infrastructure termination follows the hosting platform's temporary-storage
+              lifecycle. Audio normalization and transcription handling use memory, and the application does not create an audio archive.
+              Infrastructure and service providers may retain operational data according to their own policies.
+            </p>
+            <p>
+              The extension temporarily compares the selected field's contents in memory to avoid overwriting intervening edits. Those contents
+              are not transmitted or saved. If a completed transcript cannot be inserted safely, the page may keep one result in memory for up to
+              60 seconds with explicit Copy and Discard controls. The recovery notice does not display the transcript. Copy, Discard, expiry,
+              a new recording, disabling Dictozy, hiding the tab, or leaving the page clears the result. Deliberately cancelled work is not
+              recoverable. Copy places text on the system clipboard at the user's request; clipboard retention is controlled by the operating system and user.
+            </p>
+            <p>
+              The backend keeps temporary client-address rate-limit counters and aggregate usage counters in memory. Application request logs
+              contain a bounded request identifier, method, route category, status and latency, not audio, transcripts, field contents or client
+              IP addresses. Hosting-provider logs are governed separately.
             </p>
           </section>
 

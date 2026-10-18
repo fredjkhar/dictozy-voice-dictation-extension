@@ -2,7 +2,17 @@
 
 These notes preserve the release history without placing every prior version in the Chrome Web Store sales description.
 
+## Unreleased — Phase 1
+
+- Stop and discard unsafe/hidden recording sessions; reject synthetic page activation.
+- Preserve user edits when asynchronous insertion becomes unsafe; provide one temporary recovery result with explicit Copy/Discard.
+- Support keyboard activation while preserving native Undo and existing shortcuts/settings.
+- Harden backend proxy trust, resource limits, aggregate audio allowance, duration validation, logging and retention disclosures.
+- No version assigned, package published, or production deployment performed. See [roadmap](../docs/IMPROVEMENT_ROADMAP.md).
+
 ## 0.1.12
+
+Published baseline verified 2026-10-17; the public Store lists September 7, 2026 as its update date.
 
 - Added clear, privacy-safe guidance for microphone permission, missing-device, busy-device, and blocked-page failures.
 - Distinguished offline, connection, overload, timeout, temporary service, provider, and malformed-response failures.
