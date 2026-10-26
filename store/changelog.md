@@ -2,6 +2,14 @@
 
 These notes preserve the release history without placing every prior version in the Chrome Web Store sales description.
 
+## Unreleased — Phase 3
+
+- Corrected nested open-shadow focus resolution and immediate target-focus cancellation, preserving movement inside one rich editor.
+- Avoid nearby native controls when positioning the microphone; keep its side stable during active work.
+- Added local unpacked-extension compatibility and repeat-session regressions, a dated evidence matrix and a privacy-conscious manual pilot protocol.
+- Kept the 10/30-second recording limits. Real speech and full named-app acceptance remain pending.
+- No release, deployment or infrastructure change. See [Phase 3 report](../docs/PHASE_3_REPORT.md).
+
 ## Unreleased — Phase 2
 
 - Added optional bundled practice with permission, shortcut, privacy and help guidance.

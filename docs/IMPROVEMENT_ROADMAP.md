@@ -1,12 +1,13 @@
 # Dictozy improvement roadmap
 
 Assessment date: 2026-10-17 (America/Toronto). Base: `a939c61` on `main`.
-Working branch: `codex/phase-1-correctness-trust`.
+Current review date: 2026-10-25 (America/Toronto).
+Working branch: `codex/phase-3-compatibility-reliability` (Phase 2 base: `bbdf9a2`).
 
 ## Scope and approval gates
 
-Phase 0 and Phase 1 implementation are complete and reviewed. Phase 2 is authorized.
-Stop for user review after Phase 2; implementation acceptance does not establish production readiness.
+Phase 0, Phase 1 and Phase 2 implementation are reviewed and accepted. Phase 3 is authorized.
+Stop for user review after Phase 3; implementation acceptance does not establish production readiness.
 Do not deploy, publish, change production configuration/secrets, or begin later phases.
 Keep plain JavaScript, Manifest V3, FastAPI, backend-only xAI access, existing preferences,
 shortcuts, supported fields, native Undo, and browser permissions.
@@ -68,7 +69,7 @@ deployment dependency in the Phase 1 report; do not silently introduce infrastru
 5. Deployment-only checks: approved ingress trust chain, one worker/replica, structured logs,
    aggregate limit, request-body bounds, real microphone/provider behavior. No production changes.
 
-## Phase 2 — first use and recovery UX (Authorized; see current tracking below)
+## Phase 2 — first use and recovery UX (Implementation accepted; manual gates open)
 
 Scope/checklist: build on P1-BR recovery; explicit recording discard; elapsed/remaining time;
 restrained activity feedback; optional practice/onboarding/help; keyboard/screen-reader review.
@@ -78,7 +79,7 @@ Tests: UI/state/clipboard/expiry regressions plus human keyboard, screen-reader 
 Risk: control clutter and focus changes; no permissions, persistent history or analytics expansion.
 Documentation/report: update extension/manual QA/privacy as applicable; report tests and limitations.
 
-## Phase 3 — real applications and daily reliability (Deferred; approval required)
+## Phase 3 — real applications and daily reliability (Tested locally; live acceptance Pending)
 
 Scope/checklist: evaluate Gmail, Outlook, an AI chat, messaging, and notes app; select three for
 deeper testing; investigate iframes, Shadow DOM, rich text, native Undo and Permissions Policy;
@@ -119,7 +120,7 @@ Render, or Store-installed verification was performed. No deployment, publishing
 | Real ingress trust, service replica count and production logs | Pending | Approved deployment access; confirm trust chain and one worker/replica |
 | Durable aggregate spending protection across restarts/replicas | Deferred | Approval for a shared durable store or verified provider/edge hard cap; current cap is per running worker |
 | Publish privacy revision and new extension version | Deferred | Separate release approval; do not reuse public 0.1.12 |
-| Phase 2 implementation | Tested locally | 277 tests pass; user review and manual acceptance remain pending |
+| Phase 2 implementation | Tested locally; accepted | 277 tests passed at closure; human/manual release acceptance remains pending |
 
 The implementation intentionally rejects changed editor contents instead of rebasing stale offsets.
 One completed transcript per page may be recovered for 60 seconds without persistent history.
@@ -127,7 +128,7 @@ Conservative refusal can increase recovery frequency in dynamic rich-text editor
 than silent replacement. Default/max recording settings remain 10/30 seconds. Source version,
 manifest permissions, language settings and architecture remain unchanged.
 
-## Phase 2 — authorized implementation (Tested locally; awaiting review)
+## Phase 2 — authorized implementation (Tested locally; accepted 2026-10-25)
 
 Authorization received after Phase 1 review. Branch: `codex/phase-2-first-use-feedback`,
 starting at `9ea6918`. Before changes, all **257** Phase 1 tests passed again (53 unit,
@@ -163,4 +164,41 @@ real permission dialogs, OS shortcuts and screen readers. Screenshot inspection 
 contrast checks were performed; these are not a complete accessibility certification. All six
 Phase 1 release gates above remain open. No production readiness, deployment or publication is claimed.
 
-**Stop for user review. Phase 3 and Phase 4 remain Deferred.**
+Phase 2 was accepted on 2026-10-25. Phase 3 is authorized; Phase 4 remains Deferred.
+
+## Phase 3 tracking — 2026-10-25
+
+Baseline: verified the accepted Phase 2 commits and clean tracked tree, preserving the unrelated
+untracked `SEO Report.pdf`. Unit 54, backend 95 and website 21 passed. Initial browser run:
+105 passed / 2 Chromium startup timeouts before test assertions. Isolated reproduction confirmed
+persistent-browser launch contention; sequential installed cases passed 10/10. Per-file execution
+now keeps those cases in one worker without weakening assertions, skipping failures or extending
+timeouts. Final full-suite evidence belongs in [the Phase 3 report](PHASE_3_REPORT.md).
+
+| ID / priority | User impact and scope | Components / approach | Risk / dependencies | Acceptance and regression evidence | Status |
+|---|---|---|---|---|---|
+| P3-A / high | Understand useful everyday workflows | Gmail, ChatGPT, Notion as provisional priorities; Outlook and WhatsApp Web also assessed; dated [matrix](COMPATIBILITY_MATRIX.md) | Account access, app changes, browser/build identity; no customer ranking data | Separate UI preflight, local editor models and actual dictation; no named-app support claim from mocks | Tested for access/UI only; full live acceptance Pending |
+| P3-B / high | Open-shadow editor cannot start despite a visible mic | `content.js`: resolve nested open-root focus; direct session focus listener and cleanup | Retargeted browser focus events; closed roots and frames stay excluded | Unpacked/native browser insertion and Undo, immediate unsafe focus cancellation, retry and unchanged surrounding content | Tested with synthetic audio/stub backend |
+| P3-C / high | Native adjacent controls may be obscured | Reproduce thin composer/control geometry observed in live ChatGPT; generic placement correction | Avoid layout jitter, preserve visible Stop; no site-specific private data | Local geometry regression plus live idle-geometry recheck after local extension reload | Tested locally and in live idle UI; full capture Pending |
+| P3-D / high | Repeat-session failures and latency are unmeasured | `daily-reliability.spec.js`: five insert/Undo cycles and five discards, numeric timing attachment | Synthetic device/stub does not measure speech or production latency | Correct target only; five provider-stub calls; no discarded result; cleanup between cycles | Tested locally |
+| P3-E / medium | Longer phrases can hit the current limit | Review frontend 10/30s and strict decoded backend 60s ceiling | Encoding overhead, real cutoffs/latency, cost and open aggregate-budget gate | Retain 10/30 until physical-mic pilot demonstrates benefit and boundaries are validated | Deferred; evaluated, no duration change |
+| P3-F / high | Need evidence without collecting private writing | [Manual protocol](../qa/phase-3-acceptance.md), optional empty metrics CSV | Human mic, screen reader, private disposable app fields | First-use, completion, recovery, cutoff and correction metrics; proposed targets clearly unmeasured | Implemented; human execution Pending |
+
+All six Phase 1 release gates remain open. Phase 4 remains Deferred. No deployment, publication,
+production configuration, permissions, persistent transcript storage or infrastructure changes.
+
+### Phase 3 local completion
+
+Final validation: **54 unit + 120 browser (102 mocked, 18 unpacked/synthetic) + 95 backend +
+21 website = 290 passing tests**, zero final failures/skips. All package/assets/site/dependency,
+changed-JavaScript syntax and whitespace checks pass. Independent review found and corrected a
+same-rich-editor descendant focus regression before the final suite. Thirteen tests were added.
+
+Live Chrome preflight detected Gmail/ChatGPT fields and verified corrected ChatGPT idle control
+placement. No live audio/provider/insertion test was performed. The user chose to leave Notion,
+Outlook and WhatsApp login-dependent editor tests pending. Physical microphone, human shortcut,
+screen-reader and full named-editor acceptance remain Pending; no production-readiness claim.
+
+See [Phase 3 report](PHASE_3_REPORT.md) for files, evidence, local timing limits, reproduction,
+manual checklist and remaining risks. **Stop for review; complete manual Phase 3 acceptance before
+considering Phase 4.**

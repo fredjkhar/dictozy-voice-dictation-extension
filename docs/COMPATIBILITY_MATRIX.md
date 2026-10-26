@@ -1,0 +1,82 @@
+# DICTOZY compatibility evidence
+
+Assessment date: **2026-10-25**, America/Toronto. Working branch:
+`codex/phase-3-compatibility-reliability`, accepted baseline `bbdf9a2`.
+Final automated code revision: `14eda7a` (includes product correction `066833e`).
+
+**No named application is certified for end-to-end dictation by this assessment.**
+The live checks below establish access, editor structure and idle-control placement only.
+Physical speech, provider results, native Undo after DICTOZY insertion in these applications,
+and human accessibility acceptance remain pending.
+
+## Environments and methods
+
+| ID | Environment | What was actually exercised | Limits |
+|---|---|---|---|
+| L1 | macOS 15.6.1, user's existing Google Chrome profile; enabled unpacked DICTOZY 0.1.12 | Browser automation through live application UI and read-only DOM geometry. Chrome Details confirmed this repository's `extension/` source folder; reloaded it for the placement recheck | Running Chrome version was not verified. Initial preflight preceded reload; placement recheck used the Phase 3 working tree. Manifest version alone does not identify a branch. No microphone activation, transcript insertion or provider request |
+| A1 | macOS 15.6.1, Playwright 1.61.1 bundled Chromium/Chrome for Testing 149.0.7827.55, isolated temporary profiles, current checkout loaded unpacked | Native MV3 isolation, Chrome storage/messaging, MediaRecorder, browser focus/editing/Undo; synthetic microphone and stubbed backend | Local editor models only. Production backend DNS and page HTTPS traffic blocked. Not physical speech, real provider latency or named-site support |
+| M1 | Playwright Chromium on local QA page with injected extension/media/provider APIs | Existing deterministic cancellation, response, recovery, storage and DOM regressions | Mocked workflow evidence; not installed-extension or real microphone evidence |
+
+Live UI results are **browser-automated preflight**, not human manual acceptance. No personal
+writing, account identifiers, full private URLs, screenshots of inboxes or transcript content are
+retained in this matrix. No messages or prompts were sent, and no notes were created.
+
+## Application matrix
+
+Gmail, ChatGPT and Notion are the three provisional priorities: email composition, short prompts
+and notes are distinct everyday writing tasks. This is a product hypothesis, not a measured user
+preference. Outlook and WhatsApp Web remain in the evaluation set. Revisit priorities with feedback.
+
+| Application / priority | Workflow and method | Observed result | Supported workflow claim | Outstanding checks / limits |
+|---|---|---|---|---|
+| Gmail / priority | L1: new empty compose body, no recipients or content; focus and inspect editor/control | Body is a top-document `DIV`, `contenteditable=true`, `role=textbox`; DICTOZY idle mic visible | Field detection observed only | Selection insertion, formatting, native Undo, pending edits, compose resizing/re-render, Stop/Discard, microphone policy and actual speech all pending |
+| ChatGPT / priority | L1: logged-out empty new-chat composer; inspect field and adjacent controls, reload local extension and recheck | Top-document textarea. Before correction, DICTOZY's 42×42 control overlapped the native 44×44 voice button (roughly 36×42 px intersection). After correction it sits above the composer; DOM rectangles have zero overlap and screenshot inspection confirms both controls visible | Field detection and corrected idle placement observed only | Authenticated composer variants, resizing, insertion/Undo/recovery and real speech pending. The final same-editor-focus refinement was tested locally, not through live capture |
+| Notion / priority | L1: navigate to notes application | Redirected to marketing/login; no authenticated notes editor reached | None | Block editing, formatting, DOM replacement, focus, insertion/Undo and microphone testing blocked on signed-in private scratch workspace |
+| Outlook on the web | L1: open mail URL | Redirected to Outlook marketing/sign-in; compose unavailable | None | Private empty draft, body/subject separation, rich-text/iframe boundaries, insertion/Undo, recovery and speech blocked on sign-in |
+| WhatsApp Web | L1: open web application | Device-link/QR login screen; no message composer reached | None | Device linking must be completed by account owner. Self-chat without Send, multiline/caret/Undo and speech checks pending |
+
+Login screens and product pages are access observations, never compatibility passes. A visible
+microphone alone does not establish successful capture or insertion. Chrome preflight results do
+not establish Brave, other Chromium browsers, mobile, or Firefox support.
+The user explicitly chose to leave login-dependent editor tests pending. Temporary inspection tabs
+were closed; the empty Gmail compose body was verified unchanged. No existing drafts were edited.
+
+## Local editor-model evidence (A1)
+
+The new `extension/tests/browser/compatibility.spec.js` uses actual unpacked extension execution.
+The models are deliberately described by browser behavior rather than branded as application mocks.
+
+| Editor boundary / workflow | Outcome and implication | Remaining limitation |
+|---|---|---|
+| One-level open-shadow text input | Native insertion and Undo validated | Does not cover every web-component editor |
+| Nested open-shadow text input | Reproduced visible mic that failed to start; recursive active-focus resolution fixes activation; insertion/Undo validated | Programmatic idle focus wholly inside a shared shadow host can fail to notify document listeners until mouse/keyboard interaction |
+| Open-shadow rich text | Selected-range insertion and native Undo validated in tested Chromium | Other rich editors, selection APIs and browser versions require separate tests |
+| Nested-shadow safe target to password | Session-bound target focus listener cancels synchronously, no upload; retry verifies cleanup | Document-level focus events alone are retargeted/suppressed; safety polling remains a fallback for DOM changes |
+| Nested-shadow safe target to another supported editor | Cancels original recording; neither field receives a transcript | Does not transfer an active recording to the new editor |
+| Focus between descendants of one rich editor | Recording continues, Stop inserts safely and native Undo restores the selection | New focus listener must distinguish a new editor from a descendant of the retained editor |
+| Rich editor replaces nodes with identical HTML during pending response | Original range identity fails validation; writing unchanged and temporary recovery offered | Conservative refusal may increase recovery on editors that routinely rebuild DOM |
+| Same-origin and cross-origin iframe editors | No content script injected in frame; entering frame cancels top-level recording | Iframe editing intentionally unsupported; no new `all_frames` scope or permissions |
+| Closed shadow root | No activation/control for inaccessible editor | Intentionally unsupported; no interception of closed roots |
+| Actual `Permissions-Policy: microphone=()` response header | Browser reports disabled microphone policy; extension refuses capture with a safe message and zero backend-stub calls | Not a claim about any named application's current policy or a physical permission-prompt test |
+| Narrow composer beside native controls | Generic nearby-control avoidance reproduced and tested; chosen side stays stable during capture, native control remains clickable | Bounded hit testing is a heuristic. Extremely crowded layouts and closed-shadow controls can still collide; no universal placement guarantee |
+| Repeated local sessions | Five insertions with native Undo and five explicit discards, alternating textarea/rich text; only five stub requests | Ten controlled sessions are a smoke test, not the proposed 60-trial human pilot |
+
+## Performance and duration
+
+The repeat-session test attaches numeric local stop-to-insertion timing. The response is deliberately
+stubbed with a 100 ms delay and the input is synthetic. Report its samples separately in
+[the Phase 3 report](PHASE_3_REPORT.md); never use them as production latency, recognition accuracy,
+first-use time or pilot completion figures.
+
+**10-second default / 30-second maximum remain unchanged.** A backend ceiling of 60 decoded seconds
+does not justify a 60-second capture timer: encoding and timer overhead, cutoff frequency, latency,
+correction effort and aggregate usage need evidence. See [the manual protocol](../qa/phase-3-acceptance.md)
+and its optional empty metrics template. First success under one minute, 95% completion and zero
+wrong-field/uncontrolled-recording events remain proposed pilot targets, not measured achievements.
+
+## Release status
+
+All six gates remain open: Render proxy/worker/replica/ingress verification; durable aggregate usage
+protection; physical microphone and human installed-extension acceptance; full live-editor testing;
+production logging/deployment validation; coordinated privacy publication. No deployment,
+publication, infrastructure change, new permissions, telemetry or Phase 4 work is included.

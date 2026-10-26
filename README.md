@@ -225,3 +225,10 @@ running in bundled Chromium with synthetic audio and a stubbed backend. Neither 
 Phase 2 adds optional **Try dictation** practice, elapsed/remaining recording time, Stop/Discard,
 and accessible temporary recovery feedback. See the [Phase 2 report](docs/PHASE_2_REPORT.md)
 and [installed-extension manual checklist](qa/phase-2-acceptance.md). Release gates remain open.
+
+Phase 3 improves open-shadow focus handling and avoids nearby native controls when positioning the
+microphone. See the dated [compatibility matrix](docs/COMPATIBILITY_MATRIX.md),
+[Phase 3 report](docs/PHASE_3_REPORT.md), and [manual pilot checklist](qa/phase-3-acceptance.md).
+Live Gmail/ChatGPT checks establish field detection and selected layout behavior only; full
+named-application dictation and physical-microphone acceptance remain pending. Recording limits
+remain 10/30 seconds. No deployment or publication is included.

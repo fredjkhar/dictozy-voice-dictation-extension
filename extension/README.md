@@ -171,3 +171,20 @@ cannot remove a newer result; a clipboard operation already handed to the browse
 See [Phase 2 manual acceptance](../qa/phase-2-acceptance.md) and the
 [Phase 2 report](../docs/PHASE_2_REPORT.md). Physical microphone, screen-reader, live-editor and
 production validation remain open; bundled Chromium/synthetic audio is a separate test method.
+
+## Phase 3 compatibility validation (unpublished)
+
+Focus resolution follows nested open shadow roots. Recording ends immediately when the target loses
+focus to another editor or unsafe target, while movement within one rich editor and to DICTOZY's
+controls remains valid. Iframe and closed-shadow editors are still unsupported.
+
+The microphone checks nearby page controls before choosing a position and retains that side during
+recording/transcription. This avoids the observed ChatGPT native-voice-button collision, but does
+not guarantee collision-free placement in every crowded layout. No site-specific permissions or
+framework integrations were added. Recording remains 10 seconds by default, at most 30 seconds.
+
+See the [dated compatibility matrix](../docs/COMPATIBILITY_MATRIX.md) and
+[Phase 3 acceptance procedure](../qa/phase-3-acceptance.md). Local native-browser tests cover open
+shadow fields, native Undo, rich DOM replacement, iframe exclusion, Permissions Policy and repeated
+insert/discard sessions. Their synthetic audio and stubbed backend do not establish speech accuracy,
+production latency or full Gmail/ChatGPT/Notion/Outlook/WhatsApp compatibility.
