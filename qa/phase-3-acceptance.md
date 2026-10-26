@@ -159,8 +159,19 @@ Stop and Discard; Space must discard, restore editor focus and preserve the fixt
 The corresponding generic mocked regression is runnable with
 `npx playwright test extension/tests/browser/dictation.spec.js --grep 'recording panel avoids a bottom composer'`.
 
-VoiceOver listening is **Pending by user choice**. Do not enable it or request a listening handoff
-until the user chooses to resume that check. The procedure below remains available for that time.
+The user resumed VoiceOver listening on **2026-10-26**. The installed ChatGPT recording/Discard
+cycle passed with human confirmation of clear labels/status and no repeated countdown speech.
+After targeted status/focus corrections, the user also confirmed processing, success, microphone
+error/return to Subject, recovery reason, Copy failure/success, Discard and expiry in a local
+mocked-source fixture using actual Chrome and VoiceOver. These are distinct evidence types; see
+the dated Phase 3 report. Preserve and restore the original VoiceOver setting for each check.
+
+A final installed-source reload and short native-Chrome capture/Discard recheck passed after setup
+correction; source shape, idle return, recording-indicator removal and unchanged fixture/focus
+were observed. Earlier timeout attempts are excluded. When repeating, choose Reload **inside the
+extension's details panel**, not Chrome's identically named toolbar control; require Chrome's
+“Reloaded” confirmation, then reload the disposable page. The final recheck did not include new
+speech/recognition or human listening; successful insertion/Undo evidence retains its earlier scope.
 
 For a minimal VoiceOver listening handoff, first prepare an unchanged disposable fixture with
 recording idle. Record whether VoiceOver was already enabled and preserve that preference. Once
@@ -171,6 +182,15 @@ processing, success/error, recovery/clipboard failure and expiry announcements i
 trial. Record actually heard output; an accessibility-tree snapshot cannot replace it. Apple's
 [VoiceOver on/off instructions](https://support.apple.com/en-gb/guide/voiceover/vo2682/mac) describe
 Command-F5; restore the initial setting afterward.
+
+For a repeat, confirm the test tab is visibly selected in native Chrome before starting: a DOM
+automation handle can target a background tab. Check a page label or independent live-region
+sentence first if the listener hears nothing. Keep each check short and ask about specific spoken
+outcomes. Allow the recovery explanation to finish before Copy/Discard; leave a separate recovery
+untouched for a real minute while a different supported field has focus. Confirm expiry does not
+move focus or change text. Use native keyboard navigation for focus-return evidence. Any synthetic
+recorder/provider/clipboard behavior must remain labeled as such; do not infer physical audio,
+real clipboard access or actual spoken output from mocked tests.
 
 ## Pilot measurements without private content
 

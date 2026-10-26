@@ -1,6 +1,6 @@
 # DICTOZY compatibility evidence
 
-Assessment date: **2026-10-25**, America/Toronto. Working branch:
+Assessment updated: **2026-10-26**, America/Toronto. Working branch:
 `codex/phase-3-compatibility-reliability`, accepted baseline `bbdf9a2`.
 Initial automated code revision: `14eda7a` (includes product correction `066833e`).
 The dated follow-ups below record subsequent human evidence and recovery-focus correction `8753628`.
@@ -18,6 +18,7 @@ below. Full application and human accessibility acceptance remain incomplete.
 | A1 | macOS 15.6.1, Playwright 1.61.1 bundled Chromium/Chrome for Testing 149.0.7827.55, isolated temporary profiles, current checkout loaded unpacked | Native MV3 isolation, Chrome storage/messaging, MediaRecorder, browser focus/editing/Undo; synthetic microphone and stubbed backend | Local editor models only. Production backend DNS and page HTTPS traffic blocked. Not physical speech, real provider latency or named-site support |
 | M1 | Playwright Chromium on local QA page with injected extension/media/provider APIs | Existing deterministic cancellation, response, recovery, storage and DOM regressions | Mocked workflow evidence; not installed-extension or real microphone evidence |
 | L2 | macOS 15.6.1 (24G90), Google Chrome 156.0.8078.47 arm64, existing profile, unpacked DICTOZY 0.1.12 from this repository | Version/source verified through Chrome UI; optional practice navigation; ChatGPT Enter activation and Space discard using temporary synthetic audio in the extension's isolated world | Authenticated rich composer; generated Web Audio stream, native MediaRecorder, intercepted transcription messaging. No physical microphone/provider claim. Overrides restored before reloading the recovery-focus fix |
+| V1 | L2 Chrome/macOS with VoiceOver 10 (964.12.11), human listener and agent-operated controls | Installed ChatGPT brief capture/Discard; separately, a local fixture using current content-script source with simulated media/provider/clipboard for response states | Heard output is human-confirmed only for the listed cases below. Local fixture is not installed MV3 or real audio/provider/clipboard validation. Initial VoiceOver-off setting restored |
 
 Live UI results are **browser-automated preflight**, not human manual acceptance. No personal
 writing, account identifiers, full private URLs, screenshots of inboxes or transcript content are
@@ -205,6 +206,45 @@ fully clear position may exist; the fallback prioritizes visible controls. All g
 
 Full rerun: **296 passed, zero failed/skipped** — 54 unit, 126 browser (105 mocked + 21 unpacked/
 synthetic), 95 backend, 21 website. Package/assets/site/dependency and whitespace checks passed.
+
+## VoiceOver follow-up — 2026-10-26
+
+The earlier user-deferred listening item resumed. These scoped V1 results supersede its Pending
+status; they do not establish comprehensive accessibility or close a release gate.
+
+| Case | Method | Result |
+|---|---|---|
+| Start/Recording/Stop/Discard labels; Recording discarded; countdown silence | Installed ChatGPT, brief actual capture and agent-generated Enter/Tab/Space; human listener | **Passed.** User reported clear labels/status without repeated countdown. No requested speech/provider completion; unchanged fixture and return to editor observed |
+| Transcribing / Transcript inserted | Local mocked-source fixture, actual VoiceOver, human listener after persistent-status correction | **Passed.** Both messages explicitly confirmed clear; fixed transcript safely replaced the selected word |
+| Blocked-microphone guidance and Dismiss focus | Simulated denial, native Chrome Tab/Enter/Space, human listener | **Passed.** Guidance and return to Subject confirmed clear; DOM/native focus agreed and text stayed unchanged |
+| Recovery reason; Copy failure and success | Simulated pending response, changed field and clipboard denial/retry, native keyboard controls, human listener | **Passed.** All three messages confirmed clear; edited text unchanged. No real clipboard permission claim |
+| Transcript Discard | Local fixture, native Tab/Space, human listener | **Passed.** Message confirmed clear; recovery removed and edited text preserved |
+| Transcript expiry | Local fixture with real 60-second timer, human listener | **Passed.** Expiry message confirmed clear; recovery absent at the later observation, native/DOM Subject focus and edited text preserved |
+
+Earlier unclear/inaudible trials are excluded. One cause in the testing setup was a fixture tab
+that DOM automation had targeted without selecting it visibly in native Chrome. A separate plain
+live-region baseline and page labels were audibly confirmed before the successful short repeats.
+The product correction preserves an already initialized announcer, uses a persistent status channel
+independent of the visual bubble, and restores current editor focus on keyboard Dismiss. The user
+confirmed the response-state checks after that correction. Detailed scope, regression results and
+remaining edge-case limits are in `PHASE_3_REPORT.md`. No speech/output settings were changed;
+VoiceOver was restored to off. Other readers, applications, full physical-keyboard acceptance,
+enlarged response/recovery layouts and the pilot remain pending.
+
+Final review adds automated editable-body isolation/native-Undo and repeated-Copy-failure coverage.
+Validated total: **310 passed** (54 unit, 140 browser = 119 mocked + 21 unpacked/synthetic, 95
+backend, 21 website). The final observer guard received a full 140-case browser rerun; other suite
+results are earlier unchanged-suite passes from this follow-up. Fallback-region speech and the
+new per-Copy-attempt status were not independently heard by the user.
+
+**Final installed-source recheck, limited pass:** after correcting an agent mistake that refreshed
+the extension details page instead of DICTOZY itself, Chrome confirmed the extension reload and
+ChatGPT showed the final announcer DOM shape. A brief native-control capture/Discard returned to
+idle, removed the recording title indicator and preserved fixture/focus. Earlier control-timeout
+attempts were excluded, including one capture ending with no-speech guidance. No upload-suppression
+or recognition claim. The old stalled and temporary fixture tabs were closed, a working replacement
+ChatGPT tab retained, the local server stopped, and VoiceOver remained off. This is separate from
+the successful earlier listening trials; no release gate closed.
 
 ## Release status
 

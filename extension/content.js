@@ -224,9 +224,8 @@
 
     statusMessageElement = document.createElement("span");
     statusMessageElement.className = "voice-dictation-status__message";
-    statusMessageElement.setAttribute("role", "status");
-    statusMessageElement.setAttribute("aria-live", "polite");
-    statusMessageElement.setAttribute("aria-atomic", "true");
+    // The visible copy remains readable; the persistent announcement region is
+    // the only live channel, independent of this bubble's show/hide lifecycle.
 
     statusDismissButton = document.createElement("button");
     statusDismissButton.type = "button";
@@ -387,6 +386,7 @@
     } else if (micButton && !micButton.hidden) {
       positionStatusBubble();
     }
+    announce(message);
   }
 
   function clearTransientStateTimeout() {
@@ -462,6 +462,13 @@
       return;
     }
 
+    // Hiding a keyboard-focused Dismiss button otherwise leaves focus on body.
+    // Return only its focus, never an earlier recording's text or selection.
+    if (statusDismissButton?.contains(document.activeElement) && !document.hidden &&
+        document.hasFocus?.() !== false) {
+      getUsableField(activeField)?.focus();
+    }
+
     statusIsStandalone = false;
     setMicButtonState("idle");
     updateMicButton();
@@ -496,16 +503,27 @@
       (hit === micButton || micButton.contains(hit));
   }
 
-  function announce(message) {
+  function ensureAnnouncementElement() {
     if (!announcementElement?.isConnected) {
       announcementElement = document.createElement("div");
       announcementElement.className = "voice-dictation-announcement";
+      announcementElement.setAttribute("contenteditable", "false");
       announcementElement.setAttribute("role", "status");
       announcementElement.setAttribute("aria-live", "polite");
       announcementElement.setAttribute("aria-atomic", "true");
-      document.documentElement.append(announcementElement);
     }
-    announcementElement.textContent = message;
+    // A whole-body editor must not include status text in its content or snapshot.
+    const host = document.body && !document.body.isContentEditable && document.designMode !== "on"
+      ? document.body : document.documentElement;
+    if (announcementElement.parentElement !== host) host.append(announcementElement);
+    return announcementElement;
+  }
+
+  function announce(message) {
+    ensureAnnouncementElement();
+    // Keep the last status available after transient visual notices disappear,
+    // and do not repeat an unchanged status during re-rendering.
+    if (announcementElement.textContent !== message) announcementElement.textContent = message;
   }
 
   function clearRecovery(message = "") {
@@ -545,6 +563,7 @@
       pending.copying = true;
       copy.setAttribute("aria-disabled", "true");
       copy.textContent = "Copying…";
+      announce("Copying transcript");
       try {
         await navigator.clipboard.writeText(pending.text);
         if (recovery === pending) clearRecovery("Transcript copied. Paste it where you want.");
@@ -588,6 +607,14 @@
   }
 
   function reconcileTrackedFields(mutations = []) {
+    // Keep an existing status out of a body that becomes editable while idle.
+    // Only respond to this attribute change, never broadly reattach removed UI.
+    if (announcementElement?.isConnected && mutations.some(({ target, attributeName }) => (
+      attributeName === "contenteditable" &&
+      (target === document.body || target === document.documentElement)
+    ))) {
+      ensureAnnouncementElement();
+    }
     if (recordingTargetField && (!isRecordingContextSafe() || !hasVisibleRecordingControl())) {
       cancelRecording();
     }
@@ -1178,6 +1205,9 @@
     const attempt = recordingAttempt;
     activeField = field;
     field.focus();
+    // A page may have made its body editable since startup. Move our region
+    // before capturing content/selection so that movement cannot stale the snapshot.
+    ensureAnnouncementElement();
     recordingCanceled = false;
     recordingTargetField = field;
     recordingTargetSelection = captureFieldSelection(field);

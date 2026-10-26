@@ -9,7 +9,8 @@ Implementation commits: `066833e` (editor focus/placement and regressions),
 microphone acceptance are incomplete. This is not a production-readiness or compatibility certification.**
 The user chose to leave login-dependent editor checks pending. Phase 4 has not begun.
 The initial report below is followed by recovery and accessibility updates; the latest full
-automated validation is **296 passing tests**, with separately labeled human/agent evidence.
+automated coverage is **310 passing tests**, with separately labeled human/agent evidence and
+per-suite rerun scope in the latest follow-up.
 
 ## Outcome
 
@@ -378,3 +379,162 @@ changelog. Independent source review found no blocking issue. VoiceOver listenin
 by user choice**; enlarged recovery/processing layouts, Gmail's inconclusive enlarged capture,
 full live-editor acceptance and pilot metrics remain open. All six release gates remain open.
 No deployment, publication, infrastructure change, new permissions/dependencies or Phase 4 work.
+
+## VoiceOver listening follow-up — 2026-10-26
+
+The user resumed the previously deferred VoiceOver check. VoiceOver **10 (964.12.11)** was
+identified from the system application's version metadata on the existing macOS 15.6.1 environment.
+System Settings confirmed VoiceOver was initially off; it was enabled for the listening cycle and
+restored to off afterward. No speech settings were changed.
+
+**Passed — joint human listening / agent-operated installed-extension check in L2 Chrome.** The
+existing ChatGPT fixture was unchanged, recording idle, at the restored normal page zoom. After
+focusing Start dictation, Enter started capture. Once recording controls were visible, Tab reached
+Stop recording and Discard recording; Space discarded at approximately 4 seconds elapsed. DOM
+state returned to idle with Recording discarded, focus returned to Ask ChatGPT, and the exact
+fixture remained unchanged. No Send. The user explicitly reported clear labels and status with
+no repeated countdown announcements. This verifies heard output for this cycle; it is not merely
+an accessibility-tree inference. Browser-generated keys were used, not a human physical-keyboard
+test. No requested speech or transcription completion was part of this cycle.
+
+The subsequent source-UI listening checks used a temporary local fixture with the current DICTOZY
+scripts, simulated microphone/recorder/extension APIs, a fixed synthetic transcript and an in-memory
+clipboard stub. Actual Chrome and VoiceOver were used, with the user reporting heard output. This
+is **human screen-reader listening to mocked-source UI**, not installed-MV3/provider/microphone
+completion evidence. No audio was captured, real clipboard accessed, or private transcript stored
+by this fixture.
+
+Early fixture trials are excluded from hearing acceptance: the user could not verify all messages,
+then reported no audible voice. The agent found that browser DOM actions had not reliably selected
+the native Chrome tab. A fixture-only button readiness race was also corrected. After explicitly
+selecting the fixture in native Chrome, the user confirmed audible page labels and an independent
+plain-page live-region sentence. The system voice sample was audible through the selected MacBook
+Pro speakers. Output/speech/live-region settings were inspected but not changed. No VoiceOver
+caption-output verification is claimed. A later source-UI success/error trial was still unclear,
+so it is not counted as a pass.
+
+Inspection found two actionable issues: keyboard Dismiss could remove the focused error button
+without returning focus to the current supported editor; discrete recording/transcription status
+messages used a live node inside a bubble that was shown/hidden, with success disappearing after
+1.4 seconds. The correction restores only focus when Dismiss owns it (never old editor text or
+selection), and routes discrete messages through the existing persistent polite/atomic announcer.
+Startup initialization was already present and is preserved. Visible text stays readable without
+being a second live channel; timer/activity updates remain silent. This is delivery hardening,
+not proof that one implementation detail explained every earlier inaudible trial.
+
+After the correction, the user explicitly confirmed:
+
+- **Processing/success:** both “Transcribing” and “Transcript inserted” were clear. The canned
+  transcript replaced only the selected word and focus remained in the practice field.
+- **Microphone error:** blocked-microphone guidance was clear. Native Chrome Tab navigation reached
+  Dismiss, Space dismissed it, and the user heard Subject again. Native accessibility and DOM focus
+  independently showed Subject; the other field remained unchanged.
+- **Recovery/Copy:** the field-change explanation, simulated clipboard failure and successful retry
+  were all clear. Native Tab reached Copy and Enter activated each attempt. The edited field stayed
+  `Dear Alpha Beta Gamma`; recovery cleared on success and focus returned to Subject. This does not
+  establish real clipboard permission behavior.
+
+- **Recovery Discard/expiry:** the user confirmed both “Transcript discarded” and “Transcript
+  expired” were clear. Native Tab reached Discard and Space activated it. A separate recovery used
+  the real 60-second timer (no fake clock); the final observation was at approximately 82 seconds.
+  Recovery was gone, both native accessibility and DOM focus remained on Subject, and the edited
+  practice field was unchanged. No native typing-after-expiry claim is made.
+
+VoiceOver was restored to off. The successfully heard cases above complete this limited listening
+check; they do not certify other readers, browsers, editors, full live-app coverage or physical
+keyboard operation. Actual installed-extension capture/Discard evidence and mocked-source response
+states remain distinct. All six release gates remain open. No deployment, publication,
+infrastructure change or Phase 4 work.
+
+### Final review, regression coverage and limitations
+
+Review caught two edges before committing the correction. An announcer inside an editable body
+would change that editor's content/snapshot. The announcer now uses a noneditable body when safe,
+or a sibling outside the body otherwise. Placement is checked before selection capture; the
+existing observer also moves an already connected announcer when body/html `contenteditable`
+changes, so an idle transition does not leave a prior generic status inside the editor. No new
+observer or broad reattachment loop was added. Static and dynamically editable body insertion and
+native Undo pass. DesignMode coverage checks placement only, not new editor support. The observer
+cannot guarantee protection against a host serializing its own body synchronously in the same
+JavaScript stack that changes editability; root-level fallback speech was not human-tested.
+
+The other edge was consecutive clipboard failures: identical-message deduplication could suppress
+the second outcome. Each explicit Copy attempt now announces “Copying transcript” before awaiting
+the clipboard result; outcomes remain guarded against expired/replaced recovery sessions. Repeated
+failure mutation coverage passes. This added per-attempt message and the editable-body edge cases
+were validated automatically; they are not additional human listening claims.
+
+**Fourteen new regressions:** five error-Dismiss focus cases; five persistent-status, lifetime,
+duplicate-render and silent-timer cases; two editable-body insertion/Undo cases; one designMode
+placement case; one repeated-Copy-failure case. Relevant failures were reproduced before fixes:
+three of the five focus cases, all five initial announcement cases, and all four edge cases. The
+dynamic-body test was then strengthened to check a prior nonempty status and clean body content
+before recording; it failed before the narrow observer guard and passes after it. Existing compact
+layout semantics now assert the persistent live channel and absence of a second live channel.
+An installed denial test's broad text locator matched both visual and live text; scoping it retained
+the visible-error assertion and added matching persistent-announcement coverage.
+
+| Suite | Passed | Execution scope |
+|---|---:|---|
+| Extension unit | 54 | Rerun after the placement/retry correction; unchanged by the last observer guard |
+| Mocked browser workflows | 119 | Full browser suite rerun after the final observer guard |
+| Unpacked MV3, synthetic audio/stubbed provider | 21 | Same final full browser rerun; not physical microphone/provider tests |
+| Backend | 95 | Passed earlier in this follow-up; backend unchanged by these extension-only corrections |
+| Website | 21 | Passed earlier in this follow-up; site unchanged by these corrections |
+| **Combined validated coverage** | **310** | **No remaining failures or skips** |
+
+The final browser run passed 140/140 under `caffeinate -i`. Package check-only and whitespace checks
+passed on the final source; asset/site validators and dependency consistency passed earlier in the
+follow-up. Browser and website runs remained sequential. The initial expanded browser run had one
+strict-locator failure, corrected as described above; no test was removed or weakened to pass.
+
+**Final installed-source recheck: limited pass after setup correction.** The first ChatGPT reload
+encountered a `Page.getFrameTree` control timeout and rendered blank before capture. The debugging
+connection was ended; a fresh tab restored `Keep this text.`. A stale source marker led to finding
+an agent targeting mistake: Chrome's toolbar Reload and the extension's own Reload share a label;
+the first action had refreshed the details page, not the extension. Selecting Reload inside the
+extension details produced Chrome's explicit “Reloaded” confirmation. After a page reload, the
+installed announcer was verified as one body child with `contenteditable=false`, matching final
+source. No disable/re-enable cycle or permission-setting change was made.
+
+One following capture attempt is excluded: the browser-control wait/Discard action timed out, and
+the page later reported “No speech was detected.” It is not a Discard or upload-suppression pass.
+A separate repeat using native Chrome controls observed Recording, timer at approximately six
+seconds, Stop and Discard, then activated Discard. The final native state showed Start dictation,
+Recording discarded, no recording controls or microphone-recording title indicator, focus in
+Ask ChatGPT and the exact unchanged fixture. Nothing was sent through ChatGPT. This is a brief
+installed real-capture/UI-cancellation recheck with no requested speech; it is not a recognition,
+provider-latency, physical-device trace or network-suppression result. VoiceOver stayed off, so it
+adds no new spoken-output claim. No extension-specific cause of the control timeouts is asserted.
+
+The old stalled tab and temporary fixture tab were closed, the fixture server stopped, and the
+working replacement ChatGPT tab retained. The final source also loaded with the expected announcer
+shape in the local mocked-source Chrome fixture before cleanup. These results remain separate
+from the human-listening evidence and do not close any release gate.
+
+### Accessibility correction scope and repeat procedure
+
+Files changed for this follow-up: `extension/content.js`,
+`extension/tests/browser/dictation.spec.js`, `extension/tests/browser/installed-extension.spec.js`,
+this report, `docs/IMPROVEMENT_ROADMAP.md`, `docs/COMPATIBILITY_MATRIX.md`,
+`qa/phase-3-acceptance.md` and `store/changelog.md`.
+
+Local development uses the existing unpacked `extension/` directory. Reload it through
+`chrome://extensions`, then reload only a disposable test page to pick up content-script changes.
+Run `npm test` and `npm run test:browser`; run `npm run test:site` after the browser suite finishes
+because they share the local server port. Backend regression invocation remains
+`PYTHON_DOTENV_DISABLED=1 PYTHONDONTWRITEBYTECODE=1 XAI_API_KEY='' APP_ENV=local backend/.venv/bin/python -m pytest -q -p no:cacheprovider`.
+Packaging validation is `python3 scripts/package_extension.py --check-only`; it does not publish.
+
+For a short manual repeat, use an unsent disposable field, confirm the intended tab is selected,
+enable VoiceOver only for the check, and verify these separate cases: start/record/discard without
+countdown speech; processing/success; denied microphone then keyboard Dismiss returning to the
+current field; changed-field recovery with Copy failure/retry; transcript Discard; real-minute
+expiry with focus in another supported field. Restore the previous VoiceOver and zoom settings.
+The exact procedures and remaining application checks are in `qa/phase-3-acceptance.md`.
+
+Permissions, microphone activation rules, 10/30-second limits, shortcuts/preferences, backend-only
+xAI access and one-result memory-only recovery are unchanged. Status text contains generic outcomes,
+not dictated text. Native Undo and stale-content validation remain required regression gates.
+These changes make no new production-readiness claim. The next approved work remains Phase 3's
+pending app/layout/pilot checks; Phase 4 requires separate authorization.

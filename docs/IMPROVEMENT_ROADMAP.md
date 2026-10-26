@@ -325,3 +325,39 @@ VoiceOver remains **Pending by user choice**. A viewport-filling editor can leav
 panel placement; the fallback keeps controls reachable. Other live-app layouts, enlarged recovery/
 processing, full accessibility and pilot work remain incomplete. All six release gates stay open;
 Phase 4 stays Deferred. See the dated follow-up in `PHASE_3_REPORT.md` for evidence and limitations.
+
+### VoiceOver follow-up — Implemented; scoped listening Tested (2026-10-26)
+
+The user resumed listening and confirmed the installed ChatGPT capture/Discard labels and status,
+without repeated countdown speech. Subsequent unclear response-state announcements led to a
+targeted correction: use the existing persistent polite/atomic region for discrete statuses, keep
+visible text readable without a duplicate live channel, and preserve messages after the visual
+flash hides. Keyboard error Dismiss now returns only focus to the current supported editor, without
+restoring old text/selection or stealing focus from another control.
+
+After that correction, the user confirmed actual VoiceOver speech for processing/success,
+microphone-error guidance and return to Subject, recovery reason, Copy failure/success, transcript
+Discard and real-minute expiry. Those response-state trials used mocked-source UI in actual Chrome
+with simulated microphone/provider/clipboard; they are separate from installed-extension evidence.
+The initial inaudible/unclear attempts are excluded, and native Chrome tab selection was corrected
+before the successful repeats. VoiceOver was restored to off; no audio/output preferences changed.
+
+Full application accessibility, other screen readers, enlarged response/recovery layouts, the
+remaining live editors and pilot are **Pending**. All six release gates remain open and Phase 4
+remains **Deferred**. See `PHASE_3_REPORT.md` and `COMPATIBILITY_MATRIX.md` for detailed evidence.
+
+Final review also kept the announcer outside initially/dynamically editable bodies, including idle
+`contenteditable` transitions, and made repeated explicit Copy failures produce a fresh outcome.
+Fourteen new regressions bring validated coverage to **310 passing tests**: 54 unit, 140 browser
+(119 mocked + 21 unpacked/synthetic), 95 backend and 21 website. All 140 browser cases were rerun
+after the final observer guard; the unchanged unit/backend/site results are earlier passes from
+this follow-up. Package and whitespace checks passed on final source. No blocking issue remained
+in independent review.
+
+The final installed-source reload and short native-Chrome recording/Discard recheck **Passed within
+that scope** after correcting an agent Reload-target mistake. The expected announcer DOM shape was
+verified in ChatGPT; native Discard returned to idle, removed the recording indicator and preserved
+the fixture/focus. Earlier browser-control timeout attempts were excluded, including one capture
+that later reported no speech. These are not upload-suppression or recognition results. Temporary
+fixture/server and the stalled tab were closed; a working replacement ChatGPT tab retained the
+same harmless fixture. VoiceOver stayed off for this final recheck. All release gates remain open.

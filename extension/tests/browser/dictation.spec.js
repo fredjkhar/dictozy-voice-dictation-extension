@@ -2,6 +2,7 @@ const { expect, test } = require("@playwright/test");
 
 const MIC_BUTTON = ".voice-dictation-mic-button";
 const STATUS_MESSAGE = ".voice-dictation-status__message";
+const ANNOUNCEMENT = ".voice-dictation-announcement";
 
 async function installChromeMocks(page) {
   await page.addInitScript(() => {
@@ -472,6 +473,98 @@ for (const { errorName, message } of microphoneFailureCases) {
     await expect.poll(() => page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
   });
 }
+
+for (const [selector, key] of [["#plainTextarea", "Space"], ["#plainEditor", "Enter"]]) {
+  test(`error dismissal with ${key} restores ${selector} focus without changing newer edits or selection`, async ({ page }) => {
+    await loadContentScript(page);
+    const field = page.locator(selector);
+    await field.fill("Alpha Beta Gamma");
+    await page.evaluate(() => window.__dictozyTest.queueMicrophoneError("NotAllowedError"));
+    await page.locator(MIC_BUTTON).click();
+    await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "error");
+    // Editing after the failure must not make dismissal restore the recording's
+    // original text or selection.
+    await field.fill("Dear Alpha Beta Gamma");
+    await field.evaluate((element) => {
+      if (element instanceof HTMLTextAreaElement) {
+        element.setSelectionRange(11, 15);
+      } else {
+        const range = document.createRange();
+        range.setStart(element.firstChild, 11);
+        range.setEnd(element.firstChild, 15);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+    });
+    const dismiss = page.getByRole("button", { name: "Dismiss dictation message", exact: true });
+    await dismiss.focus();
+    await page.keyboard.press(key);
+    await expect(dismiss).toBeHidden();
+    await expect(field).toBeFocused();
+    expect(await field.evaluate((element) => element.value ?? element.textContent)).toBe("Dear Alpha Beta Gamma");
+    expect(await field.evaluate((element) => {
+      if (element instanceof HTMLTextAreaElement) return [element.selectionStart, element.selectionEnd];
+      const selection = window.getSelection();
+      return [selection.anchorOffset, selection.focusOffset];
+    })).toEqual([11, 15]);
+    expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+    expect(await page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
+  });
+}
+
+test("error dismissal restores the most recently edited field after an asynchronous failure", async ({ page }) => {
+  await loadContentScript(page);
+  const original = await focusFirstTextField(page);
+  await original.fill("Original text");
+  await page.evaluate(() => window.__dictozyTest.queueResponse({}, { defer: true }));
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+  const current = page.locator("#plainTextarea");
+  await current.fill("Keep this new draft");
+  await current.evaluate((element) => element.setSelectionRange(5, 9));
+  await page.evaluate(() => {
+    const request = window.__dictozyTest.requests[0];
+    window.__dictozyTest.resolveRequest(request.requestId, {
+      ok: false, requestId: request.requestId, message: "Transcription temporarily unavailable.",
+    });
+  });
+  const dismiss = page.getByRole("button", { name: "Dismiss dictation message", exact: true });
+  await expect(dismiss).toBeVisible();
+  await dismiss.focus();
+  await page.keyboard.press("Space");
+  await expect(current).toBeFocused();
+  await expect(current).toHaveValue("Keep this new draft");
+  expect(await current.evaluate((element) => [element.selectionStart, element.selectionEnd])).toEqual([5, 9]);
+  await expect(original).toHaveValue("Original text");
+});
+
+test("mouse error dismissal leaves the current editor and caret unchanged", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await field.fill("Keep this text");
+  await page.evaluate(() => window.__dictozyTest.queueMicrophoneError("NotAllowedError"));
+  await page.locator(MIC_BUTTON).click();
+  await field.evaluate((element) => element.setSelectionRange(5, 5));
+  await page.getByRole("button", { name: "Dismiss dictation message", exact: true }).click();
+  await expect(field).toBeFocused();
+  await expect(field).toHaveValue("Keep this text");
+  expect(await field.evaluate((element) => [element.selectionStart, element.selectionEnd])).toEqual([5, 5]);
+});
+
+test("error dismissal does not steal focus from an unrelated page control", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await field.fill("Keep this text");
+  await page.evaluate(() => window.__dictozyTest.queueMicrophoneError("NotAllowedError"));
+  await page.locator(MIC_BUTTON).click();
+  const other = page.locator("#addDynamicField");
+  await other.focus();
+  // The page can dispatch dismissal after focus has left the now-hidden notice.
+  await page.locator(".voice-dictation-status__dismiss").evaluate((button) => button.click());
+  await expect(other).toBeFocused();
+  await expect(field).toHaveValue("Keep this text");
+});
 
 test("shows blocked-page guidance when the microphone API is unavailable", async ({ page }) => {
   await loadContentScript(page);
@@ -1869,6 +1962,35 @@ test("failed clipboard copy can retry without displaying private content", async
   await expect(copy).toHaveCount(0);
 });
 
+test("each explicitly retried clipboard failure receives an announcement", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => window.__dictozyTest.queueResponse({}, { defer: true }));
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+  await field.fill("Keep these edits");
+  await resolveLatestTranscript(page);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true,
+      value: { writeText: async () => { throw new Error("fixture denial"); } } });
+    const region = document.querySelector(".voice-dictation-announcement");
+    window.__copyAnnouncements = [];
+    new MutationObserver(() => { window.__copyAnnouncements.push(region.textContent); })
+      .observe(region, { childList: true, characterData: true, subtree: true });
+  });
+  const copy = page.getByRole("button", { name: "Copy transcript", exact: true });
+  for (const attempt of [1, 2]) {
+    await copy.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("region", { name: "Transcript recovery" })).toContainText("Clipboard unavailable");
+    await expect.poll(() => page.evaluate(() => window.__copyAnnouncements
+      .filter(message => message.startsWith("Clipboard unavailable")).length)).toBe(attempt);
+    await expect(copy).toHaveAttribute("aria-disabled", "false");
+  }
+  expect(await page.evaluate(() => window.__copyAnnouncements.join(" "))).not.toContain("private dictated result");
+  await expect(field).toHaveValue("Keep these edits");
+});
+
 test("normal stop survives the duration deadline while browser completion is delayed", async ({ page }) => {
   await loadContentScript(page);
   await page.clock.install();
@@ -1903,6 +2025,174 @@ test("late microphone permission cannot start recording in an unfocused window",
 });
 
 // Phase 2: recording feedback and safe interaction with the retained field.
+test("persistent announcement region exists empty in body before interaction", async ({ page }) => {
+  await loadContentScript(page);
+  const announcement = page.locator(ANNOUNCEMENT);
+  await expect(announcement).toHaveCount(1);
+  await expect(announcement).toHaveText("");
+  await expect(announcement).toHaveAttribute("role", "status");
+  await expect(announcement).toHaveAttribute("aria-live", "polite");
+  await expect(announcement).toHaveAttribute("aria-atomic", "true");
+  expect(await announcement.evaluate((element) => element.parentElement === document.body)).toBe(true);
+  expect(await announcement.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return element.hidden || style.display === "none" || style.visibility === "hidden" ||
+      Boolean(element.closest('[aria-hidden="true"]'));
+  })).toBe(false);
+  expect(await page.evaluate(() => window.__dictozyTest.microphoneRequests)).toBe(0);
+});
+
+for (const mode of ["initially", "dynamically"]) {
+  test(`persistent announcement stays outside a body made ${mode} editable and preserves native Undo`, async ({ page }) => {
+    if (mode === "initially") {
+      await page.addInitScript(() => document.addEventListener("DOMContentLoaded", () => {
+        document.body.textContent = "Alpha Beta Gamma";
+        document.body.contentEditable = "true";
+      }));
+    }
+    await loadContentScript(page);
+    if (mode === "dynamically") {
+      await expect(page.locator("body > .voice-dictation-announcement")).toHaveCount(1);
+      await focusFirstTextField(page);
+      await page.evaluate(() => window.__dictozyTest.queueMicrophoneError("NotAllowedError"));
+      await page.locator(MIC_BUTTON).click();
+      await expect(page.locator(ANNOUNCEMENT)).toHaveText(microphoneFailureCases[0].message);
+      await page.getByRole("button", { name: "Dismiss dictation message" }).click();
+      await page.evaluate(() => {
+        const announcement = document.querySelector(".voice-dictation-announcement");
+        document.body.replaceChildren(document.createTextNode("Alpha Beta Gamma"), announcement);
+        document.body.contentEditable = "true";
+      });
+      // Relocate retained status as soon as the body becomes editable, even if
+      // the user has not started another recording or focused the new editor.
+      await expect(page.locator("body")).toHaveText("Alpha Beta Gamma");
+      await expect(page.locator("body > .voice-dictation-announcement")).toHaveCount(0);
+    }
+    const editor = page.locator("body");
+    await editor.focus();
+    await editor.evaluate((element) => {
+      const range = document.createRange();
+      range.setStart(element.firstChild, 6);
+      range.setEnd(element.firstChild, 10);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      window.__dictozyTest.queueResponse({ ok: true, transcript: "dictated" });
+    });
+    await page.locator(MIC_BUTTON).click();
+    await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+    await expect(editor).toHaveText("Alpha Beta Gamma");
+    await expect(editor.locator(ANNOUNCEMENT)).toHaveCount(0);
+    expect(await page.locator(ANNOUNCEMENT).evaluate((element) => element.parentElement === document.documentElement)).toBe(true);
+    await expect(page.locator(ANNOUNCEMENT)).toHaveAttribute("contenteditable", "false");
+    await page.getByRole("button", { name: "Stop recording", exact: true }).click();
+    await expect(editor).toHaveText("Alpha dictated Gamma");
+    await expect(page.getByRole("region", { name: "Transcript recovery" })).toHaveCount(0);
+    await expect(editor).toBeFocused();
+    await undoLastEdit(page);
+    await expect(editor).toHaveText("Alpha Beta Gamma");
+    await expect(editor.locator(ANNOUNCEMENT)).toHaveCount(0);
+  });
+}
+
+test("persistent announcement stays outside body when document designMode is on", async ({ page }) => {
+  await page.addInitScript(() => document.addEventListener("DOMContentLoaded", () => {
+    document.body.textContent = "Design mode fixture";
+    document.designMode = "on";
+  }));
+  await loadContentScript(page);
+  const announcement = page.locator(ANNOUNCEMENT);
+  expect(await announcement.evaluate((element) => element.parentElement === document.documentElement)).toBe(true);
+  await expect(announcement).toHaveAttribute("contenteditable", "false");
+  // Chromium's document-wide designMode reports isContentEditable even for
+  // contenteditable=false. This checks placement, not designMode editor support.
+  await expect(page.locator("body")).toHaveText("Design mode fixture");
+  expect(await page.evaluate(() => window.__dictozyTest.microphoneRequests)).toBe(0);
+});
+
+test("persistent announcement receives an immediate microphone error through one live channel", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await field.fill("Keep this text");
+  await page.evaluate(() => window.__dictozyTest.queueMicrophoneError("NotAllowedError"));
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(ANNOUNCEMENT)).toHaveText(microphoneFailureCases[0].message);
+  await expect(page.locator(STATUS_MESSAGE)).toHaveText(microphoneFailureCases[0].message);
+  // The visible copy stays readable, but must not create a second live channel.
+  expect(await page.locator(STATUS_MESSAGE).getAttribute("role")).toBeNull();
+  expect(await page.locator(STATUS_MESSAGE).getAttribute("aria-live")).toBeNull();
+  await expect(page.locator('.voice-dictation-status [role="status"], .voice-dictation-status [aria-live="polite"], .voice-dictation-announcement[role="status"]')).toHaveCount(1);
+  await expect(field).toBeFocused();
+  await expect(field).toHaveValue("Keep this text");
+});
+
+test("persistent announcement retains transcription success after the visual flash hides", async ({ page }) => {
+  await loadContentScript(page);
+  await page.clock.install();
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => window.__dictozyTest.queueResponse({}, { defer: true }));
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+  const announcement = page.locator(ANNOUNCEMENT);
+  await expect(announcement).toHaveText("Transcribing");
+  await resolveLatestTranscript(page, "Do not announce this private fixture");
+  await expect(field).toHaveValue("Do not announce this private fixture");
+  await expect(announcement).toHaveText("Transcript inserted");
+  await page.clock.fastForward(1500);
+  await expect(page.locator(".voice-dictation-status")).toBeHidden();
+  await expect(announcement).toHaveText("Transcript inserted");
+  await expect(announcement).not.toContainText("private fixture");
+  await expect(field).toBeFocused();
+  await undoLastEdit(page);
+  await expect(field).toHaveValue("");
+});
+
+test("persistent announcement reports recording and discard without repeating timer updates", async ({ page }) => {
+  await loadContentScript(page);
+  await page.clock.install();
+  const field = await focusFirstTextField(page);
+  await field.fill("Keep this text");
+  await page.locator(MIC_BUTTON).click();
+  const announcement = page.locator(ANNOUNCEMENT);
+  await expect(announcement).toHaveText("Recording");
+  await announcement.evaluate((element) => {
+    window.__announcementChanges = 0;
+    new MutationObserver((records) => { window.__announcementChanges += records.length; })
+      .observe(element, { childList: true, characterData: true, subtree: true });
+  });
+  await page.clock.fastForward(3100);
+  await expect(page.locator(".voice-dictation-timing")).toHaveText("3s elapsed · 7s left");
+  await expect(announcement).toHaveText("Recording");
+  expect(await page.evaluate(() => window.__announcementChanges)).toBe(0);
+  await page.getByRole("button", { name: "Discard recording", exact: true }).click();
+  await expect(announcement).toHaveText("Recording discarded");
+  expect(await page.evaluate(() => window.__announcementChanges)).toBe(1);
+  await page.clock.fastForward(1500);
+  await expect(page.locator(".voice-dictation-status")).toBeHidden();
+  await expect(announcement).toHaveText("Recording discarded");
+  expect(await page.evaluate(() => window.__announcementChanges)).toBe(1);
+  await expect(field).toHaveValue("Keep this text");
+  expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+});
+
+test("persistent announcement avoids duplicate updates when a standalone error is rendered twice", async ({ page }) => {
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => window.__dictozyTest.queueResponse({}, { defer: true }));
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+  const announcement = page.locator(ANNOUNCEMENT);
+  await announcement.evaluate((element) => {
+    window.__announcementChanges = 0;
+    new MutationObserver((records) => { window.__announcementChanges += records.length; })
+      .observe(element, { childList: true, characterData: true, subtree: true });
+  });
+  await field.evaluate((element) => element.remove());
+  await expect(announcement).toHaveText("The original field is no longer available. Record again in a supported field.");
+  expect(await page.evaluate(() => window.__announcementChanges)).toBe(1);
+  await expect(page.locator(ANNOUNCEMENT)).toHaveCount(1);
+});
+
 test("recording shows elapsed and remaining time without announcing each tick", async ({ page }) => {
   await loadContentScript(page);
   await page.clock.install();
@@ -2137,9 +2427,14 @@ test("300x228 viewport keeps recording controls visible and keyboard reachable w
   const discard = page.getByRole("button", { name: "Discard recording", exact: true });
   await expectCompactBounds(controls);
   for (const control of [page.locator(MIC_BUTTON), stop, discard]) await expectCompactControl(control);
-  await expect(page.locator(STATUS_MESSAGE)).toHaveAttribute("role", "status");
-  await expect(page.locator(STATUS_MESSAGE)).toHaveAttribute("aria-live", "polite");
-  await expect(page.locator(STATUS_MESSAGE)).toHaveAttribute("aria-atomic", "true");
+  // Status semantics live on the persistent region, not the transient visual
+  // copy: hiding that copy must not interrupt or duplicate announcements.
+  await expect(page.locator(ANNOUNCEMENT)).toHaveAttribute("role", "status");
+  await expect(page.locator(ANNOUNCEMENT)).toHaveAttribute("aria-live", "polite");
+  await expect(page.locator(ANNOUNCEMENT)).toHaveAttribute("aria-atomic", "true");
+  await expect(page.locator(ANNOUNCEMENT)).toHaveText("Recording");
+  expect(await page.locator(STATUS_MESSAGE).getAttribute("role")).toBeNull();
+  expect(await page.locator(STATUS_MESSAGE).getAttribute("aria-live")).toBeNull();
   await expect(page.locator(".voice-dictation-timing")).toHaveAttribute("aria-live", "off");
   await expect(page.locator(".voice-dictation-activity")).toHaveAttribute("aria-live", "off");
   expect(await page.locator(MIC_BUTTON).evaluate((element) => getComputedStyle(element).transitionDuration)).toBe("0s");

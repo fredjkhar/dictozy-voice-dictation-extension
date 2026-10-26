@@ -154,7 +154,12 @@ test("practice handles microphone denial with help and no provider request", asy
   });
   await page.locator(MIC).click();
   await expect(page.locator(MIC)).toHaveAttribute("data-state", "error");
-  await expect(page.getByText("Microphone access is blocked.", { exact: false })).toBeVisible();
+  const message = page.locator(".voice-dictation-status__message");
+  await expect(message).toContainText("Microphone access is blocked.");
+  await expect(message).toBeVisible();
+  const announcement = page.locator("body > .voice-dictation-announcement");
+  await expect(announcement).toHaveAttribute("role", "status");
+  await expect(announcement).toHaveText(await message.textContent());
   expect(await worker.evaluate(() => globalThis.__backendCalls)).toBe(0);
   await page.setViewportSize({ width: 360, height: 640 });
   await page.getByText("Microphone or dictation not working?", { exact: true }).click();

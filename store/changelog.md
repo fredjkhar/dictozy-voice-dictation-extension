@@ -4,6 +4,11 @@ These notes preserve the release history without placing every prior version in 
 
 ## Unreleased — Phase 3
 
+- Use one persistent screen-reader status channel, keeping completed messages available after
+  visual feedback hides; return keyboard Dismiss focus to the current supported editor without
+  restoring old text or selection. Record scoped VoiceOver listening evidence separately from mocks.
+- Keep status text outside editable page bodies, including idle editability changes, and distinguish
+  each explicit Copy retry from duplicate status rendering. Preserve insertion and native Undo.
 - Keep recording feedback clear of the retained editor where space permits, with a compact layout
   for short viewports; add a bottom-composer overlap regression and recheck ChatGPT at 400% Chrome zoom.
 - Keep recovery Copy/Discard keyboard focus on the most recently edited supported field, including
