@@ -36,6 +36,11 @@ const test = base.extend({
 
 const MIC = ".voice-dictation-mic-button";
 
+// Each case starts its own persistent browser. Concurrent launches can stall
+// Chromium startup on macOS; keep these independent cases in one worker.
+// "default" still runs later cases after a failure (unlike "serial").
+test.describe.configure({ mode: "default" });
+
 test("installed MV3 rejects page-generated clicks and supports keyboard recording with Undo", async ({ page, context }) => {
   await page.goto("http://127.0.0.1:4173/qa/manual-test-page.html");
   const field = page.locator("#plainTextInput");
