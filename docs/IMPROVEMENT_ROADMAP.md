@@ -254,3 +254,27 @@ reopening its minimized compose window; the 400% editor could not be reached and
 Original 100% zoom was restored; the expiry fixture and extra tab were cleaned up. Fix commit:
 `8753628`. Recording layouts at enlarged zoom and full human acceptance remain incomplete.
 All six release gates remain open; no deployment, publication, infrastructure or Phase 4 work.
+
+### Physical 10/30-second acceptance — Tested (limited live scope)
+
+The user approved recovery fix `8753628` and authorized physical 10- and 30-second recording tests.
+Chrome's popup was verified at the existing 10-second setting, English formatting and assigned
+Command+Shift+Y shortcut. With human speech and the existing backend, the agent observed the
+10-second ChatGPT trial automatically progress from Recording to Transcribing to Success. The
+sampled recording interval was approximately 9.98 seconds; controls remained visible, the original
+fixture was preserved with text appended, and one native Undo restored it. This is UI timing,
+not decoded-audio duration or a physical microphone-release measurement.
+
+The first 30-second observation ended at an idle state around 23 seconds; the user reported
+switching windows/tabs or changing focus. This interrupted attempt is excluded from automatic-stop
+acceptance. The user confirmed starting a second recording and reported automatic stop at 30
+seconds without pressing Stop, visible controls throughout, inserted text and Chrome's microphone
+indicator turning off. The agent subsequently observed idle with the completed 30-second timer,
+preserved fixture prefix and appended text, and verified one native Undo restored the exact fixture.
+The second run was not independently timed continuously. These are joint physical-microphone/UI
+results, separate from mocks and the prior 293-test automated validation.
+
+The original 10-second preference was restored and its saved value verified; English formatting
+was preserved. No message was sent, audio/transcripts were not saved in test records, and no source
+code changed for these checks. The six release gates, full manual acceptance and pilot remain open;
+no production or Phase 4 work.

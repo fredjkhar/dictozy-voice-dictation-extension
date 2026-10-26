@@ -106,6 +106,11 @@ expected cancellation/recovery scenarios separate from ordinary completion-rate 
 - [ ] **State and timing:** confirm distinct idle/recording/processing/success/error feedback,
   readable elapsed and remaining time, reachable Stop and Discard, and activity changes while
   speaking/pausing. Check a 10-second automatic stop and the existing optional 30-second setting.
+  Keep Chrome and the test tab in front until recording finishes; switching to another window to
+  report progress can cancel capture. Report afterward. If interrupted, record that separately and
+  begin a fresh trial. Verify insertion and one-step Undo, check the browser microphone-use
+  indicator, and restore the original duration preference after testing. Distinguish continuously
+  observed timing from a user-reported result or a timer inspected only after completion.
   Record a cutoff only when it ends an intended phrase unexpectedly; a correctly reached configured
   limit is not itself a lifecycle failure. Never infer recognition accuracy from the activity dot.
 - [ ] **Explicit discard:** discard with mouse and keyboard; no transcript, upload or recovery

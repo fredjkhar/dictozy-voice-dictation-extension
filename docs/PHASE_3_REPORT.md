@@ -261,10 +261,38 @@ automatically minimized composer. At 400%, compose could not be reopened through
 control, so DICTOZY layout there remains unvalidated. Original 100% zoom was restored.
 
 The focus correction and three regression tests are committed as `8753628`. Clipboard denial/retry
-has mocked coverage only. Screen-reader use, physical
-10/30-second speech, fuller editor acceptance, login-dependent apps and pilot measurements remain
-pending. All six release gates above remain open.
+has mocked coverage only. At this recovery-fix checkpoint, physical 10/30-second speech was still
+pending; see the follow-up below. Screen-reader use, fuller editor acceptance, login-dependent apps
+and pilot measurements remain pending. All six release gates above remain open.
 
 Follow-up files: `extension/content.js`, the new recovery spec, `qa/phase-3-acceptance.md`,
 `docs/COMPATIBILITY_MATRIX.md`, `docs/IMPROVEMENT_ROADMAP.md`, this report and the unreleased changelog.
 No backend, manifest, dependency, production configuration, secret or infrastructure changes.
+
+## Physical duration follow-up — 2026-10-25
+
+The user approved fix `8753628` and authorized 10- and 30-second physical-microphone tests in
+ChatGPT. These used the same L2 Chrome/macOS environment, the repository's unpacked extension,
+English formatting and the existing production backend/xAI route. No generated audio, response
+stub or message override was used for these checks. Only the disposable fixture and harmless
+spoken test phrase/counting were used; no audio or returned transcript was saved in the test record.
+
+| Check | Evidence and outcome |
+|---|---|
+| 10-second automatic stop | **Passed — joint human speech/agent observation.** Agent started recording after the user's Ready reply; UI polling at approximately 500 ms intervals observed Recording → Transcribing → Success without a manual Stop. The interval from first observed Recording to first observed Transcribing was about 9.98 seconds. Elapsed/remaining feedback progressed to 10s/0s; recording controls remained visible at every sample and activity was indicated. Original fixture preserved, text appended, and one native Undo restored the exact fixture |
+| First 30-second attempt | **Interrupted; excluded from automatic-stop acceptance.** Observations ended on idle at about 23 seconds, before the configured limit. The user confirmed switching windows/tabs or changing focus. The user then independently started another recording, explaining the later completed timer and appended text. No complete network/track trace was collected for the interrupted attempt |
+| Second 30-second attempt | **Passed — user reported, with agent verification afterward.** User confirmed automatic stop at 30 seconds without Stop, visible controls throughout, successful insertion and Chrome's microphone-use indicator turning off. Agent observed idle with a 30s/0s timer, preserved fixture prefix and appended text, then verified one native Undo restored the exact fixture. This run was not continuously timed by the agent |
+| Preference restoration | **Passed — agent UI verification.** Original 10-second setting restored through the popup, saved value confirmed; English formatting preserved. Composer left idle with its original fixture; no message sent |
+
+UI polling measures observed state transitions, not sample-accurate decoded audio duration,
+provider latency or physical device release. Microphone-indicator release was confirmed by the user
+for the second 30-second run; it was not independently confirmed for the 10-second run. These two
+limited completion checks do not establish recognition accuracy, a pilot completion rate, broad
+editor compatibility or readiness to raise duration limits. The interrupted trial is kept separate.
+
+This follow-up changes documentation only: roadmap, compatibility matrix, this report and the
+manual protocol. The latest full automated result remains **293 passed, zero failures/skips** from
+the recovery-fix validation; no new automated test run is claimed for these manual trials.
+The product remains at **10 seconds default / 30 seconds maximum**. All six release gates remain
+open, including fuller human acceptance, screen-reader/zoom work, login-dependent editor checks
+and pilot evaluation. No deployment, publication, infrastructure change or Phase 4 work.

@@ -149,8 +149,28 @@ or live transcript was saved in the evidence record, and no message was sent.
 Final rerun: **293 passed, zero failed/skipped** (54 unit, 123 browser, 95 backend, 21 website).
 Browser cases comprise 102 injected/mocked and 21 unpacked/synthetic. The real-minute test was run
 with `caffeinate -i` to avoid host idle sleep; an earlier attempt encountered a host/process pause.
-No product timeout or assertion was weakened. Clipboard denial/retry remains mocked coverage,
-and actual screen-reader, live 10/30-second speech, full editor and pilot acceptance remain open.
+No product timeout or assertion was weakened. At this recovery-fix checkpoint, live 10/30-second
+speech was still pending; see the follow-up below. Clipboard denial/retry remains mocked coverage,
+and actual screen-reader, full editor and pilot acceptance remain open.
+
+## Physical duration follow-up — 2026-10-25
+
+Environment L2, ChatGPT, the unpacked branch including recovery fix `8753628`, English formatting;
+`physical_mic_provider` with human speech and the existing backend/xAI route. No mocks or generated
+audio were used in these trials. Evidence stores only results/timing, not audio or returned text.
+
+| Trial | Result | Evidence / limits |
+|---|---|---|
+| 10-second configured limit | Passed — joint human/agent execution | Agent observed automatic Recording → Transcribing → Success, approximately 9.98s between first recording and first transcribing samples, timer reaching 10s/0s, controls visible at every recording sample and activity indicated. Preserved fixture prefix with text appended; one native Undo restored it. Polling was approximately 500ms, not exact audio duration. Physical microphone-indicator release was not separately confirmed for this run |
+| First 30-second attempt | Interrupted; excluded from automatic-stop acceptance | Agent saw idle around 23s; user reported switching windows/tabs or changing focus. No full network/track trace. User confirmed starting the subsequent recording independently; later text/timer are not attributed to the interrupted run |
+| Second 30-second attempt | Passed — user reported; aftermath verified by agent | User confirmed automatic stop at 30s without Stop, controls visible throughout, text inserted and microphone-use indicator off. Agent observed idle with timer 30s/0s and original fixture prefix preserved, then verified one native Undo restored the exact fixture. No continuous agent timing of this run |
+| Restore preferences and fixture | Passed — agent UI observation | Saved original 10s value and English formatting verified; original composer fixture restored, recording idle. No message sent |
+
+The 10s/30s completion checks now have limited live evidence. They do not complete the broader
+human checklist or pilot and do not justify changing duration limits. Default 10s / maximum 30s
+remain unchanged. Full physical screen-reader, enlarged recording layouts and other editor/pilot
+checks remain pending. The prior automated total remains 293 passing tests; these manual checks
+are separate, not added to that count.
 
 ## Release status
 
