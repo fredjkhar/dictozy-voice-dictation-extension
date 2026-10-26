@@ -114,6 +114,7 @@
   let activeField = null;
   let activeTextRange = null;
   let micButton = null;
+  let micButtonPlacement = null;
   let statusBubble = null;
   let statusMessageElement = null;
   let statusDismissButton = null;
@@ -130,6 +131,7 @@
   let recordingTimeoutId = null;
   let recordingSafetyIntervalId = null;
   let removeTrackListeners = null;
+  let removeRecordingFocusListener = null;
   let recordingAttempt = 0;
   let recordingTargetField = null;
   let recordingTargetSelection = null;
@@ -170,14 +172,16 @@
   }
 
   function getCurrentEditableField() {
-    const focused = document.activeElement;
+    let focused = document.activeElement;
 
     if (micButton?.contains(focused) || statusBubble?.contains(focused)) {
       return getUsableField(activeField);
     }
 
-    if (focused?.shadowRoot?.activeElement) {
-      return getEditableField(focused.shadowRoot.activeElement);
+    // Focus is retargeted at each shadow host. Follow the active chain just as
+    // composedPath() does for field events, including nested open roots.
+    while (focused?.shadowRoot?.activeElement) {
+      focused = focused.shadowRoot.activeElement;
     }
 
     return getEditableField(focused);
@@ -440,6 +444,7 @@
   function clearActiveField() {
     activeField = null;
     activeTextRange = null;
+    micButtonPlacement = null;
   }
 
   function getUsableField(field) {
@@ -586,6 +591,19 @@
     }
   }
 
+  function overlapsPageControl(left, top, size) {
+    const offsets = [2, size / 2, size - 2];
+    for (const x of offsets) {
+      for (const y of offsets) {
+        for (const element of document.elementsFromPoint(left + x, top + y)) {
+          if (micButton?.contains(element) || statusBubble?.contains(element) || recoveryElement?.contains(element)) continue;
+          if (element.closest('button, input, textarea, select, iframe, a[href], summary, [role="button"], [role="textbox"], [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])')) return true;
+        }
+      }
+    }
+    return false;
+  }
+
   function updateMicButton() {
     if (!isDictationEnabled()) {
       hideMicButton();
@@ -611,12 +629,26 @@
     );
     const preferredLeft = rect.right + BUTTON_EDGE_OFFSET;
     const fallbackLeft = rect.left - buttonSize - BUTTON_EDGE_OFFSET;
-    const left = preferredLeft + buttonSize + BUTTON_EDGE_OFFSET <= window.innerWidth
-      ? preferredLeft
-      : Math.max(BUTTON_EDGE_OFFSET, fallbackLeft);
-
-    button.style.top = `${Math.round(top)}px`;
-    button.style.left = `${Math.round(left)}px`;
+    const maxLeft = Math.max(BUTTON_EDGE_OFFSET, window.innerWidth - buttonSize - BUTTON_EDGE_OFFSET);
+    const clampLeft = (left) => Math.max(BUTTON_EDGE_OFFSET, Math.min(maxLeft, left));
+    const candidates = [
+      { side: "right", left: preferredLeft, top },
+      { side: "left", left: fallbackLeft, top },
+      { side: "above", left: clampLeft(rect.right - buttonSize), top: rect.top - buttonSize - BUTTON_EDGE_OFFSET },
+      { side: "below", left: clampLeft(rect.right - buttonSize), top: rect.bottom + BUTTON_EDGE_OFFSET },
+    ];
+    const activeWork = recordingTargetField || transcriptionTargetField;
+    // Keep the chosen side through an active session; toolbar changes must not
+    // make the Stop control jump. A bounded hit test avoids scanning the page.
+    let placement = activeWork === field && micButtonPlacement?.field === field
+      ? candidates.find(({ side }) => side === micButtonPlacement.side)
+      : candidates.find(({ left, top: candidateTop }) => left >= BUTTON_EDGE_OFFSET && left <= maxLeft &&
+          candidateTop >= BUTTON_EDGE_OFFSET && candidateTop + buttonSize + BUTTON_EDGE_OFFSET <= window.innerHeight &&
+          !overlapsPageControl(left, candidateTop, buttonSize));
+    placement ||= candidates[preferredLeft <= maxLeft ? 0 : 1];
+    micButtonPlacement = { field, side: placement.side };
+    button.style.top = `${Math.round(Math.max(BUTTON_EDGE_OFFSET, Math.min(window.innerHeight - buttonSize - BUTTON_EDGE_OFFSET, placement.top)))}px`;
+    button.style.left = `${Math.round(clampLeft(placement.left))}px`;
     button.hidden = false;
 
     if (statusBubble && !statusBubble.hidden) {
@@ -906,6 +938,8 @@
     recordingStartedAt = 0;
     removeTrackListeners?.();
     removeTrackListeners = null;
+    removeRecordingFocusListener?.();
+    removeRecordingFocusListener = null;
     if (recordingTimeoutId) {
       window.clearTimeout(recordingTimeoutId);
       recordingTimeoutId = null;
@@ -949,6 +983,10 @@
     clearRecordingResources();
 
     setMicButtonState("idle");
+    if (!getFocusedSupportedField()) {
+      clearActiveField();
+      hideMicButton();
+    }
   }
 
   function sendCancellationToBackground(requestId) {
@@ -1114,6 +1152,16 @@
     recordingCanceled = false;
     recordingTargetField = field;
     recordingTargetSelection = captureFieldSelection(field);
+    // Document focus events can be suppressed when both fields share a shadow
+    // host. Listen on this recording target so unsafe focus ends capture now.
+    const handleRecordingFocusOut = (event) => {
+      if (attempt !== recordingAttempt || micButton?.contains(event.relatedTarget) ||
+          statusBubble?.contains(event.relatedTarget) ||
+          getUsableField(getEditableField(event.relatedTarget)) === field) return;
+      cancelRecording();
+    };
+    field.addEventListener("focusout", handleRecordingFocusOut);
+    removeRecordingFocusListener = () => field.removeEventListener("focusout", handleRecordingFocusOut);
     transcriptionTargetField = null;
     transcriptionTargetSelection = null;
     setMicButtonState("idle");
