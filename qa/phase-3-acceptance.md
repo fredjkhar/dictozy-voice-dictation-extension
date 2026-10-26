@@ -9,7 +9,14 @@ Closeout updated **2026-10-26**: available local validation is complete, with **
 The [final summary](../docs/PHASE_3_CLOSEOUT.md) consolidates completed human/Chrome checks and
 remaining manual work. Unchecked items here describe the reusable protocol, not a claim that
 every step is untested. Notion/Outlook/WhatsApp editor access, broader layouts/device coverage and
-the human pilot remain pending; all release gates stay open. Phase 4 is not authorized.
+the human pilot remain unverified; all release gates stay open. Phase 4 implementation is not authorized.
+
+The user's streamlined policy makes additional app/zoom/screen-reader/pilot scenarios **optional
+follow-ups**, unless an observed critical defect or specific release requirement makes one necessary.
+Use relevant existing automated tests and prior successful evidence first. This protocol is a
+reference, not a requirement to repeat every manual step or request personal-account access.
+Unavailable external checks do not automatically block development. Full automated validation and
+explicit release approval remain required for a production release.
 
 ## Scope and evidence labels
 

@@ -11,6 +11,12 @@ broader accessibility and the human pilot remain incomplete. All six release gat
 See the [final Phase 3 summary](PHASE_3_CLOSEOUT.md) for the authoritative closeout and
 **314 passing automated tests** (54 unit, 144 browser, 95 backend, 21 website).
 
+Under the user's 2026-10-26 streamlined policy, remaining application access, extensive layout
+checks and the human pilot are **optional follow-ups**, not development blockers without a specific
+release requirement or observed critical defect. Unverified results remain unverified; reuse scoped
+passes rather than requesting personal-account access or repeating manual checks. The historical
+Blocked/Pending labels below describe missing evidence, not a blanket prerequisite for Phase 4.
+
 ## Current consolidated status — 2026-10-26
 
 | Application / area | Validated scope | Still open |

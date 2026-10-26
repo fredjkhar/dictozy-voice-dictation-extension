@@ -3,6 +3,13 @@
 Date: **2026-10-26** (America/Toronto). Branch: `codex/phase-3-compatibility-reliability`.
 Final product revision: `87fcc00`; this closeout adds tests and documentation only.
 
+**Acceptance update — 2026-10-26:** the user accepts Phase 3 as locally implemented and
+automated-test validated. The [lean testing policy](../AGENTS.md#lean-testing-and-autonomous-decisions)
+now applies. Notion/Outlook/WhatsApp, extensive layouts and the human pilot are optional follow-ups
+unless a specific release requirement or observed critical defect makes them necessary. They do
+not block continued development. All six release gates remain open; Phase 4 implementation has
+not begun. See the [Phase 4 recommendation](IMPROVEMENT_ROADMAP.md#phase-4--personal-productivity-deferred-evidence-and-approval-required).
+
 **Phase 3 local implementation and available validation are complete. Broader live compatibility
 and pilot validation remain pending. This does not establish production readiness.** The user
 previously chose to leave login-dependent editor tests pending. All six release gates remain open;
@@ -42,6 +49,15 @@ or blocking product regression were found during this final validation.
 | Backend | 95 | Local validation/security/provider-mock tests, including generated decoded audio |
 | Website | 21 | Local browser tests |
 | **Total** | **314** | **Zero failures or skips** |
+
+One final risk-focused review of `f04643c` reused existing coverage: **21 lifecycle/DOM unit tests,
+29 browser tests (26 mocked, 3 unpacked/synthetic), and 31 backend tests passed; zero failures**.
+It covered explicit activation, unsafe/hidden-page cancellation, late callbacks/permission,
+microphone cleanup, changed-field/beforeinput protection, focus-safe recovery, Undo/Redo, accessible
+status/error focus, trusted proxy boundaries, upload/PCM/resource limits, atomic budgets and safe
+logging. No new critical defect or coverage gap justified runtime changes or additional tests.
+No personal-account interaction or manual participation was requested. The unchanged 314-test
+baseline above was reused; it was not rerun for this documentation-only policy update.
 
 All four suites were rerun during closeout. The full 144-case browser run includes the four new
 compact-layout cases. The subsequent test-only Undo/Redo enhancement passed its focused native
@@ -86,10 +102,10 @@ excluded from passes. VoiceOver remains off. No email, chat message or prompt wa
 
 | Item | Status / reason |
 |---|---|
-| Notion, Outlook and WhatsApp Web editors | **Blocked** on signed-in private test editors/device linking; left pending at the user's direction. Access/login screens are not compatibility tests. |
-| Wider Gmail/ChatGPT variants and layouts | **Pending**: live post-Stop pending-response edits, compose resizing/re-render/formatting variants, Gmail enlarged recording controls, and actual enlarged response/recovery layouts. Local regressions cover modeled behavior only. |
-| Broader accessibility/device coverage | **Pending**: other screen readers, browser/OS versions, devices, permission-prompt and full first-use combinations. Scoped VoiceOver passes do not certify the entire extension/application. |
-| First-use and daily reliability pilot | **Pending**: novice time-to-first-dictation, actual stop-to-text latency, correction effort, ordinary recovery/cutoff frequency and the proposed 60-trial pilot. No 95% completion or under-one-minute achievement is claimed. |
+| Notion, Outlook and WhatsApp Web editors | **Deferred — optional**: authenticated test editors/device linking unavailable; no personal-account access requested. Compatibility remains unverified. |
+| Wider Gmail/ChatGPT variants and layouts | **Deferred — optional**: additional live post-Stop edits, compose variants and enlarged recording/response/recovery layouts. Reuse existing real and automated results; escalate an observed critical defect. |
+| Broader accessibility/device coverage | **Deferred — optional**: other screen readers, browsers/devices and first-use combinations. Scoped VoiceOver passes do not certify everything; a serious observed accessibility regression remains actionable. |
+| First-use and daily reliability pilot | **Deferred — optional**: novice timing, provider latency, correction effort, ordinary recovery/cutoff frequency and the proposed 60-trial pilot remain unmeasured. No 95% completion or under-one-minute achievement is claimed. |
 | Longer duration | **Deferred** pending pilot evidence, encoding boundary checks and aggregate cost protection. No 60-second option was added. |
 
 Closed shadow roots and iframe editing remain unsupported. Extremely crowded or viewport-filling
@@ -137,7 +153,7 @@ For manual UI inspection, serve the repository with
 extension's fixed production backend.** Automated tests stub it; manual dictation requires the
 approved transcription environment and non-sensitive fixture speech.
 
-Remaining manual checklist, when the required access is available:
+Optional follow-up checklist, when justified and feasible without routine user participation:
 
 - Use fresh private drafts/composers with no recipients; verify insertion, selection, Undo/Redo,
   keyboard Stop/Discard and no Send in Notion/Outlook/WhatsApp and remaining Gmail/ChatGPT variants.
@@ -145,8 +161,11 @@ Remaining manual checklist, when the required access is available:
   restore zoom and remove only test content afterward.
 - Run the [content-free pilot](../qa/phase-3-acceptance.md) and record counts/timings in the empty
   template; keep deliberate cancellation/recovery checks separate from ordinary trials.
-- Close operational/privacy gates only with supporting production evidence and separate approval
-  for any deployment, infrastructure change or publication.
 
-**Recommended next step:** review this Phase 3 closeout and schedule the outstanding acceptance
-work when access is available. Local implementation is ready for review; Phase 4 remains deferred.
+Operational/privacy release gates remain mandatory and separate from those optional checks.
+Close them only with supporting evidence and the required approval for production actions.
+
+**Recommended next step:** review the small personal-vocabulary proposal in the roadmap. Phase 3
+is ready for the next approved development phase; optional external checks do not block it.
+Phase 4 implementation still needs scope/privacy approval. Production release requires all
+applicable critical gates, a complete automated run and explicit release approval.

@@ -106,6 +106,32 @@ Ignore:
 - Make the smallest useful change.
 - Provide manual testing steps after implementation tasks.
 
+### Lean testing and autonomous decisions
+
+- Use risk-based, automation-first validation. Prioritize text preservation, correct-field
+  insertion, explicit activation, visible controls, cancellation, microphone cleanup, safe
+  recovery, backend security/privacy/resource bounds and major functional regressions.
+- Reuse existing Node, Playwright, unpacked-extension/synthetic-microphone and pytest coverage.
+  Run relevant focused tests first; add regressions only for meaningful uncovered risk. Avoid
+  overlapping coverage and extensive tests for cosmetic or low-impact edge cases.
+- Run all automated suites at major phase completion and before release preparation, not after
+  every small change. Reuse a verified unchanged baseline; expand testing for relevant changes,
+  failures or unresolved critical concerns.
+- Perform feasible checks autonomously. Reuse successful compatibility evidence; do not request
+  personal-account access or repeat human microphone/keyboard/zoom/screen-reader tests routinely.
+  Record unavailable verification accurately and continue unless a critical defect or explicit
+  release requirement makes it necessary. Never present mocks as live validation.
+- Phase 3 is locally implemented and automated-test validated. Untested Notion/Outlook/WhatsApp,
+  extensive layouts and the human pilot are optional follow-ups, not automatic development gates.
+- Make routine technical choices and defer noncritical checks independently. Seek input only for
+  significant architecture, cost/infrastructure, permissions/privacy, product scope, production
+  actions, or an important critical test that cannot reasonably be automated.
+- Keep the six release gates tracked separately. A release requires the complete automated suite
+  and explicit release approval; do not deploy, publish or change infrastructure without approval.
+- Keep phase reports concise: implemented work, critical test results, material risks, unavailable
+  external checks and readiness for the next phase. Link reproducible commands/manual procedures
+  when useful; a documented manual procedure is not a request for user participation.
+
 For each future task, Codex should report:
 
 1. Files created or modified.

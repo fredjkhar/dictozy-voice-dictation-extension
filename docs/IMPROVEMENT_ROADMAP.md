@@ -6,8 +6,10 @@ Working branch: `codex/phase-3-compatibility-reliability` (Phase 2 base: `bbdf9a
 
 ## Scope and approval gates
 
-Phase 0, Phase 1 and Phase 2 implementation are reviewed and accepted. Phase 3 is authorized.
-Stop for user review after Phase 3; implementation acceptance does not establish production readiness.
+Phase 0, Phase 1 and Phase 2 implementation are reviewed and accepted. Phase 3 is accepted as
+locally implemented and automated-test validated under the user's streamlined testing policy.
+Phase 4 recommendation is authorized; feature implementation still requires product-scope approval.
+Implementation acceptance does not establish production readiness.
 Do not deploy, publish, change production configuration/secrets, or begin later phases.
 Keep plain JavaScript, Manifest V3, FastAPI, backend-only xAI access, existing preferences,
 shortcuts, supported fields, native Undo, and browser permissions.
@@ -18,9 +20,25 @@ Statuses: **Pending**, **In progress**, **Implemented**, **Tested**, **Blocked**
 **Phase 3 closeout:** available local implementation and validation are complete; **314 tests pass**
 (54 unit, 144 browser, 95 backend, 21 website; zero failures/skips). Scoped Gmail/ChatGPT physical
 dictation and VoiceOver outcomes are recorded separately from mocks. Remaining live editors,
-layout variants and the human pilot stay open, along with all six release gates. See the
+extensive layouts and the human pilot are optional follow-ups, not development blockers unless
+a specific release requirement or observed critical defect makes them necessary. All six release
+gates stay open. See the
 [final Phase 3 summary](PHASE_3_CLOSEOUT.md) for current evidence, limitations and next steps.
 Earlier dated sections below retain their historical results. Phase 4 remains Deferred.
+
+### Current testing policy — 2026-10-26
+
+Follow [AGENTS.md](../AGENTS.md#lean-testing-and-autonomous-decisions): reuse relevant focused
+tests, automate feasible checks, preserve prior valid evidence and involve the user only for
+important decisions or critical checks that cannot reasonably be automated. Full suites run at
+major phase completion and before release preparation. Do not add cosmetic/overlapping coverage
+or repeat successful manual checks without a regression signal. Report unavailable external
+verification accurately; this does not automatically block development. Release approval and
+critical security/privacy/correctness requirements are unchanged.
+
+The final focused critical review found no new blocker: **21 unit, 29 browser (26 mocked,
+3 unpacked/synthetic) and 31 backend tests passed**, with no new runtime changes or tests.
+The existing 314-test full-suite baseline is retained rather than rerun for this policy-only update.
 
 ## Phase 0 — baseline (Tested)
 
@@ -68,11 +86,12 @@ deployment dependency in the Phase 1 report; do not silently introduce infrastru
 ### Quality gate and manual acceptance
 
 1. Add failing targeted regressions before corrections where feasible.
-2. Run focused checks, then all four suites and CI-equivalent validators.
+2. Run relevant focused checks; run all four suites and CI-equivalent validators at major phase
+   completion and before release preparation. Broaden for relevant changes or unresolved risks.
 3. Review diff, permissions, retention, stale operations, event reentrancy, resource bounds.
-4. Human installed-extension checks: mouse/Enter/Space/shortcut; recording then password/blank
-   focus/tab switch; cancel pending microphone access; edit earlier text while response is pending;
-   verify no overwrite, recovery Copy/Discard/expiry, native Undo, site/global toggles.
+4. Reuse automated and valid prior installed-extension evidence for activation/cancellation,
+   safe insertion, recovery and Undo. Request human checks only for critical gaps that cannot
+   reasonably be automated; do not routinely repeat successful scenarios.
 5. Deployment-only checks: approved ingress trust chain, one worker/replica, structured logs,
    aggregate limit, request-body bounds, real microphone/provider behavior. No production changes.
 
@@ -86,7 +105,7 @@ Tests: UI/state/clipboard/expiry regressions plus human keyboard, screen-reader 
 Risk: control clutter and focus changes; no permissions, persistent history or analytics expansion.
 Documentation/report: update extension/manual QA/privacy as applicable; report tests and limitations.
 
-## Phase 3 — real applications and daily reliability (Available local validation complete; broader acceptance Pending)
+## Phase 3 — real applications and daily reliability (Locally accepted; optional follow-ups Deferred)
 
 Scope/checklist: evaluate Gmail, Outlook, an AI chat, messaging, and notes app; select three for
 deeper testing; investigate iframes, Shadow DOM, rich text, native Undo and Permissions Policy;
@@ -108,6 +127,22 @@ Acceptance/tests: demonstrated user need; no accidental trigger, destructive rep
 secret exposure; deletion/disclosure and unchanged core behavior verified.
 Risk/dependencies: new locally stored user data and vocabulary transmission require explicit
 scope/privacy review. Documentation/report: record evidence, chosen feature, tests and limitations.
+
+**Recommendation, not implementation authorization:** prioritize a small, optional personal
+vocabulary feature as the first candidate. It directly addresses repeated corrections to names
+and technical terms without adding spoken command interpretation. This is a product hypothesis;
+the existing tests do not establish demand or recognition improvement. Defer snippets until there
+is concrete need for repeated phrases. Current [xAI REST documentation](https://docs.x.ai/developers/model-capabilities/audio/speech-to-text#request-body)
+(checked 2026-10-26) supports repeated `keyterm` fields on the existing `/v1/stt` endpoint, up to
+100 terms of 50 characters each. Documentation support is not provider-call validation.
+
+Proposed minimum scope: off by default; bounded local add/edit/delete; explicit disclosure and
+opt-in for sending enabled terms with dictation through the backend; backend validation; no
+transcript history, page scraping, new permission, framework or infrastructure. Preserve insertion,
+Undo and recovery paths. Validate storage/deletion, disabled-request omission, enabled-request
+bounds/serialization and generic safe logs with existing utilities; reuse critical insertion tests.
+Scope/privacy approval is needed before implementation. Phase 3's optional account/layout/pilot
+checks do not prevent that decision; all release gates remain separate.
 
 ## Phase 1 final report
 
@@ -207,8 +242,8 @@ Outlook and WhatsApp login-dependent editor tests pending. Physical microphone, 
 screen-reader and full named-editor acceptance remain Pending; no production-readiness claim.
 
 See [Phase 3 report](PHASE_3_REPORT.md) for files, evidence, local timing limits, reproduction,
-manual checklist and remaining risks. **Stop for review; complete manual Phase 3 acceptance before
-considering Phase 4.**
+manual checklist and remaining risks. **The streamlined policy above supersedes the former blanket
+manual gate: Phase 3 is locally accepted and ready for Phase 4 scope review.**
 
 ### Manual acceptance walkthrough — 2026-10-25
 
