@@ -678,6 +678,9 @@
       }
 
       activeField = field;
+      // Recovery controls may be reached through the microphone by Tab. Keep
+      // the last supported field, even when focus enters the panel indirectly.
+      if (recovery) recovery.returnFocus = field;
       rememberTextRange();
       updateMicButton();
     } else {
