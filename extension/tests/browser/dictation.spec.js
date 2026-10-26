@@ -2159,6 +2159,67 @@ test("300x228 viewport keeps recording controls visible and keyboard reachable w
   expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
 });
 
+test("recording panel avoids a bottom composer at 300x228 through timer updates and resize", async ({ page }, testInfo) => {
+  const compactViewport = { width: 300, height: 228 };
+  await page.setViewportSize(compactViewport);
+  await loadContentScript(page);
+  // Generic responsive composer geometry: the editor spans most of the small
+  // viewport, leaving the microphone above it. This is not a live-app test.
+  await page.evaluate(() => {
+    const field = document.createElement("textarea");
+    field.id = "bottomComposer";
+    field.setAttribute("aria-label", "Bottom composer");
+    field.style.cssText = "position:fixed;left:16px;right:34px;bottom:16px;width:auto;height:110px;min-height:0;box-sizing:border-box;margin:0;resize:none;";
+    document.body.replaceChildren(field);
+  });
+  const field = page.getByRole("textbox", { name: "Bottom composer", exact: true });
+  await field.fill("Alpha Beta Gamma");
+  await field.evaluate((element) => element.setSelectionRange(6, 10));
+  await page.locator(MIC_BUTTON).click();
+  const controls = page.getByRole("group", { name: "Dictation controls", exact: true });
+  const stop = page.getByRole("button", { name: "Stop recording", exact: true });
+  const discard = page.getByRole("button", { name: "Discard recording", exact: true });
+
+  async function expectClearComposer(viewport) {
+    await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+    await expectCompactBounds(controls, viewport);
+    const editorBounds = await field.boundingBox();
+    const panelBounds = await controls.boundingBox();
+    const overlapWidth = Math.max(0, Math.min(editorBounds.x + editorBounds.width, panelBounds.x + panelBounds.width) - Math.max(editorBounds.x, panelBounds.x));
+    const overlapHeight = Math.max(0, Math.min(editorBounds.y + editorBounds.height, panelBounds.y + panelBounds.height) - Math.max(editorBounds.y, panelBounds.y));
+    expect(overlapWidth * overlapHeight, `Feedback must not cover the editor: ${JSON.stringify({ editorBounds, panelBounds })}`).toBe(0);
+    for (const control of [page.locator(MIC_BUTTON), stop, discard]) {
+      await expectCompactBounds(control, viewport);
+      expect(await control.evaluate((element) => {
+        const bounds = element.getBoundingClientRect();
+        return element.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2));
+      })).toBe(true);
+    }
+  }
+
+  await expectClearComposer(compactViewport);
+  await expect(page.locator(".voice-dictation-timing")).toContainText("1s elapsed");
+  await expectClearComposer(compactViewport);
+  await page.setViewportSize({ width: 340, height: 260 });
+  await expectClearComposer({ width: 340, height: 260 });
+  await page.setViewportSize(compactViewport);
+  await expectClearComposer(compactViewport);
+  await page.screenshot({ path: testInfo.outputPath("compact-bottom-composer-recording.png") });
+  await expect(field).toBeFocused();
+  expect(await field.evaluate((element) => [element.selectionStart, element.selectionEnd])).toEqual([6, 10]);
+  await page.keyboard.press("Tab");
+  await expect(page.locator(MIC_BUTTON)).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(stop).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(discard).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(field).toBeFocused();
+  await expect(field).toHaveValue("Alpha Beta Gamma");
+  expect(await field.evaluate((element) => [element.selectionStart, element.selectionEnd])).toEqual([6, 10]);
+  expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+});
+
 test("300x228 viewport keeps recovery and clipboard failure controls visible and keyboard reachable", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await loadContentScript(page);

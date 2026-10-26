@@ -4,13 +4,16 @@ These notes preserve the release history without placing every prior version in 
 
 ## Unreleased — Phase 3
 
+- Keep recording feedback clear of the retained editor where space permits, with a compact layout
+  for short viewports; add a bottom-composer overlap regression and recheck ChatGPT at 400% Chrome zoom.
 - Keep recovery Copy/Discard keyboard focus on the most recently edited supported field, including
   when Tab passes through the microphone; add native clipboard and real-minute expiry regressions.
 
 - Corrected nested open-shadow focus resolution and immediate target-focus cancellation, preserving movement inside one rich editor.
 - Avoid nearby native controls when positioning the microphone; keep its side stable during active work.
 - Added local unpacked-extension compatibility and repeat-session regressions, a dated evidence matrix and a privacy-conscious manual pilot protocol.
-- Kept the 10/30-second recording limits. Real speech and full named-app acceptance remain pending.
+- Kept the 10/30-second recording limits. Limited Gmail/ChatGPT speech checks are recorded;
+  full named-app acceptance remains pending.
 - No release, deployment or infrastructure change. See [Phase 3 report](../docs/PHASE_3_REPORT.md).
 
 ## Unreleased — Phase 2

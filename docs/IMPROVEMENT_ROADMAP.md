@@ -303,3 +303,25 @@ synthetic), 95 backend and 21 website; package check-only and whitespace checks 
 source is unchanged. Real VoiceOver spoken-output verification remains **Pending**; a short listening
 handoff was prepared. Semantics and mocks do not establish what a screen reader announces.
 All six release gates remain open; no deployment, publication, infrastructure or Phase 4 work.
+
+### Recording panel at 400% — Implemented and Tested (2026-10-26)
+
+The prior enlarged-layout finding is corrected for the observed ChatGPT composer. Panel placement
+now checks the retained editor and microphone after viewport clamping, retains a valid position
+across timer updates, and uses a compact three-row recording layout in short viewports. Stop and
+Discard retain accessible labels, DOM tab order and at least 32-pixel height. No editor, insertion,
+Undo, recording lifecycle, preferences, permissions or duration changes.
+
+A new generic bottom-composer regression failed before the fix, then passed with zero panel/editor
+intersection through timer updates and resize, reachable controls, preserved selection/text and
+keyboard Discard. Full validation: **296 passed, zero failed/skipped** (54 unit, 126 browser =
+105 mocked + 21 unpacked/synthetic, 95 backend, 21 website); package/assets/site/dependency and
+whitespace checks passed. Actual Chrome at 400% confirmed a 208×81.20 recording panel above the
+ChatGPT editable text with approximately 6.3 CSS pixels of clearance. Tab reached microphone,
+Stop and Discard; Space returned to idle with the fixture unchanged and nothing sent. Restored
+100% zoom. This brief installed capture is distinct from mocked tests and speech/provider evidence.
+
+VoiceOver remains **Pending by user choice**. A viewport-filling editor can leave no fully clear
+panel placement; the fallback keeps controls reachable. Other live-app layouts, enlarged recovery/
+processing, full accessibility and pilot work remain incomplete. All six release gates stay open;
+Phase 4 stays Deferred. See the dated follow-up in `PHASE_3_REPORT.md` for evidence and limitations.

@@ -297,12 +297,37 @@
   function positionStatusBubble() {
     if (!statusBubble || statusBubble.hidden || !micButton) return;
     const rect = micButton.getBoundingClientRect();
-    const height = statusBubble.offsetHeight;
+    const { width, height } = statusBubble.getBoundingClientRect();
     const top = rect.bottom + height + 6 <= window.innerHeight - BUTTON_EDGE_OFFSET
       ? rect.bottom + 6 : Math.max(BUTTON_EDGE_OFFSET, rect.top - height - 6);
-    statusBubble.style.top = `${Math.round(top)}px`;
-    statusBubble.style.left = `${Math.round(Math.max(BUTTON_EDGE_OFFSET,
-      Math.min(rect.left, window.innerWidth - statusBubble.offsetWidth - BUTTON_EDGE_OFFSET)))}px`;
+    const clamp = ([left, top]) => ({
+      left: Math.floor(Math.max(BUTTON_EDGE_OFFSET, Math.min(left, window.innerWidth - width - BUTTON_EDGE_OFFSET))),
+      top: Math.floor(Math.max(BUTTON_EDGE_OFFSET, Math.min(top, window.innerHeight - height - BUTTON_EDGE_OFFSET))),
+    });
+    let position = clamp([rect.left, top]);
+    if (currentMicButtonState === "recording" && recordingTargetField) {
+      const editor = recordingTargetField.getBoundingClientRect();
+      const clears = (point, bounds) => point.left + width + 6 <= bounds.left ||
+        point.left >= bounds.right + 6 || point.top + height + 6 <= bounds.top ||
+        point.top >= bounds.bottom + 6;
+      // Check the final, viewport-clamped rectangles. At high zoom, anchoring
+      // only to the mic can put the entire panel over the retained editor.
+      const candidates = [
+        [parseFloat(statusBubble.style.left), parseFloat(statusBubble.style.top)],
+        [rect.left, top], [rect.right + 6, rect.top], [rect.left - width - 6, rect.top],
+        ...[editor.left, editor.right - width, BUTTON_EDGE_OFFSET,
+          window.innerWidth - width - BUTTON_EDGE_OFFSET].flatMap(left => [
+          [left, editor.top - height - 6], [left, editor.bottom + 6],
+        ]),
+        [editor.left - width - 6, editor.top], [editor.right + 6, editor.top],
+      ].filter(point => point.every(Number.isFinite)).map(clamp);
+      // Retain a valid position across timer updates. If the editor fills the
+      // viewport, prioritize keeping the mic and explicit controls reachable.
+      position = candidates.find(point => clears(point, rect) && clears(point, editor)) ||
+        candidates.find(point => clears(point, rect)) || position;
+    }
+    statusBubble.style.top = `${position.top}px`;
+    statusBubble.style.left = `${position.left}px`;
     statusBubble.style.right = "auto";
   }
 
@@ -352,6 +377,7 @@
     statusIsStandalone = standalone;
     statusMessageElement.textContent = message;
     statusDismissButton.hidden = !dismissible;
+    bubble.classList.toggle("voice-dictation-status--recording", currentMicButtonState === "recording");
     bubble.hidden = false;
 
     if (standalone) {

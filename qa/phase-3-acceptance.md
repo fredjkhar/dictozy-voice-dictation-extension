@@ -150,6 +150,18 @@ viewport does not establish an unobscured editor. Test recording and recovery/cl
 not only idle controls. Restore each site's original zoom. If the editor or automation connection
 stalls, stop the trial and mark it inconclusive rather than interpreting stale state as a pass.
 
+To recheck the 2026-10-26 recording-panel fix locally: reload DICTOZY in `chrome://extensions`,
+reload the disposable ChatGPT tab, leave `Keep this text.` unsent, and set Chrome page zoom to 400%.
+Start DICTOZY and **wait for Recording and Stop/Discard to appear before tabbing**. Verify the
+panel clears the editable text and all controls fit. Tab from the editor through microphone,
+Stop and Discard; Space must discard, restore editor focus and preserve the fixture. Restore
+100% zoom. The agent completed this check in L2 Chrome; broader layout acceptance remains open.
+The corresponding generic mocked regression is runnable with
+`npx playwright test extension/tests/browser/dictation.spec.js --grep 'recording panel avoids a bottom composer'`.
+
+VoiceOver listening is **Pending by user choice**. Do not enable it or request a listening handoff
+until the user chooses to resume that check. The procedure below remains available for that time.
+
 For a minimal VoiceOver listening handoff, first prepare an unchanged disposable fixture with
 recording idle. Record whether VoiceOver was already enabled and preserve that preference. Once
 the listener is ready, focus the field/microphone, traverse the named controls, briefly record and

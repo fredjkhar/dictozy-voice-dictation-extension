@@ -1,6 +1,6 @@
 # Phase 3 compatibility and daily reliability report
 
-Date: **2026-10-25** (America/Toronto). Branch: `codex/phase-3-compatibility-reliability`.
+Date: **2026-10-26** (America/Toronto). Branch: `codex/phase-3-compatibility-reliability`.
 Accepted Phase 2 base: `bbdf9a2`.
 Implementation commits: `066833e` (editor focus/placement and regressions),
 `14eda7a` (test startup and repeated-session evidence).
@@ -9,7 +9,7 @@ Implementation commits: `066833e` (editor focus/placement and regressions),
 microphone acceptance are incomplete. This is not a production-readiness or compatibility certification.**
 The user chose to leave login-dependent editor checks pending. Phase 4 has not begun.
 The initial report below is followed by recovery and accessibility updates; the latest full
-automated validation is **295 passing tests**, with separately labeled human/agent evidence.
+automated validation is **296 passing tests**, with separately labeled human/agent evidence.
 
 ## Outcome
 
@@ -331,3 +331,50 @@ and recovery announcements; live recovery/processing layout at enlarged zoom; Ch
 occlusion at 400%; a fresh diagnostic Gmail run without the stalled control connection; fuller
 editor acceptance and pilot measurements. The six release gates remain open. No deployment,
 publication, infrastructure change or Phase 4 work occurred.
+
+## Recording-panel overlap correction — 2026-10-26
+
+**Implemented and Tested in the reported ChatGPT layout; broader accessibility remains pending.**
+The user authorized fixing the 400% recording-panel overlap and explicitly left VoiceOver pending.
+The new generic bottom-composer regression failed before the fix: at 300×228, a 234×117 panel
+covered approximately 22,660 CSS square pixels of a 250×110 textarea. Existing viewport-fit tests
+did not assert editor clearance, which explains why they had passed.
+
+`extension/content.js` now evaluates a small set of viewport-clamped panel positions against both
+the retained editor and microphone. It keeps a valid position across timer updates. In
+`extension/content.css`, recording feedback has a stable width and, in viewports at most 320 CSS
+pixels high, a compact three-row layout with unchanged labels, timing/activity, DOM tab order
+and at least 32-pixel Stop/Discard controls. No host editor styles, focus, selection, insertion,
+Undo, recording duration or lifecycle code changed. A viewport-filling editor may leave no fully
+clear placement; the bounded fallback prioritizes reachable recording controls. This is not a
+universal no-overlap guarantee for arbitrary host layouts.
+
+The new `extension/tests/browser/dictation.spec.js` test covers zero panel/editor overlap, panel
+and control bounds, unobstructed control centers, the longer Activity unavailable state, timer
+updates, resize to 340×260 and back, keyboard Discard, unchanged text/selection, restored field
+focus and zero mocked transcription requests. It failed before and passes after the correction.
+The three focused compact-layout tests passed. Full validation: **296 passed, zero failed/skipped**
+— 54 unit, 126 browser (105 mocked + 21 unpacked MV3/synthetic audio/stubbed provider), 95 backend
+and 21 website. Package check-only, asset/site validators, dependency check and `git diff --check`
+passed. Browser and website suites ran sequentially; browser used `caffeinate -i`.
+
+**Actual Chrome recheck:** reloaded the repository's unpacked extension, then the existing ChatGPT
+tab in the same L2 environment. Native Chrome UI confirmed 400% zoom, with a 300×228 CSS viewport.
+During recording, the panel was 208×81.20 at (84,14), ending at y95.20; the editable text rectangle
+began at y101.50, leaving approximately 6.3 pixels of clearance. Screenshot inspection confirmed
+readable feedback and visible Stop/Discard. Browser-generated Tab moved from editor → microphone
+→ Stop → Discard, and Space discarded. State returned to idle, focus returned to Ask ChatGPT,
+and the exact fixture remained unchanged. Nothing was sent. Original 100% zoom was restored and
+verified; the 10-second preference was preserved. These were brief real installed-extension
+captures with no requested speech, not recognition, provider or physical-device-release tests.
+No network trace was collected, so UI Discard is not proof of upload suppression.
+
+Two setup attempts were excluded: navigation while microphone access was still pending reached
+ChatGPT's own dictation control (explicitly cancelled; fixture unchanged), and a recording cancelled
+after a focus interruption. The final complete check above was separately observed.
+
+Documentation updated: this report, roadmap, compatibility matrix, manual protocol and unreleased
+changelog. Independent source review found no blocking issue. VoiceOver listening stays **Pending
+by user choice**; enlarged recovery/processing layouts, Gmail's inconclusive enlarged capture,
+full live-editor acceptance and pilot metrics remain open. All six release gates remain open.
+No deployment, publication, infrastructure change, new permissions/dependencies or Phase 4 work.

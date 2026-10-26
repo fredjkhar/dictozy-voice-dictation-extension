@@ -189,6 +189,23 @@ viewport tests remain separate. Full regression rerun: **295 passed, zero failed
 125 browser = 104 mocked + 21 unpacked/synthetic, 95 backend, 21 website). Package and whitespace
 checks passed. No application source change was made for this follow-up.
 
+## Recording-panel correction — 2026-10-26
+
+| Check | Method | Result / limits |
+|---|---|---|
+| Bottom composer at 300×228 | New `mocked_browser` regression | Failed before fix; passes with zero panel/editor overlap, visible/hittable controls, timer updates, resize, preserved selection/text and keyboard Discard. Includes Activity unavailable; zero mocked requests |
+| ChatGPT recording at 400% | L2 actual Chrome zoom, reloaded unpacked extension, brief capture and browser-generated keys | Passed for the reported panel overlap: panel 208×81.20 at (84,14), editable text y101.50, approximately 6.3 CSS pixels clear. Visible/readable feedback and Stop/Discard. Tab editor → mic → Stop → Discard; Space returned to idle, fixture unchanged, focus restored; no Send. Restored original 100% zoom |
+| VoiceOver spoken output | Human listening required | Pending by user choice; neither DOM inspection nor keyboard automation closes this item |
+
+This fixes the panel-over-editable-text finding recorded on 2026-10-25 for this ChatGPT layout.
+It does not establish all composer variants, Gmail enlarged capture, recovery/processing layout,
+speech accuracy, physical microphone release or network suppression. Setup attempts with pending
+access/focus interruption were excluded; see the report. When an editor fills the viewport, no
+fully clear position may exist; the fallback prioritizes visible controls. All gates remain open.
+
+Full rerun: **296 passed, zero failed/skipped** — 54 unit, 126 browser (105 mocked + 21 unpacked/
+synthetic), 95 backend, 21 website. Package/assets/site/dependency and whitespace checks passed.
+
 ## Release status
 
 All six gates remain open: Render proxy/worker/replica/ingress verification; durable aggregate usage
