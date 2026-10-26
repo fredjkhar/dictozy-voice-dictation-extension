@@ -42,7 +42,7 @@ const INSERTED_TEXT = "Alpha Native browser fixture Gamma";
 
 test.describe.configure({ mode: "default" });
 
-test("repeated native recording, Undo and discard leave each editor and control state intact", async ({ page, context }, testInfo) => {
+test("repeated native recording, Undo, Redo and discard leave each editor and control state intact", async ({ page, context }, testInfo) => {
   test.setTimeout(60000); // Functional budget for ten native capture sessions; not a latency target.
   await page.goto("http://127.0.0.1:4173/qa/manual-test-page.html");
   const textarea = page.locator("#plainTextarea");
@@ -72,6 +72,7 @@ test("repeated native recording, Undo and discard leave each editor and control 
   const discard = page.getByRole("button", { name: "Discard recording", exact: true });
   const samples = [];
   const undoKey = process.platform === "darwin" ? "Meta+Z" : "Control+Z";
+  const redoKey = process.platform === "darwin" ? "Meta+Shift+Z" : "Control+Shift+Z";
 
   async function selectWord(field, rich) {
     await field.scrollIntoViewIfNeeded();
@@ -128,6 +129,23 @@ test("repeated native recording, Undo and discard leave each editor and control 
     samples.push(elapsed);
     await page.keyboard.press(undoKey);
     await expectUnchangedEditors();
+    // Exercise the browser's native history in both selected-range targets,
+    // then leave the original content restored before the discard session.
+    await page.keyboard.press(redoKey);
+    if (rich) {
+      await expect(field).toHaveText(INSERTED_TEXT);
+      await expect(textarea).toHaveValue(INITIAL_TEXT);
+    } else {
+      await expect(field).toHaveValue(INSERTED_TEXT);
+      await expect(richEditor).toHaveText(INITIAL_TEXT);
+      await expect(richEditor.locator("strong")).toHaveText("Beta");
+    }
+    await expect(field).toBeFocused();
+    await expect(unrelatedField).toHaveValue("Unrelated fixture text");
+    await expect(page.locator(".voice-dictation-recovery")).toHaveCount(0);
+    await page.keyboard.press(undoKey);
+    await expectUnchangedEditors();
+    await expect(field).toBeFocused();
     expect(await worker.evaluate(() => globalThis.__backendCalls)).toBe(cycle + 1);
 
     // Alternate a completed session with an explicit discard on the other

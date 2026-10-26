@@ -5,10 +5,25 @@ Assessment updated: **2026-10-26**, America/Toronto. Working branch:
 Initial automated code revision: `14eda7a` (includes product correction `066833e`).
 The dated follow-ups below record subsequent human evidence and recovery-focus correction `8753628`.
 
-**No named application is certified for end-to-end dictation by this assessment.**
-The initial live checks establish access, editor structure and idle-control placement only.
-Subsequent user-reported speech/Undo results and agent-operated checks are identified separately
-below. Full application and human accessibility acceptance remain incomplete.
+**No named application is certified for every dictation workflow by this assessment.**
+Scoped Gmail/ChatGPT and VoiceOver passes are summarized below. Full application acceptance,
+broader accessibility and the human pilot remain incomplete. All six release gates remain open.
+See the [final Phase 3 summary](PHASE_3_CLOSEOUT.md) for the authoritative closeout and
+**314 passing automated tests** (54 unit, 144 browser, 95 backend, 21 website).
+
+## Current consolidated status — 2026-10-26
+
+| Application / area | Validated scope | Still open |
+|---|---|---|
+| Gmail | User-reported real dictation/insertion/Undo; selected-word replacement and changed-content recovery/Copy (edit before Stop); no Send in those checks | Post-Stop pending-response edits, broader compose/formatting/re-render variants and enlarged capture. Final 200% retry was inconclusive after native control failed before capture; zoom restored, disposable draft removed, temporary tab closed |
+| ChatGPT | User-reported real dictation/insertion/Undo, Command+Shift+Y start/stop, Discard and tab cancellation; actual installed Chrome 400% recording panel clearance and keyboard Discard; final installed-source capture/Discard recheck | Broader composer variants, complete first-use/device matrix and real enlarged response/recovery layouts |
+| Notion / Outlook / WhatsApp Web | Access preflight only | Editor tests Blocked on login/device linking; left pending at the user's direction |
+| 10/30-second duration | Physical-mic automatic-stop checks passed within recorded observed/user-reported scope; 10-second preference restored | Longer capture Deferred; actual cutoff/latency/correction pilot Pending |
+| VoiceOver | Human confirmed installed ChatGPT recording controls; separately confirmed response/error/recovery/Copy/Discard/expiry speech in local simulated-source UI | Other screen readers/app variants and broader accessibility Pending; no countdown speech reported in tested cycle |
+| Local compact states and repeated sessions | Mocked 600×456/300×228 processing/success/error checks and 300×228 recovery expiry; unpacked synthetic insertion/Undo/Redo/discard sessions | These do not establish real Chrome zoom, physical speech, provider latency or named-app support |
+
+The chronological records below preserve the methods, build identities, exceptions and earlier
+incomplete attempts. Earlier Pending labels in the initial preflight table are historical.
 
 ## Environments and methods
 
@@ -20,11 +35,11 @@ below. Full application and human accessibility acceptance remain incomplete.
 | L2 | macOS 15.6.1 (24G90), Google Chrome 156.0.8078.47 arm64, existing profile, unpacked DICTOZY 0.1.12 from this repository | Version/source verified through Chrome UI; optional practice navigation; ChatGPT Enter activation and Space discard using temporary synthetic audio in the extension's isolated world | Authenticated rich composer; generated Web Audio stream, native MediaRecorder, intercepted transcription messaging. No physical microphone/provider claim. Overrides restored before reloading the recovery-focus fix |
 | V1 | L2 Chrome/macOS with VoiceOver 10 (964.12.11), human listener and agent-operated controls | Installed ChatGPT brief capture/Discard; separately, a local fixture using current content-script source with simulated media/provider/clipboard for response states | Heard output is human-confirmed only for the listed cases below. Local fixture is not installed MV3 or real audio/provider/clipboard validation. Initial VoiceOver-off setting restored |
 
-Live UI results are **browser-automated preflight**, not human manual acceptance. No personal
+Initial L1 live UI results are **browser-automated preflight**, not human manual acceptance. No personal
 writing, account identifiers, full private URLs, screenshots of inboxes or transcript content are
 retained in this matrix. No messages or prompts were sent, and no notes were created.
 
-## Application matrix
+## Initial application preflight matrix (historical)
 
 Gmail, ChatGPT and Notion are the three provisional priorities: email composition, short prompts
 and notes are distinct everyday writing tasks. This is a product hypothesis, not a measured user

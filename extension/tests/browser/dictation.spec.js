@@ -2244,6 +2244,7 @@ test("synthetic Stop and Discard events cannot change recording state", async ({
 
 for (const action of ["copy", "discard", "expire"]) {
   test(`recovery ${action} explains refusal and returns keyboard focus safely`, async ({ page }) => {
+    if (action === "expire") await page.setViewportSize({ width: 300, height: 228 });
     await loadContentScript(page);
     await page.clock.install();
     const field = await focusFirstTextField(page);
@@ -2255,11 +2256,16 @@ for (const action of ["copy", "discard", "expire"]) {
     const panel = page.getByRole("region", { name: "Transcript recovery" });
     await expect(panel).toContainText("The field changed");
     await expect(panel).not.toContainText("private dictated result");
+    if (action === "expire") {
+      await expectCompactBounds(panel);
+      expect(await page.locator("html").innerHTML()).not.toContain("private dictated result");
+    }
     await page.evaluate(() => Object.defineProperty(navigator, "clipboard", {
       configurable: true, value: { writeText: async () => {} },
     }));
     const control = page.getByRole("button", { name: action === "discard" ? "Discard transcript" : "Copy transcript", exact: true });
     await control.focus();
+    if (action === "expire") await expectCompactControl(control);
     if (action === "expire") await page.clock.fastForward(60001);
     else await page.keyboard.press("Enter");
     await expect(panel).toHaveCount(0);
@@ -2404,12 +2410,115 @@ async function expectCompactBounds(locator, viewport = { width: 300, height: 228
   expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
 }
 
-async function expectCompactControl(locator) {
-  await expectCompactBounds(locator);
+async function expectCompactControl(locator, viewport) {
+  await expectCompactBounds(locator, viewport);
   expect(await locator.evaluate((element) => {
     const bounds = element.getBoundingClientRect();
     return element.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2));
   })).toBe(true);
+}
+
+async function createCompactComposer(page) {
+  // Responsive fixture geometry only; it does not model a third-party editor.
+  await page.evaluate(() => {
+    const field = document.createElement("textarea");
+    field.id = "compactComposer";
+    field.setAttribute("aria-label", "Compact composer");
+    field.style.cssText = "position:fixed;left:16px;right:34px;bottom:16px;width:auto;height:110px;min-height:0;box-sizing:border-box;margin:0;resize:none;";
+    document.body.replaceChildren(field);
+  });
+  const field = page.getByRole("textbox", { name: "Compact composer", exact: true });
+  await field.fill("Alpha Beta Gamma");
+  await field.evaluate((element) => element.setSelectionRange(6, 10));
+  return field;
+}
+
+// Exercise both sides of the compact-height CSS breakpoint. These are CSS
+// viewport simulations with mocked audio/provider, not real Chrome zoom tests.
+for (const viewport of [{ width: 600, height: 456 }, { width: 300, height: 228 }]) {
+  test(`${viewport.width}x${viewport.height} viewport keeps processing and success visible without disrupting insertion or Undo`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await loadContentScript(page);
+    await page.clock.install();
+    const field = await createCompactComposer(page);
+    await page.evaluate(() => {
+      window.__dictozyTest.deferRecorderStop = true;
+      window.__dictozyTest.queueResponse({}, { defer: true });
+    });
+    await page.locator(MIC_BUTTON).click();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "Stop recording", exact: true })).toBeFocused();
+    await page.keyboard.press("Enter");
+
+    const panel = page.getByRole("group", { name: "Dictation controls", exact: true });
+    await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "processing");
+    await expect(page.locator(MIC_BUTTON)).toBeDisabled();
+    await expectCompactBounds(panel, viewport);
+    await expectCompactBounds(page.locator(STATUS_MESSAGE), viewport);
+    await expect(page.locator(STATUS_MESSAGE)).toHaveText("Preparing transcription");
+    await expect(field).toBeFocused();
+    await expect(field).toHaveValue("Alpha Beta Gamma");
+    expect(await page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+    await expect(page.locator(".voice-dictation-feedback")).toBeHidden();
+
+    await page.evaluate(() => window.__dictozyTest.pendingStops.splice(0).forEach((finish) => finish()));
+    await waitForRequestCount(page, 1);
+    await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "transcribing");
+    await expectCompactBounds(panel, viewport);
+    await expectCompactBounds(page.locator(STATUS_MESSAGE), viewport);
+    await expectCompactControl(page.locator(MIC_BUTTON), viewport);
+    await expect(page.locator(STATUS_MESSAGE)).toHaveText("Transcribing");
+    expect(await field.evaluate((element) => [element.selectionStart, element.selectionEnd])).toEqual([6, 10]);
+
+    await resolveLatestTranscript(page, "private selected fixture");
+    await expect(field).toHaveValue("Alpha private selected fixture Gamma");
+    await expect(field).toBeFocused();
+    await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "success");
+    await expectCompactBounds(panel, viewport);
+    await expectCompactBounds(page.locator(STATUS_MESSAGE), viewport);
+    await expectCompactControl(page.locator(MIC_BUTTON), viewport);
+    await expect(page.locator(STATUS_MESSAGE)).toHaveText("Transcript inserted");
+    await expect(page.locator(ANNOUNCEMENT)).toHaveText("Transcript inserted");
+    expect((await page.locator(".voice-dictation-status, .voice-dictation-announcement").allTextContents()).join(" "))
+      .not.toContain("private selected fixture");
+    await expect(page.getByRole("region", { name: "Transcript recovery" })).toHaveCount(0);
+    await undoLastEdit(page);
+    await expect(field).toHaveValue("Alpha Beta Gamma");
+    await page.clock.fastForward(1500);
+    await expect(panel).toBeHidden();
+    await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "idle");
+    await expect(field).toBeFocused();
+    expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(1);
+  });
+
+  test(`${viewport.width}x${viewport.height} viewport keeps long microphone errors and keyboard dismissal reachable`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await loadContentScript(page);
+    const field = await createCompactComposer(page);
+    await page.evaluate(() => window.__dictozyTest.queueMicrophoneError("NotAllowedError"));
+    await page.locator(MIC_BUTTON).click();
+    const panel = page.getByRole("group", { name: "Dictation controls", exact: true });
+    const dismiss = page.getByRole("button", { name: "Dismiss dictation message", exact: true });
+    await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "error");
+    await expect(page.locator(STATUS_MESSAGE)).toHaveText(microphoneFailureCases[0].message);
+    await expectCompactBounds(panel, viewport);
+    await expectCompactBounds(page.locator(STATUS_MESSAGE), viewport);
+    for (const control of [page.locator(MIC_BUTTON), dismiss]) await expectCompactControl(control, viewport);
+    expect((await panel.allTextContents()).join(" ")).not.toContain("private microphone detail");
+    await expect(field).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.locator(MIC_BUTTON)).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(dismiss).toBeFocused();
+    await page.keyboard.press("Space");
+    await expect(panel).toBeHidden();
+    await expect(field).toBeFocused();
+    await expect(field).toHaveValue("Alpha Beta Gamma");
+    expect(await field.evaluate((element) => [element.selectionStart, element.selectionEnd])).toEqual([6, 10]);
+    expect(await page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
+    expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+  });
 }
 
 test("300x228 viewport keeps recording controls visible and keyboard reachable with restrained announcements", async ({ page }) => {

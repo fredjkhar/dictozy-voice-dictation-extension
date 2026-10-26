@@ -1,7 +1,7 @@
 # Dictozy improvement roadmap
 
 Assessment date: 2026-10-17 (America/Toronto). Base: `a939c61` on `main`.
-Current review date: 2026-10-25 (America/Toronto).
+Current review date: 2026-10-26 (America/Toronto).
 Working branch: `codex/phase-3-compatibility-reliability` (Phase 2 base: `bbdf9a2`).
 
 ## Scope and approval gates
@@ -14,6 +14,13 @@ shortcuts, supported fields, native Undo, and browser permissions.
 
 Statuses: **Pending**, **In progress**, **Implemented**, **Tested**, **Blocked**, **Deferred**.
 “Tested” names the validation method; it does not imply real microphone or named-site verification.
+
+**Phase 3 closeout:** available local implementation and validation are complete; **314 tests pass**
+(54 unit, 144 browser, 95 backend, 21 website; zero failures/skips). Scoped Gmail/ChatGPT physical
+dictation and VoiceOver outcomes are recorded separately from mocks. Remaining live editors,
+layout variants and the human pilot stay open, along with all six release gates. See the
+[final Phase 3 summary](PHASE_3_CLOSEOUT.md) for current evidence, limitations and next steps.
+Earlier dated sections below retain their historical results. Phase 4 remains Deferred.
 
 ## Phase 0 — baseline (Tested)
 
@@ -79,7 +86,7 @@ Tests: UI/state/clipboard/expiry regressions plus human keyboard, screen-reader 
 Risk: control clutter and focus changes; no permissions, persistent history or analytics expansion.
 Documentation/report: update extension/manual QA/privacy as applicable; report tests and limitations.
 
-## Phase 3 — real applications and daily reliability (Local changes accepted; live acceptance Pending)
+## Phase 3 — real applications and daily reliability (Available local validation complete; broader acceptance Pending)
 
 Scope/checklist: evaluate Gmail, Outlook, an AI chat, messaging, and notes app; select three for
 deeper testing; investigate iframes, Shadow DOM, rich text, native Undo and Permissions Policy;
@@ -179,8 +186,8 @@ timeouts. Final full-suite evidence belongs in [the Phase 3 report](PHASE_3_REPO
 |---|---|---|---|---|---|
 | P3-A / high | Understand useful everyday workflows | Gmail, ChatGPT, Notion as provisional priorities; Outlook and WhatsApp Web also assessed; dated [matrix](COMPATIBILITY_MATRIX.md) | Account access, app changes, browser/build identity; no customer ranking data | Separate UI preflight, local editor models and actual dictation; no named-app support claim from mocks | UI and limited Gmail/ChatGPT human workflows Tested; full live acceptance Pending |
 | P3-B / high | Open-shadow editor cannot start despite a visible mic | `content.js`: resolve nested open-root focus; direct session focus listener and cleanup | Retargeted browser focus events; closed roots and frames stay excluded | Unpacked/native browser insertion and Undo, immediate unsafe focus cancellation, retry and unchanged surrounding content | Tested with synthetic audio/stub backend |
-| P3-C / high | Native adjacent controls may be obscured | Reproduce thin composer/control geometry observed in live ChatGPT; generic placement correction | Avoid layout jitter, preserve visible Stop; no site-specific private data | Local geometry regression plus live idle-geometry recheck after local extension reload | Tested locally and in live idle UI; full capture Pending |
-| P3-D / high | Repeat-session failures and latency are unmeasured | `daily-reliability.spec.js`: five insert/Undo cycles and five discards, numeric timing attachment | Synthetic device/stub does not measure speech or production latency | Correct target only; five provider-stub calls; no discarded result; cleanup between cycles | Tested locally |
+| P3-C / high | Native adjacent controls may be obscured | Reproduce thin composer/control geometry observed in live ChatGPT; generic placement correction | Avoid layout jitter, preserve visible Stop; no site-specific private data | Local geometry regression plus live idle-geometry recheck after local extension reload | Tested locally and in scoped live ChatGPT capture at 400%; wider layouts Pending |
+| P3-D / high | Repeat-session failures and latency are unmeasured | `daily-reliability.spec.js`: five insert/Undo/Redo/Undo cycles and five discards, numeric timing attachment | Synthetic device/stub does not measure speech or production latency | Correct target only; five provider-stub calls; no discarded result; cleanup between cycles | Tested locally; human pilot Pending |
 | P3-E / medium | Longer phrases can hit the current limit | Review frontend 10/30s and strict decoded backend 60s ceiling | Encoding overhead, real cutoffs/latency, cost and open aggregate-budget gate | Retain 10/30 until physical-mic pilot demonstrates benefit and boundaries are validated | Deferred; evaluated, no duration change |
 | P3-F / high | Need evidence without collecting private writing | [Manual protocol](../qa/phase-3-acceptance.md), optional empty metrics CSV | Human mic, screen reader, private disposable app fields | First-use, completion, recovery, cutoff and correction metrics; proposed targets clearly unmeasured | Implemented; human execution partial, pilot Pending |
 

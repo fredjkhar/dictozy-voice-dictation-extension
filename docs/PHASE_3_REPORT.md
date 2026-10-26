@@ -1,5 +1,14 @@
 # Phase 3 compatibility and daily reliability report
 
+**Final closeout:** [Phase 3 final summary](PHASE_3_CLOSEOUT.md), 2026-10-26.
+Available local implementation and validation are complete: **314 passing tests, zero failures or
+skips** (54 unit, 144 browser, 95 backend, 21 website). Human-confirmed VoiceOver checks are recorded
+with their installed-extension versus simulated-fixture limits. Broader live editor/pilot acceptance
+and all six release gates remain open. Phase 4 has not begun.
+
+The sections below are a chronological implementation/evidence record. Earlier test counts and
+pending statuses describe their date/revision; use the final summary for the current consolidated result.
+
 Date: **2026-10-26** (America/Toronto). Branch: `codex/phase-3-compatibility-reliability`.
 Accepted Phase 2 base: `bbdf9a2`.
 Implementation commits: `066833e` (editor focus/placement and regressions),
@@ -8,9 +17,8 @@ Implementation commits: `066833e` (editor focus/placement and regressions),
 **Local implementation and automated validation are complete. Full live-application and physical
 microphone acceptance are incomplete. This is not a production-readiness or compatibility certification.**
 The user chose to leave login-dependent editor checks pending. Phase 4 has not begun.
-The initial report below is followed by recovery and accessibility updates; the latest full
-automated coverage is **310 passing tests**, with separately labeled human/agent evidence and
-per-suite rerun scope in the latest follow-up.
+The initial report below is followed by recovery and accessibility updates. The final summary
+above supersedes their automated counts and consolidates separately labeled human/agent evidence.
 
 ## Outcome
 

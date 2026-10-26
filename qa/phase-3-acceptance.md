@@ -5,6 +5,12 @@ record of passes. Record results in the dated compatibility matrix and identify 
 used. Passing local fixtures or a synthetic microphone test does not establish compatibility with
 a live application, speech accuracy, physical microphone behavior or production readiness.
 
+Closeout updated **2026-10-26**: available local validation is complete, with **314 passing tests**.
+The [final summary](../docs/PHASE_3_CLOSEOUT.md) consolidates completed human/Chrome checks and
+remaining manual work. Unchecked items here describe the reusable protocol, not a claim that
+every step is untested. Notion/Outlook/WhatsApp editor access, broader layouts/device coverage and
+the human pilot remain pending; all release gates stay open. Phase 4 is not authorized.
+
 ## Scope and evidence labels
 
 Prioritize **Gmail, ChatGPT and Notion** for deeper testing: email, short questions and notes cover
