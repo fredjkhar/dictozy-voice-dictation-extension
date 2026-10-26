@@ -82,6 +82,49 @@ test("installed MV3 discards unsafe recording and honors real storage changes", 
   await expect(page.locator(MIC)).toBeVisible();
 });
 
+test("installed vocabulary changes affect the next upload without changing insertion, Undo or cancellation", async ({ page, context }) => {
+  const worker = context.serviceWorkers()[0];
+  await worker.evaluate(async () => {
+    globalThis.__vocabularyRequests = [];
+    globalThis.fetch = async (_url, { body }) => {
+      globalThis.__vocabularyRequests.push({
+        enabled: body.get("vocabulary_enabled"), terms: body.get("vocabulary"), language: body.get("language"),
+      });
+      return new Response(JSON.stringify({ transcript: "Provider fixture" }), { status: 200 });
+    };
+    await chrome.storage.local.set({ personalVocabulary: { enabled: true, terms: ["Initial name"] } });
+  });
+  await page.goto("http://127.0.0.1:4173/qa/manual-test-page.html");
+  const field = page.locator("#plainTextarea");
+  const unrelated = page.locator("#plainTextInput");
+  await unrelated.fill("Unrelated text");
+  await field.fill("Alpha Beta Gamma");
+  for (const enabled of [true, false]) {
+    await field.evaluate((element) => { element.focus(); element.setSelectionRange(6, 10); });
+    await page.locator(MIC).click();
+    await expect(page.locator(MIC)).toHaveAttribute("data-state", "recording");
+    await worker.evaluate((enabled) => chrome.storage.local.set({ personalVocabulary: { enabled, terms: ["Updated name"] } }), enabled);
+    await expect(page.locator(MIC)).toHaveAttribute("data-state", "recording");
+    await page.waitForTimeout(1600); // Existing synthetic device requires a tone segment.
+    await page.getByRole("button", { name: "Stop recording", exact: true }).click();
+    await expect(field).toHaveValue("Alpha Provider fixture Gamma");
+    await expect(field).toBeFocused();
+    await expect(unrelated).toHaveValue("Unrelated text");
+    const request = await worker.evaluate(() => globalThis.__vocabularyRequests.at(-1));
+    expect(request).toEqual({ enabled: enabled ? "true" : null, terms: enabled ? '["Updated name"]' : null, language: "en" });
+    await page.keyboard.press(process.platform === "darwin" ? "Meta+Z" : "Control+Z");
+    await expect(field).toHaveValue("Alpha Beta Gamma");
+  }
+  await page.locator(MIC).click();
+  await expect(page.locator(MIC)).toHaveAttribute("data-state", "recording");
+  await worker.evaluate(() => chrome.storage.local.set({ personalVocabulary: { enabled: true, terms: ["Discarded name"] } }));
+  await page.getByRole("button", { name: "Discard recording", exact: true }).click();
+  await expect(page.locator(MIC)).toHaveAttribute("data-state", "idle");
+  await expect(field).toHaveValue("Alpha Beta Gamma");
+  await expect(page.locator(".voice-dictation-recovery")).toHaveCount(0);
+  expect(await worker.evaluate(() => globalThis.__vocabularyRequests.length)).toBe(2);
+});
+
 test("packaged practice is optional, uses explicit activation and preserves native Undo", async ({ page, context }, testInfo) => {
   await context.addInitScript(() => {
     window.__micRequests = 0;

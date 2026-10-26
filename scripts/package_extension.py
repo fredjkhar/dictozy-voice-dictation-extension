@@ -37,6 +37,7 @@ EXPECTED_COMMANDS = {
 PACKAGE_FILES = (
     "manifest.json",
     "config.js",
+    "vocabulary.js",
     "background-utils.js",
     "dom-utils.js",
     "dictation-lifecycle.js",
@@ -46,6 +47,7 @@ PACKAGE_FILES = (
     "background.js",
     "popup.html",
     "popup.js",
+    "popup-vocabulary.js",
     "practice.html",
     "practice.js",
     "practice.css",

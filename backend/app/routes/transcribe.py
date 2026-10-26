@@ -11,6 +11,7 @@ from app.core.transcription_languages import (
     UnsupportedTranscriptionLanguageError,
     normalize_transcription_language,
 )
+from app.core.vocabulary import InvalidVocabularyError, vocabulary_from_form
 from app.schemas.transcription import TranscriptionResponse
 from app.services.audio_normalization import AudioNoSpeechError, AudioNormalizationError, normalize_audio_for_stt
 from app.services.xai_service import (
@@ -58,6 +59,16 @@ async def transcribe_audio_route(
             detail="Unsupported transcription language.",
         ) from exc
 
+    try:
+        # File/Form has already parsed and cached this bounded multipart body.
+        # Manual validation avoids FastAPI errors echoing private vocabulary values.
+        keyterms = vocabulary_from_form(await request.form())
+    except InvalidVocabularyError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid personal vocabulary.",
+        ) from None
+
     if not rate_limiter.allow(
         get_rate_limit_key(request),
         limit=settings.transcribe_rate_limit_requests,
@@ -85,6 +96,7 @@ async def transcribe_audio_route(
                 filename=safe_audio_filename(normalized_audio.filename),
                 content_type=normalize_content_type(normalized_audio.content_type) or "audio/wav",
                 language=normalized_language,
+                **({"keyterms": keyterms} if keyterms else {}),
             )
     except LimitExceeded as exc:
         raise HTTPException(

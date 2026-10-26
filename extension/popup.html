@@ -326,6 +326,47 @@
       .status[data-tone="error"] {
         color: #b91c1c;
       }
+
+      .vocabulary-settings {
+        padding-top: 10px;
+        border-top: 1px solid #e5eaf0;
+      }
+
+      .vocabulary-settings summary {
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .vocabulary-content {
+        display: grid;
+        gap: 10px;
+        padding-top: 10px;
+      }
+
+      .vocabulary-content textarea {
+        width: 100%;
+        min-height: 90px;
+        resize: vertical;
+        border: 1px solid #c5d0de;
+        border-radius: 5px;
+        padding: 8px;
+        font-family: inherit;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .vocabulary-content textarea:focus-visible,
+      .vocabulary-settings summary:focus-visible {
+        outline: 3px solid #38bdf8;
+        outline-offset: 2px;
+      }
+
+      .vocabulary-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
     </style>
   </head>
   <body>
@@ -400,6 +441,24 @@
           </label>
           <button id="saveSettings" class="primary-button" type="button">Save Settings</button>
         </form>
+        <details class="vocabulary-settings">
+          <summary>Personal vocabulary</summary>
+          <div class="vocabulary-content">
+            <label class="field-label" for="vocabularyTerms">Words and phrases</label>
+            <p id="vocabularyHelp" class="field-help">One word or phrase per line. Up to 100 entries, 50 characters each. Edit or remove lines, then save.</p>
+            <textarea id="vocabularyTerms" rows="4" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="vocabularyHelp" disabled></textarea>
+            <div class="vocabulary-actions">
+              <button id="saveVocabulary" class="secondary-button" type="button" disabled>Save vocabulary</button>
+              <button id="clearVocabulary" class="secondary-button" type="button" disabled>Clear vocabulary</button>
+            </div>
+            <p id="vocabularyDisclosure" class="field-help">Saving words locally does not enable sending. When assistance is enabled, your saved words and phrases accompany each dictation to the Dictozy backend and xAI. Disabling or clearing affects future requests; requests already sent cannot be recalled.</p>
+            <label class="toggle-row">
+              <span class="toggle-title">Enable vocabulary assistance</span>
+              <input id="vocabularyEnabled" class="switch" type="checkbox" role="switch" aria-describedby="vocabularyDisclosure" disabled>
+            </label>
+            <p id="vocabularyStatus" class="status" aria-live="polite">Loading vocabulary…</p>
+          </div>
+        </details>
         <div class="reset-row">
           <button id="resetSitePreferences" class="secondary-button reset-button" type="button">Reset Site Preferences</button>
           <p class="field-help">Clears only the websites you disabled.</p>
@@ -411,5 +470,7 @@
     <script src="config.js"></script>
     <script src="site-preferences.js"></script>
     <script src="popup.js"></script>
+    <script src="vocabulary.js"></script>
+    <script src="popup-vocabulary.js"></script>
   </body>
 </html>
