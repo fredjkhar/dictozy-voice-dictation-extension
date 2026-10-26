@@ -8,6 +8,8 @@ Implementation commits: `066833e` (editor focus/placement and regressions),
 **Local implementation and automated validation are complete. Full live-application and physical
 microphone acceptance are incomplete. This is not a production-readiness or compatibility certification.**
 The user chose to leave login-dependent editor checks pending. Phase 4 has not begun.
+The initial report below is followed by an acceptance update with **293 passing automated tests**
+and separately labeled human/agent evidence.
 
 ## Outcome
 
@@ -15,7 +17,7 @@ The user chose to leave login-dependent editor checks pending. Phase 4 has not b
 - Found DICTOZY overlapping ChatGPT's native voice button in a live Chrome check, added a generic
   nearby-control placement correction, and verified the corrected idle geometry on the live page.
 - Added 13 automated tests: 12 unpacked-extension compatibility cases and one repeated-session case.
-- Final suites: **290 passed, zero failures or skips**: 54 unit, 120 browser, 95 backend, 21 website.
+- Initial completion suites: **290 passed, zero failures or skips**: 54 unit, 120 browser, 95 backend, 21 website.
   Browser tests comprise **102 mocked workflows and 18 unpacked MV3 tests with synthetic audio**.
 - Created a dated five-application matrix and a content-free manual pilot procedure/template.
 - Preserved **10-second default / 30-second maximum**, existing permissions, shortcuts, settings,
@@ -90,7 +92,7 @@ One recorded focused run had **5 samples, median 112 ms and nearest-rank p95 120
 The five-sample p95 is simply the largest sample and is not a service-level estimate. These ten
 controlled sessions are not the human pilot and do not establish the proposed 95% completion target.
 
-## Live application evidence
+## Initial live application evidence
 
 The [dated compatibility matrix](COMPATIBILITY_MATRIX.md) contains methods, environments, outcomes
 and limitations. Gmail, ChatGPT and Notion are provisional priorities representing email, prompts
@@ -110,11 +112,12 @@ Source folder and local extension reload were verified. No microphone was activa
 request was made by these checks, and no email/message/prompt was sent. The empty Gmail body was
 verified unchanged. Temporary inspection tabs were closed. No existing draft or note was edited.
 
-No human physical-microphone, physical-shortcut, screen-reader or full live-editor acceptance was
-performed. Existing user-entered practice text was not interpreted as test evidence. The final
+At the initial report, no human physical-microphone, physical-shortcut, screen-reader or full
+live-editor acceptance had been performed. Subsequent user reports are recorded in the update
+below and compatibility matrix. Existing user-entered practice text was not interpreted as test evidence. The final
 same-editor-focus refinement was verified locally; live recording of that refinement is pending.
 
-## Automated validation
+## Initial automated validation
 
 Environment: macOS 15.6.1; Node 22.13.1; Python 3.14.7; Playwright 1.61.1;
 bundled Chromium/Chrome for Testing 149.0.7827.55. No production credentials were used.
@@ -196,8 +199,8 @@ human transcription environment.
 |---|---|
 | Actual Render proxy, worker, replica and ingress configuration | Open; deployment-side verification not performed |
 | Aggregate usage protection across restarts/multiple instances | Open; existing budget remains process-local, not a durable spending cap |
-| Real microphone and human installed-extension acceptance | Open; synthetic device and UI-only preflight are insufficient |
-| Real-world editor compatibility | Open; limited live detection/layout evidence, full speech/insertion/Undo/recovery pending |
+| Real microphone and human installed-extension acceptance | Open; limited human walkthrough passes supplement automation, but full acceptance and pilot remain incomplete |
+| Real-world editor compatibility | Open; limited Gmail/ChatGPT speech/Undo/cancellation/recovery evidence; fuller workflows and remaining applications pending |
 | Production logging and deployment validation | Open; local tests do not validate production behavior |
 | Coordinated publication of revised privacy disclosures | Open; no publication authorized/performed |
 
@@ -209,3 +212,59 @@ OS shortcut conflicts and provider accuracy remain unmeasured.
 
 Recommended next step: review this local Phase 3 work, then complete the human acceptance/pilot and
 login-dependent editor checks. Keep Phase 4 deferred and require separate release authorization.
+
+## Acceptance update — 2026-10-25
+
+The user accepted local Phase 3 changes and reported successful physical-microphone Gmail and
+ChatGPT insertion/Undo, ChatGPT Discard and tab-switch cancellation, Gmail selected-word
+replacement/Undo and changed-content Copy recovery, and Command+Shift+Y start/stop with Undo.
+These are **Passed — user reported**, with details and limits in the [matrix](COMPATIBILITY_MATRIX.md).
+They do not establish the 60-trial pilot target or close a release gate.
+
+The user then authorized autonomous remaining tests. They exposed a recovery keyboard-focus bug:
+after editing Subject, Tab could pass through the microphone before reaching Copy/Discard, leaving
+recovery's remembered focus on the original body. Both native keyboard tests failed before the
+fix. `extension/content.js` now updates only recovery's return-focus field whenever it remembers
+a supported field. It does not change insertion targets or selections. Expiry still moves focus
+only if a removed recovery control held it, preserving typing in another editor.
+
+New `extension/tests/browser/recovery-acceptance.spec.js` adds three tests using the actual unpacked
+extension, synthetic microphone, native clipboard/keys and a deferred backend stub with production
+blocked. They cover edits made after Stop while a response is pending, actual minute-long expiry
+(visible at 55s, removed after 61s, observed lifetime at least 59.9s), keyboard Copy followed by
+explicit paste, and keyboard Discard. All preserve the body and intended Subject focus. A host
+pause interrupted an initial expiry run; `caffeinate -i` prevented idle sleep for the clean reruns.
+No clock advancement, test deletion, timeout weakening or product duration change was used.
+
+Final full validation: **293 passed, zero failures/skips** — 54 unit, 123 browser (102 mocked,
+21 unpacked/synthetic), 95 backend and 21 website. Package check-only, asset/site validation,
+dependency and whitespace checks also passed. Independent review found no blocking issue in the
+focus fix. Browser and website suites ran sequentially.
+
+In the actual Chrome UI, version **156.0.8078.47 arm64**, macOS **15.6.1 (24G90)**, and unpacked
+source were verified. ChatGPT Enter activation and Space Discard passed with a temporary generated
+audio stream and intercepted content-script messaging: fixture preserved, zero transcription
+messages, zero remaining generated tracks. The overrides were restored before reloading the fix.
+Opening optional practice and selecting Try focused its field without starting recording or
+showing a permission prompt; inline troubleshooting was accessible. These are agent-operated
+live-editor-stubbed/UI checks, not physical speech or screen-reader evidence.
+
+Live Gmail expiry subsequently passed joint human/agent execution. Chrome's debugging interface
+prevented a reliable response override after reload, so the user supplied a fresh spoken result.
+The agent observed recovery, put focus in Subject, left the notice untouched, then confirmed its
+expired announcement/removal, unchanged body and preserved Subject focus. A native X keypress
+without clicking landed in Subject. The final check was approximately 66 seconds after first
+observation, not a precise measurement of the expiration boundary. An earlier already-copied
+attempt was excluded. No email was sent. Original tabs were retained; the extra expiry fixture/tab
+were cleaned up. At 200% zoom, the idle mic remained within the viewport after reopening Gmail's
+automatically minimized composer. At 400%, compose could not be reopened through the tested
+control, so DICTOZY layout there remains unvalidated. Original 100% zoom was restored.
+
+The focus correction and three regression tests are committed as `8753628`. Clipboard denial/retry
+has mocked coverage only. Screen-reader use, physical
+10/30-second speech, fuller editor acceptance, login-dependent apps and pilot measurements remain
+pending. All six release gates above remain open.
+
+Follow-up files: `extension/content.js`, the new recovery spec, `qa/phase-3-acceptance.md`,
+`docs/COMPATIBILITY_MATRIX.md`, `docs/IMPROVEMENT_ROADMAP.md`, this report and the unreleased changelog.
+No backend, manifest, dependency, production configuration, secret or infrastructure changes.

@@ -79,7 +79,7 @@ Tests: UI/state/clipboard/expiry regressions plus human keyboard, screen-reader 
 Risk: control clutter and focus changes; no permissions, persistent history or analytics expansion.
 Documentation/report: update extension/manual QA/privacy as applicable; report tests and limitations.
 
-## Phase 3 — real applications and daily reliability (Tested locally; live acceptance Pending)
+## Phase 3 — real applications and daily reliability (Local changes accepted; live acceptance Pending)
 
 Scope/checklist: evaluate Gmail, Outlook, an AI chat, messaging, and notes app; select three for
 deeper testing; investigate iframes, Shadow DOM, rich text, native Undo and Permissions Policy;
@@ -177,12 +177,12 @@ timeouts. Final full-suite evidence belongs in [the Phase 3 report](PHASE_3_REPO
 
 | ID / priority | User impact and scope | Components / approach | Risk / dependencies | Acceptance and regression evidence | Status |
 |---|---|---|---|---|---|
-| P3-A / high | Understand useful everyday workflows | Gmail, ChatGPT, Notion as provisional priorities; Outlook and WhatsApp Web also assessed; dated [matrix](COMPATIBILITY_MATRIX.md) | Account access, app changes, browser/build identity; no customer ranking data | Separate UI preflight, local editor models and actual dictation; no named-app support claim from mocks | Tested for access/UI only; full live acceptance Pending |
+| P3-A / high | Understand useful everyday workflows | Gmail, ChatGPT, Notion as provisional priorities; Outlook and WhatsApp Web also assessed; dated [matrix](COMPATIBILITY_MATRIX.md) | Account access, app changes, browser/build identity; no customer ranking data | Separate UI preflight, local editor models and actual dictation; no named-app support claim from mocks | UI and limited Gmail/ChatGPT human workflows Tested; full live acceptance Pending |
 | P3-B / high | Open-shadow editor cannot start despite a visible mic | `content.js`: resolve nested open-root focus; direct session focus listener and cleanup | Retargeted browser focus events; closed roots and frames stay excluded | Unpacked/native browser insertion and Undo, immediate unsafe focus cancellation, retry and unchanged surrounding content | Tested with synthetic audio/stub backend |
 | P3-C / high | Native adjacent controls may be obscured | Reproduce thin composer/control geometry observed in live ChatGPT; generic placement correction | Avoid layout jitter, preserve visible Stop; no site-specific private data | Local geometry regression plus live idle-geometry recheck after local extension reload | Tested locally and in live idle UI; full capture Pending |
 | P3-D / high | Repeat-session failures and latency are unmeasured | `daily-reliability.spec.js`: five insert/Undo cycles and five discards, numeric timing attachment | Synthetic device/stub does not measure speech or production latency | Correct target only; five provider-stub calls; no discarded result; cleanup between cycles | Tested locally |
 | P3-E / medium | Longer phrases can hit the current limit | Review frontend 10/30s and strict decoded backend 60s ceiling | Encoding overhead, real cutoffs/latency, cost and open aggregate-budget gate | Retain 10/30 until physical-mic pilot demonstrates benefit and boundaries are validated | Deferred; evaluated, no duration change |
-| P3-F / high | Need evidence without collecting private writing | [Manual protocol](../qa/phase-3-acceptance.md), optional empty metrics CSV | Human mic, screen reader, private disposable app fields | First-use, completion, recovery, cutoff and correction metrics; proposed targets clearly unmeasured | Implemented; human execution Pending |
+| P3-F / high | Need evidence without collecting private writing | [Manual protocol](../qa/phase-3-acceptance.md), optional empty metrics CSV | Human mic, screen reader, private disposable app fields | First-use, completion, recovery, cutoff and correction metrics; proposed targets clearly unmeasured | Implemented; human execution partial, pilot Pending |
 
 All six Phase 1 release gates remain open. Phase 4 remains Deferred. No deployment, publication,
 production configuration, permissions, persistent transcript storage or infrastructure changes.
@@ -202,3 +202,55 @@ screen-reader and full named-editor acceptance remain Pending; no production-rea
 See [Phase 3 report](PHASE_3_REPORT.md) for files, evidence, local timing limits, reproduction,
 manual checklist and remaining risks. **Stop for review; complete manual Phase 3 acceptance before
 considering Phase 4.**
+
+### Manual acceptance walkthrough — 2026-10-25
+
+The user accepted the Phase 3 local changes and requested guided real-microphone tests in Chrome,
+starting with Gmail and ChatGPT. The user reports that Gmail inserted text in the message body,
+recording stopped, and native Undo restored the empty body. These three smoke checks passed by
+user report; latency, browser version and wider acceptance were not reported. The user also reports
+that ChatGPT inserted text, recording stopped, Undo cleared the composer, nothing was sent, and
+controls stayed visible. The user reports that explicit Discard stopped recording, preserved the
+existing fixture text, produced no delayed transcript or recovery notice, and sent nothing.
+The user also reports that switching tabs stopped recording, it stayed stopped on return, the
+existing text was unchanged, no delayed transcript or recovery appeared, and nothing was sent.
+The user reports that Gmail selected-word replacement changed only the selected fixture word,
+preserved the surrounding words, restored the original text with one Undo, and sent nothing.
+The user reports that editing the same Gmail field during recording preserved the changed body,
+showed recovery, allowed explicit Copy/paste into the empty Subject, and sent nothing. Record these
+as user-reported smoke passes; microphone-indicator release and network suppression were not
+independently verified. Editing before Stop does not substitute for the separate
+edit-during-pending-response timing case. The user reports that Command+Shift+Y started and stopped
+recording in ChatGPT, controls stayed visible, dictated text appended without changing the original,
+one Undo restored the original fixture text, and nothing was sent. Record the actual assigned
+shortcut check as Passed — user reported; individual-control Enter/Space activation and
+screen-reader checks remain unverified manually. Gmail recovery expiry with preserved text and
+Subject focus subsequently passed the joint human/agent check described below. Keep these
+results separate from automated and UI-only preflight evidence; all six release gates remain open.
+The checked-in extension uses the existing production backend and xAI for these manual recordings.
+Use non-sensitive fixture phrases and fresh, unsent editors. Phase 4 remains Deferred.
+
+### Autonomous acceptance follow-up — 2026-10-25
+
+The user authorized remaining checks. A new native-browser keyboard regression reproduced focus
+returning to the original body after Subject → microphone → recovery Copy/Discard. **Implemented
+and Tested:** `rememberActiveField` now updates recovery's return-focus field while a result exists.
+Recording/transcription target snapshots and expiry's no-focus-theft guard remain unchanged.
+
+Three new unpacked/synthetic tests cover a pending-response edit followed by actual 60-second
+expiry with preserved Subject focus, native keyboard Copy/paste, and keyboard Discard. Final full
+rerun: **54 unit + 123 browser (102 mocked, 21 unpacked/synthetic) + 95 backend + 21 website = 293
+passed**, zero failed/skipped; package/assets/site/dependency and whitespace validators passed.
+
+Chrome 156.0.8078.47 arm64 on macOS 15.6.1 was verified. Agent-operated ChatGPT Enter/Space
+activation/discard passed with temporary generated audio and intercepted messaging; zero
+transcription messages and zero remaining generated tracks. Overrides were restored. Practice
+navigation and its idle/permission behavior passed UI inspection. These are separate from the
+user's physical-microphone evidence. After live response overriding became unavailable, the user
+supplied one fresh spoken result. The agent observed Gmail recovery expire without changing the
+body or moving focus from Subject; typing X without refocusing confirmed the intended field.
+The first, already-copied attempt was excluded. Gmail idle UI passed a 200% zoom check after
+reopening its minimized compose window; the 400% editor could not be reached and remains unvalidated.
+Original 100% zoom was restored; the expiry fixture and extra tab were cleaned up. Fix commit:
+`8753628`. Recording layouts at enlarged zoom and full human acceptance remain incomplete.
+All six release gates remain open; no deployment, publication, infrastructure or Phase 4 work.

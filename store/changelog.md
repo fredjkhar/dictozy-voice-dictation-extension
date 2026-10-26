@@ -4,6 +4,9 @@ These notes preserve the release history without placing every prior version in 
 
 ## Unreleased — Phase 3
 
+- Keep recovery Copy/Discard keyboard focus on the most recently edited supported field, including
+  when Tab passes through the microphone; add native clipboard and real-minute expiry regressions.
+
 - Corrected nested open-shadow focus resolution and immediate target-focus cancellation, preserving movement inside one rich editor.
 - Avoid nearby native controls when positioning the microphone; keep its side stable during active work.
 - Added local unpacked-extension compatibility and repeat-session regressions, a dated evidence matrix and a privacy-conscious manual pilot protocol.

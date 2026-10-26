@@ -1,6 +1,6 @@
 # Phase 3 compatibility and daily reliability acceptance
 
-Protocol date: **2026-10-25**. Status: **Pending human execution.** This is a test plan, not a
+Protocol date: **2026-10-25**. Status: **Partially executed; results in the compatibility matrix.** This is a test plan, not a
 record of passes. Record results in the dated compatibility matrix and identify the exact method
 used. Passing local fixtures or a synthetic microphone test does not establish compatibility with
 a live application, speech accuracy, physical microphone behavior or production readiness.
@@ -123,7 +123,9 @@ expected cancellation/recovery scenarios separate from ordinary completion-rate 
   cancellation must not later insert or offer a deliberately cancelled transcript.
 - [ ] **Recovery:** check that its reason is understandable and the transcript is not displayed.
   Reach Copy/Discard with Tab, activate with Enter/Space, and paste a copied result only into a
-  disposable test field. Exercise clipboard denial/retry, new recording, hiding the page and the
+  disposable test field. Include moving from the original body to Subject, then tabbing through
+  the microphone to Copy/Discard: when the recovery control disappears, focus must return to
+  Subject, not the original body. Exercise clipboard denial/retry, new recording, hiding the page and the
   60-second expiry. Expiry must not steal focus from another editor. A clipboard operation already
   accepted by the browser can finish after Discard/expiry; note that separately from new insertion.
 - [ ] **Boundaries:** check local same-origin/cross-origin iframe, open/closed shadow-root and
@@ -199,6 +201,10 @@ python3 scripts/validate_store_assets.py
 python3 scripts/validate_site.py
 backend/.venv/bin/python -m pip check
 ```
+
+The unpacked recovery acceptance file includes a real 60-second wait. Keep the test host awake;
+on macOS, `caffeinate -i npm run test:browser` prevents idle sleep during the suite without changing
+product clocks or persistent power settings. Synthetic audio/stubbed-provider labels still apply.
 
 ## Release gates still open
 
