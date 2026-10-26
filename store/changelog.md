@@ -2,6 +2,13 @@
 
 These notes preserve the release history without placing every prior version in the Chrome Web Store sales description.
 
+## Unreleased — Phase 4 personal vocabulary
+
+- Add an optional local vocabulary list with separate, off-by-default sharing; saving does not enable transmission. Disable retains the list locally; Clear deletes it and turns sharing off.
+- Bound and validate terms in the extension and backend, forwarding opted-in terms through the existing backend-only xAI transcription path. No automatic extraction, rewriting, snippets, extra permissions or recognition-improvement claim.
+- Preserve recording, insertion, native Undo and temporary recovery. Do not persist or log vocabulary on the backend; dispatched requests cannot be recalled.
+- Not deployed or published. A compatible backend and revised privacy disclosures must be coordinated before extension release under separate approval; all six release gates remain open.
+
 ## Unreleased — Phase 3
 
 - Use one persistent screen-reader status channel, keeping completed messages available after

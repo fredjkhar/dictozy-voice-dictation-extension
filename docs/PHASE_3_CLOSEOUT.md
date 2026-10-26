@@ -3,12 +3,16 @@
 Date: **2026-10-26** (America/Toronto). Branch: `codex/phase-3-compatibility-reliability`.
 Final product revision: `87fcc00`; this closeout adds tests and documentation only.
 
+**Subsequent development:** the user authorized Phase 4 optional personal vocabulary after this
+closeout. Its implementation and test results are in the [Phase 4 report](PHASE_4_REPORT.md).
+Phase 4 approval statements below describe the historical Phase 3 closeout; release gates stay open.
+
 **Acceptance update — 2026-10-26:** the user accepts Phase 3 as locally implemented and
 automated-test validated. The [lean testing policy](../AGENTS.md#lean-testing-and-autonomous-decisions)
 now applies. Notion/Outlook/WhatsApp, extensive layouts and the human pilot are optional follow-ups
 unless a specific release requirement or observed critical defect makes them necessary. They do
 not block continued development. All six release gates remain open; Phase 4 implementation has
-not begun. See the [Phase 4 recommendation](IMPROVEMENT_ROADMAP.md#phase-4--personal-productivity-deferred-evidence-and-approval-required).
+not begun at that point. See the [current Phase 4 status](PHASE_4_REPORT.md).
 
 **Phase 3 local implementation and available validation are complete. Broader live compatibility
 and pilot validation remain pending. This does not establish production readiness.** The user

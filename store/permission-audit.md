@@ -1,6 +1,6 @@
 # Extension Permission Audit
 
-Audit date: August 26, 2026
+Audit update: October 26, 2026. Includes unpublished personal-vocabulary changes; no new permissions.
 
 This audit explains why the current Dictozy extension needs each requested permission. It is written for Chrome Web Store review and for future maintainers.
 
@@ -9,6 +9,11 @@ This audit explains why the current Dictozy extension needs each requested permi
 `storage`: retained.
 
 Required to save the enabled state, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables in `chrome.storage.local`. Site preferences are not synchronized or sent to the backend. The production backend endpoint is fixed in packaged code and is not stored as a user setting.
+
+The same permission stores the optional `personalVocabulary` list and separate sharing preference.
+Sharing is off by default; saving does not enable it. Only enabled saved terms accompany future
+dictation requests to the backend and xAI. Disabling retains the local list without sending it;
+Clear removes the key and disables sharing. No Chrome Sync or additional permission is introduced.
 
 `activeTab`: removed.
 
@@ -28,7 +33,7 @@ Retained:
 
 - `https://voice-dictation-extension.onrender.com/*`
 
-The production Render origin is required for user-triggered transcription requests from the Manifest V3 service worker. The service worker cannot be configured by users, pages, messages, or stored values to call a different endpoint.
+The production Render origin is required for user-triggered transcription requests from the Manifest V3 service worker, including vocabulary hints only when explicitly enabled. The service worker cannot be configured by users, pages, messages, or stored values to call a different endpoint.
 
 Removed:
 

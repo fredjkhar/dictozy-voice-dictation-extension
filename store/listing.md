@@ -124,7 +124,7 @@ Dictozy lets users dictate short text into supported web fields by recording aud
 `storage`:
 
 ```text
-Stores the enabled state, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables locally in Chrome. No cloud synchronization is used by the extension, and the production backend endpoint is not a stored user setting.
+Stores the enabled state, recording-duration preference, language-formatting preference, explicitly disabled origins, and optional user-entered vocabulary with a separate sharing preference locally in Chrome. No cloud synchronization is used by the extension. Vocabulary is sent with dictation only when explicitly enabled; the production backend endpoint is not a stored user setting.
 ```
 
 Site access on HTTPS pages:
@@ -149,6 +149,10 @@ Allows the Manifest V3 service worker to send user-triggered audio only to https
 
 ## Privacy Dashboard Draft
 
+The vocabulary additions below are prepared for a future approved release, not the published
+extension. Coordinate the backend, extension, policy and Dashboard disclosures before publication;
+do not change the live listing or an active Store draft as part of local development.
+
 Remote code:
 
 ```text
@@ -160,6 +164,7 @@ Data handled:
 - User-provided audio recorded after a visible click or assigned shortcut.
 - Returned transcript text.
 - Extension settings stored locally, including the selected language-formatting preference.
+- Optional user-entered personal-vocabulary terms stored locally and sent with dictation to the backend and xAI only after separate opt-in. Saving does not enable sharing; Clear removes the local list and turns sharing off.
 - Exact origins the user explicitly disables, stored only in local extension storage.
 - The selected language code sent with a user-triggered audio request.
 - Focused field metadata inspected locally for compatibility and safety checks.
@@ -178,6 +183,7 @@ Dashboard selections require manual review rather than copy/paste:
 - Declare the current Dashboard categories that cover user-provided audio, transcripts, personal communications, user-generated content, and form data.
 - Certify that data is used only for the disclosed single purpose, is not sold, is not used for advertising or lending, and is transferred only as needed to provide transcription.
 - Keep the privacy policy URL and Limited Use certifications current.
+- Include opted-in vocabulary in the applicable user-generated-content/personal-information disclosures. Terms may contain names or other personal information; do not claim all local settings remain on-device when vocabulary sharing is enabled.
 
 ## Reviewer Test Instructions
 

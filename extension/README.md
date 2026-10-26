@@ -37,6 +37,7 @@ The popup stores local settings with `chrome.storage.local`:
 - Keyboard shortcut: the `toggle-dictation` command suggests `Ctrl+Shift+Y` by default and `Command+Shift+Y` on macOS. Chrome may leave it unassigned after a conflict; the popup shows the current assignment and opens `chrome://extensions/shortcuts` for remapping.
 - Language formatting: defaults to English. Automatic asks the backend to omit provider language and formatting parameters; an explicit choice sends its language code so xAI can guide written formatting for numbers, currencies, and units. It is not a guarantee of improved speech recognition.
 - Recording limit: defaults to 10 seconds and is clamped between 1 and 30 seconds.
+- Personal vocabulary (unpublished): save user-entered terms locally; a separate, off-by-default choice enables sending saved terms with future dictation requests. See the Phase 4 notes below.
 - Reset Site Preferences: removes only explicitly disabled origins and leaves the global enabled state, recording limit, language formatting, and keyboard shortcut unchanged.
 
 The release build pins transcription to `https://voice-dictation-extension.onrender.com/api/transcribe`. Popup messages, page data, and stored settings cannot select another endpoint. xAI remains backend-only.
@@ -188,3 +189,34 @@ See the [dated compatibility matrix](../docs/COMPATIBILITY_MATRIX.md) and
 shadow fields, native Undo, rich DOM replacement, iframe exclusion, Permissions Policy and repeated
 insert/discard sessions. Their synthetic audio and stubbed backend do not establish speech accuracy,
 production latency or full Gmail/ChatGPT/Notion/Outlook/WhatsApp compatibility.
+
+## Phase 4 personal vocabulary (unpublished)
+
+The popup accepts one term per line, up to 100 terms of at most 50 Unicode code points each.
+Saving keeps the list local and does not enable transmission. Enable the separate sharing control
+only if you want the saved terms sent with future dictation to Dictozy's backend and xAI as hints.
+Editing and saving an already enabled list updates the terms used by future requests. Hints do
+not guarantee better recognition; no automatic term extraction, text rewriting or spoken snippets
+are included. Opening, saving or enabling vocabulary never starts recording.
+
+The `personalVocabulary` key in `chrome.storage.local` holds `{ enabled, terms }`; missing data
+defaults to `{ enabled: false, terms: [] }`. No Chrome Sync, account, extra permission or transcript history is used. Disable
+sharing to retain the list locally without sending it; Clear removes this key and turns sharing
+off. Already dispatched requests cannot be recalled. Global and site controls remain independent.
+
+The service worker reads current local storage for each upload, validates the list, and includes
+optional `vocabulary_enabled=true` and a JSON `vocabulary` array only when enabled and nonempty.
+Page/content-script messages cannot supply these terms. Both extension and backend trim terms,
+normalize Unicode to NFC and remove case-insensitive duplicates. The backend forwards valid terms
+to the existing xAI endpoint as repeated `keyterm` fields and does not persist or log them.
+
+Release coordination is still required: the live backend is unchanged and vocabulary handling
+has not been verified there. An older backend may ignore the new fields. Under separate release
+approval, deploy and verify the backward-compatible backend before distributing this extension
+change, and publish the matching privacy disclosures. All six release gates remain open.
+
+For a focused local check, use the existing mocked browser tests: save a small list with sharing
+off, reopen the popup, enable it, then disable and clear it. Confirm disabled/empty requests omit
+both fields and enabled requests contain only saved terms; use synthetic fixtures, not private
+vocabulary. This is not a live-provider recognition test. Loading this unpacked extension still
+uses the fixed production backend; starting local FastAPI does not redirect it.

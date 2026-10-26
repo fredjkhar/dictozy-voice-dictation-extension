@@ -2,15 +2,16 @@
 
 Assessment date: 2026-10-17 (America/Toronto). Base: `a939c61` on `main`.
 Current review date: 2026-10-26 (America/Toronto).
-Working branch: `codex/phase-3-compatibility-reliability` (Phase 2 base: `bbdf9a2`).
+Working branch: `codex/phase-4-personal-vocabulary` (accepted Phase 3/policy base: `6577e4a`).
 
 ## Scope and approval gates
 
 Phase 0, Phase 1 and Phase 2 implementation are reviewed and accepted. Phase 3 is accepted as
 locally implemented and automated-test validated under the user's streamlined testing policy.
-Phase 4 recommendation is authorized; feature implementation still requires product-scope approval.
+Phase 4 optional personal vocabulary is authorized, including local storage and explicit opt-in
+for transmission through the existing backend and xAI. Snippets and other features remain deferred.
 Implementation acceptance does not establish production readiness.
-Do not deploy, publish, change production configuration/secrets, or begin later phases.
+Do not deploy, publish, change production configuration/secrets, or expand the approved scope.
 Keep plain JavaScript, Manifest V3, FastAPI, backend-only xAI access, existing preferences,
 shortcuts, supported fields, native Undo, and browser permissions.
 
@@ -24,7 +25,11 @@ extensive layouts and the human pilot are optional follow-ups, not development b
 a specific release requirement or observed critical defect makes them necessary. All six release
 gates stay open. See the
 [final Phase 3 summary](PHASE_3_CLOSEOUT.md) for current evidence, limitations and next steps.
-Earlier dated sections below retain their historical results. Phase 4 remains Deferred.
+Earlier dated sections below retain their historical results.
+
+**Phase 4 closeout:** optional personal vocabulary is implemented and locally validated:
+**381 tests pass** (60 unit, 150 browser, 150 backend, 21 website; zero failures/skips).
+See [Phase 4 report](PHASE_4_REPORT.md). No live provider accuracy claim or release approval is implied.
 
 ### Current testing policy — 2026-10-26
 
@@ -36,7 +41,7 @@ or repeat successful manual checks without a regression signal. Report unavailab
 verification accurately; this does not automatically block development. Release approval and
 critical security/privacy/correctness requirements are unchanged.
 
-The final focused critical review found no new blocker: **21 unit, 29 browser (26 mocked,
+The Phase 3 policy-update review found no new blocker: **21 unit, 29 browser (26 mocked,
 3 unpacked/synthetic) and 31 backend tests passed**, with no new runtime changes or tests.
 The existing 314-test full-suite baseline is retained rather than rerun for this policy-only update.
 
@@ -118,31 +123,28 @@ manual stop-to-text/correction/recovery measurements. No private speech/page-con
 Risk/dependencies: application access, real Chrome/microphone and human validation; longer clips
 must respect backend bounds. Documentation/report: compatibility matrix and measured evidence.
 
-## Phase 4 — personal productivity (Deferred; evidence and approval required)
+## Phase 4 — optional personal vocabulary (Tested locally; complete)
 
-Scope/checklist: choose vocabulary OR snippets based on Phase 3 evidence; verify xAI capabilities;
-explicit local management/deletion, disclosure of transmitted vocabulary, distinctive snippet
-triggers, undoable text insertion, no automatic submission.
-Acceptance/tests: demonstrated user need; no accidental trigger, destructive replacement or
-secret exposure; deletion/disclosure and unchanged core behavior verified.
-Risk/dependencies: new locally stored user data and vocabulary transmission require explicit
-scope/privacy review. Documentation/report: record evidence, chosen feature, tests and limitations.
+Scope: extend the existing popup with a local word/phrase editor and independent, default-off
+sharing control. No snippets, automatic extraction, rewriting, cloud sync, new permissions or
+infrastructure. [xAI documentation](https://docs.x.ai/developers/model-capabilities/audio/speech-to-text#request-body)
+checked 2026-10-26 supports repeatable `keyterm` fields on `/v1/stt` with the default model used by
+the existing service. Preserve model omission and language behavior; no paid provider call required.
 
-**Recommendation, not implementation authorization:** prioritize a small, optional personal
-vocabulary feature as the first candidate. It directly addresses repeated corrections to names
-and technical terms without adding spoken command interpretation. This is a product hypothesis;
-the existing tests do not establish demand or recognition improvement. Defer snippets until there
-is concrete need for repeated phrases. Current [xAI REST documentation](https://docs.x.ai/developers/model-capabilities/audio/speech-to-text#request-body)
-(checked 2026-10-26) supports repeated `keyterm` fields on the existing `/v1/stt` endpoint, up to
-100 terms of 50 characters each. Documentation support is not provider-call validation.
+| Priority / item | Components and acceptance | Status |
+|---|---|---|
+| Critical: explicit consent | Popup stores terms locally; saving never opts in; background reads current settings at upload and omits terms when disabled/empty/invalid; pages cannot supply terms | Tested: unit, popup, unpacked extension, backend |
+| Critical: bounded provider input | Shared client validator and backend validator; at most 100 raw entries, 50 Unicode code points each, trim/NFC/case-insensitive dedup; invalid data never leaks through errors/logs | Tested: validation and multipart serialization |
+| High: management | Existing popup supports add/edit/delete via one line per term, Save, Clear, separate enable/disable; storage errors are explicit | Tested: automated popup and keyboard checks |
+| High: backward compatibility | Optional multipart fields; old requests and language work unchanged; repeatable provider fields precede audio; no transcript rewriting or lifecycle changes | Tested: full suites and native Undo/cancel integration |
+| High: regression/privacy review | Reuse critical tests, add focused storage/request coverage and one unpacked capture/Undo/cancel integration; full suite once at completion; update unpublished privacy docs | Tested: 381 passed; source/privacy/package review complete |
+| Deferred: other productivity | Spoken snippets, other features and accuracy claims lack authorization/evidence | Deferred |
 
-Proposed minimum scope: off by default; bounded local add/edit/delete; explicit disclosure and
-opt-in for sending enabled terms with dictation through the backend; backend validation; no
-transcript history, page scraping, new permission, framework or infrastructure. Preserve insertion,
-Undo and recovery paths. Validate storage/deletion, disabled-request omission, enabled-request
-bounds/serialization and generic safe logs with existing utilities; reuse critical insertion tests.
-Scope/privacy approval is needed before implementation. Phase 3's optional account/layout/pilot
-checks do not prevent that decision; all release gates remain separate.
+Risk: enabled terms may contain personal information; all enabled saved terms accompany each new
+dictation. Clear/delete affects local storage and future requests, not already dispatched requests.
+The live backend remains unchanged and may ignore the fields: coordinated backend-first release
+and revised disclosures require separate approval. All six existing release gates stay open.
+See [Phase 4 report](PHASE_4_REPORT.md) for final results, local commands and limitations.
 
 ## Phase 1 final report
 

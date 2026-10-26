@@ -4,6 +4,14 @@ Dictozy `0.1.12` is published, verified 2026-10-17 (Store update date September 
 
 Phase 1 changes are unpublished. Before a future approved release, assign a new version, regenerate its package, and complete [Phase 1 acceptance](../qa/phase-1-acceptance.md). Never upload the changed branch under the already-published 0.1.12 version.
 
+### Future vocabulary release coordination (unpublished)
+
+- Keep all six release gates in the [roadmap](../docs/IMPROVEMENT_ROADMAP.md) open until separately supported by evidence; local vocabulary tests do not close them.
+- Under separate approval, deploy and verify the backward-compatible vocabulary backend before distributing the extension change. The unchanged live backend is unverified and may ignore the new fields.
+- Verify old-client requests, disabled/empty vocabulary omission and enabled `keyterm` forwarding; distinguish mocked serialization coverage from live provider behavior and do not promise recognition improvements.
+- Coordinate `PRIVACY.md`, `site/privacy.html`, Dashboard disclosures and accurate popup assets with the approved release. Vocabulary is saved locally, sent only with separate opt-in, and clearable; no new permission is required.
+- Run the complete automated suite before release preparation. Do not deploy, publish, upload a Store package or alter infrastructure without explicit approval.
+
 ## Package
 
 - [ ] Run all backend and extension checks.

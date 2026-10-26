@@ -82,7 +82,29 @@ The optional multipart `language` field controls written formatting:
 - A supported explicit language sends its code with `format=true` to guide written formatting for numbers, currencies, and units.
 - An unsupported value returns a safe `400` response before xAI is called.
 
-Deploy the backward-compatible backend before distributing extension `0.1.6`. Verify one transcription from the published `0.1.5` extension, then test English, Automatic, and one explicit non-English language from the `0.1.6` package.
+Historical language-formatting rollout (`0.1.6`): the backward-compatible backend needed to precede the extension, with checks of the older `0.1.5` request and the new English, Automatic and explicit-language requests. This is not a new deployment instruction.
+
+### Optional vocabulary (unpublished)
+
+The new multipart fields are `vocabulary_enabled=true` and `vocabulary`, a JSON array of user-entered
+terms. Disabled or empty extension settings omit both fields. Missing or false consent ignores
+vocabulary data, preserving existing clients' requests. An enabled value must be valid JSON no
+longer than 64,000 characters, with at most 100 raw entries; each term must be a string of at most
+50 Unicode code points after trimming and NFC normalization. Case-insensitive duplicates are removed.
+Invalid enabled input receives a safe error before provider processing; terms must never appear
+in application logs or error details.
+
+The backend passes validated terms as repeated `keyterm` fields to the existing `/v1/stt` endpoint.
+It does not persist vocabulary, extract terms from audio/transcripts or select a new model: the
+request continues to omit `model` and use the provider default. xAI's [REST request documentation](https://docs.x.ai/developers/model-capabilities/audio/speech-to-text#request-body)
+documents keyterm support. Live provider behavior and recognition accuracy remain unverified;
+local tests verify validation and actual multipart serialization without credentials or paid calls.
+
+The production backend is unchanged and its handling of these new fields is unverified; older
+versions may silently ignore them. A future approved release must deploy and verify this
+backward-compatible backend before distributing the vocabulary-enabled extension, coordinate
+privacy disclosures, and retain all six open release gates. This documentation does not authorize
+deployment, publication, infrastructure or secret changes.
 
 Run backend tests:
 
@@ -136,7 +158,7 @@ for an approved deployment. Restarting resets the allowance; it is not a durable
 The server uses only Uvicorn's resolved client address for per-client limits. Export
 `FORWARDED_ALLOW_IPS` with verified proxy IPs/networks; never use `*`. Until the proxy is verified,
 clients behind it may share a quota. Docker runs one worker with access logging disabled;
-application request IDs and latency are logged without audio/transcript/field contents.
+application request IDs and latency are logged without audio/transcript/vocabulary/field contents.
 
 Actual upload bytes are bounded before multipart parsing, with limited concurrency and a
 15-second upload timeout. The parser may spool uploads over 1 MiB to temporary files, which are
