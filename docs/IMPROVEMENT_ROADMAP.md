@@ -278,3 +278,28 @@ The original 10-second preference was restored and its saved value verified; Eng
 was preserved. No message was sent, audio/transcripts were not saved in test records, and no source
 code changed for these checks. The six release gates, full manual acceptance and pilot remain open;
 no production or Phase 4 work.
+
+### Enlarged layout and screen-reader preparation — Partially tested
+
+On 2026-10-25, the agent exercised actual Chrome page zoom in the L2 ChatGPT composer at 200%
+(600×456 CSS viewport) and 400% (300×228). Idle and recording controls, timing and activity stayed
+within the viewport. At 400%, browser-generated keyboard events reached microphone → Stop →
+Discard, and Space discarded without changing the fixture. The 200% trial used a mouse Discard
+after checking the first two Tab stops. These were brief installed-extension microphone captures,
+not speech/provider completion trials. The recording panel overlaps part of the composer at 400%,
+so enlarged-layout acceptance is partial despite reachable controls. Original 100% zoom restored.
+
+Gmail fullscreen compose at 200% exposed an idle control within the viewport. The capture attempt
+then encountered a browser-control timeout and an unresponsive page, with conflicting accessibility
+and screenshot states. Recording/cancellation behavior could not be reliably established for this
+attempt. No source cause was identified; the result is **Blocked/inconclusive**, not a pass or a
+confirmed extension defect. Zoom was restored to 100%; the stalled debugging connection/tab were
+closed and Gmail recovered in a fresh tab. A targeted draft search found no remaining layout fixture.
+
+Two new mocked-browser regressions cover 300×228 recording/recovery bounds (including vertical
+fit and clipboard failure), unobstructed control centers, keyboard focus and live-region semantics.
+Full validation: **295 passed, zero failures/skips** — 54 unit, 125 browser (104 mocked, 21 unpacked
+synthetic), 95 backend and 21 website; package check-only and whitespace checks passed. Application
+source is unchanged. Real VoiceOver spoken-output verification remains **Pending**; a short listening
+handoff was prepared. Semantics and mocks do not establish what a screen reader announces.
+All six release gates remain open; no deployment, publication, infrastructure or Phase 4 work.

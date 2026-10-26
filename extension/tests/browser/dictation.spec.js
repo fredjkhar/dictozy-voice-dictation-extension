@@ -2103,6 +2103,108 @@ test("compact feedback and recovery remain visible with reduced motion on a narr
   await page.screenshot({ path: testInfo.outputPath("recovery-narrow.png") });
 });
 
+// This models the CSS viewport seen at 400% Chrome zoom on the inspected
+// display. Chrome/media/provider are mocked; this is not a VoiceOver test.
+async function expectCompactBounds(locator, viewport = { width: 300, height: 228 }) {
+  await expect(locator).toBeVisible();
+  const bounds = await locator.boundingBox();
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height);
+}
+
+async function expectCompactControl(locator) {
+  await expectCompactBounds(locator);
+  expect(await locator.evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    return element.contains(document.elementFromPoint(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2));
+  })).toBe(true);
+}
+
+test("300x228 viewport keeps recording controls visible and keyboard reachable with restrained announcements", async ({ page }) => {
+  await page.setViewportSize({ width: 300, height: 228 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await loadContentScript(page);
+  const field = page.locator("#plainTextarea");
+  await field.fill("Keep this text.");
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+  await page.waitForTimeout(250); // Include the normal recording safety checks.
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+  const controls = page.getByRole("group", { name: "Dictation controls", exact: true });
+  const stop = page.getByRole("button", { name: "Stop recording", exact: true });
+  const discard = page.getByRole("button", { name: "Discard recording", exact: true });
+  await expectCompactBounds(controls);
+  for (const control of [page.locator(MIC_BUTTON), stop, discard]) await expectCompactControl(control);
+  await expect(page.locator(STATUS_MESSAGE)).toHaveAttribute("role", "status");
+  await expect(page.locator(STATUS_MESSAGE)).toHaveAttribute("aria-live", "polite");
+  await expect(page.locator(STATUS_MESSAGE)).toHaveAttribute("aria-atomic", "true");
+  await expect(page.locator(".voice-dictation-timing")).toHaveAttribute("aria-live", "off");
+  await expect(page.locator(".voice-dictation-activity")).toHaveAttribute("aria-live", "off");
+  expect(await page.locator(MIC_BUTTON).evaluate((element) => getComputedStyle(element).transitionDuration)).toBe("0s");
+  await expect(field).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator(MIC_BUTTON)).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(stop).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(discard).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(stop).toBeFocused();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Space");
+  await expect(field).toBeFocused();
+  await expect(field).toHaveValue("Keep this text.");
+  expect(await page.evaluate(() => window.__dictozyTest.requests.length)).toBe(0);
+});
+
+test("300x228 viewport keeps recovery and clipboard failure controls visible and keyboard reachable", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await loadContentScript(page);
+  const field = await focusFirstTextField(page);
+  await page.evaluate(() => window.__dictozyTest.queueResponse({}, { defer: true }));
+  await recordAndStop(page);
+  await waitForRequestCount(page, 1);
+  await field.fill("Keep these edits");
+  await resolveLatestTranscript(page);
+  // Reflow an existing result as a user increases zoom after dictation.
+  await page.setViewportSize({ width: 300, height: 228 });
+  const panel = page.getByRole("region", { name: "Transcript recovery", exact: true });
+  const copy = page.getByRole("button", { name: "Copy transcript", exact: true });
+  const discard = page.getByRole("button", { name: "Discard transcript", exact: true });
+  await expectCompactBounds(panel);
+  await expectCompactControl(copy);
+  await expectCompactControl(discard);
+  const announcement = page.locator(".voice-dictation-announcement");
+  await expect(announcement).toHaveAttribute("role", "status");
+  await expect(announcement).toHaveAttribute("aria-live", "polite");
+  await expect(announcement).toHaveAttribute("aria-atomic", "true");
+  await expect(announcement).toContainText("The field changed");
+  expect(await panel.getAttribute("aria-live")).toBeNull();
+  expect(await page.locator("html").innerHTML()).not.toContain("private dictated result");
+  await page.evaluate(() => Object.defineProperty(navigator, "clipboard", {
+    configurable: true, value: { writeText: async () => { throw new Error("fixture denial"); } },
+  }));
+  await copy.focus();
+  await page.keyboard.press("Space");
+  await expect(panel).toContainText("Clipboard unavailable");
+  await expect(announcement).toContainText("Clipboard unavailable");
+  await expectCompactBounds(panel);
+  await expectCompactControl(copy);
+  await expectCompactControl(discard);
+  await expect(copy).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(discard).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(copy).toBeFocused();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await expect(panel).toHaveCount(0);
+  await expect(field).toBeFocused();
+  await expect(field).toHaveValue("Keep these edits");
+});
+
 test("popup practice is explicitly opened and can be revisited without changing preferences", async ({ page }) => {
   await page.goto("/extension/popup.html");
   await expect(page.locator("#status")).toHaveText("Ready.");

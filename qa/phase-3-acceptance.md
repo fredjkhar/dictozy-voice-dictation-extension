@@ -142,6 +142,24 @@ expected cancellation/recovery scenarios separate from ordinary completion-rate 
   visible focus, 200%/400% zoom and reduced motion. Verify narrow layouts do not cover the editor
   or hide Stop/Discard. Record screen reader name/version; leave this pending if none was used.
 
+For the enlarged-layout check, use Chrome's actual page-zoom control and verify its displayed
+percentage. On the inspected L2 display, 200% yielded a 600×456 CSS viewport and 400% yielded
+300×228. A resized mocked viewport is separate evidence. Inspect both horizontal and vertical
+bounds, readable timing, button hit targets and overlap with editor content. A control fitting the
+viewport does not establish an unobscured editor. Test recording and recovery/clipboard errors,
+not only idle controls. Restore each site's original zoom. If the editor or automation connection
+stalls, stop the trial and mark it inconclusive rather than interpreting stale state as a pass.
+
+For a minimal VoiceOver listening handoff, first prepare an unchanged disposable fixture with
+recording idle. Record whether VoiceOver was already enabled and preserve that preference. Once
+the listener is ready, focus the field/microphone, traverse the named controls, briefly record and
+Discard, and ask whether labels, Recording and Discard were intelligible without repeated countdown
+speech. The listener need not speak. This short check covers only those states: separately verify
+processing, success/error, recovery/clipboard failure and expiry announcements in a controlled
+trial. Record actually heard output; an accessibility-tree snapshot cannot replace it. Apple's
+[VoiceOver on/off instructions](https://support.apple.com/en-gb/guide/voiceover/vo2682/mac) describe
+Command-F5; restore the initial setting afterward.
+
 ## Pilot measurements without private content
 
 For an initial pilot, propose **20 ordinary trials in each of the three priority applications**

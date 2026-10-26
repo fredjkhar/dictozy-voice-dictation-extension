@@ -8,8 +8,8 @@ Implementation commits: `066833e` (editor focus/placement and regressions),
 **Local implementation and automated validation are complete. Full live-application and physical
 microphone acceptance are incomplete. This is not a production-readiness or compatibility certification.**
 The user chose to leave login-dependent editor checks pending. Phase 4 has not begun.
-The initial report below is followed by an acceptance update with **293 passing automated tests**
-and separately labeled human/agent evidence.
+The initial report below is followed by recovery and accessibility updates; the latest full
+automated validation is **295 passing tests**, with separately labeled human/agent evidence.
 
 ## Outcome
 
@@ -291,8 +291,43 @@ limited completion checks do not establish recognition accuracy, a pilot complet
 editor compatibility or readiness to raise duration limits. The interrupted trial is kept separate.
 
 This follow-up changes documentation only: roadmap, compatibility matrix, this report and the
-manual protocol. The latest full automated result remains **293 passed, zero failures/skips** from
-the recovery-fix validation; no new automated test run is claimed for these manual trials.
+manual protocol. At this duration-check checkpoint, the latest full automated result was
+**293 passed, zero failures/skips** from the recovery-fix validation; no new automated test run is
+claimed for those manual trials.
 The product remains at **10 seconds default / 30 seconds maximum**. All six release gates remain
 open, including fuller human acceptance, screen-reader/zoom work, login-dependent editor checks
 and pilot evaluation. No deployment, publication, infrastructure change or Phase 4 work.
+
+## Enlarged-layout and accessibility follow-up — 2026-10-25
+
+Actual L2 Chrome zoom was used for the ChatGPT checks below. They were short installed-extension
+microphone captures followed by Discard, with no requested speech, manual Stop or Send. They are
+not transcription/recognition tests. Network suppression and physical device release were not
+independently traced. The existing 10-second setting and original fixture were preserved.
+
+| Check | Result / evidence |
+|---|---|
+| ChatGPT 200% page zoom | Idle mic and recording mic/panel/timer/activity/Stop/Discard all fit the 600×456 CSS viewport. Visual inspection confirmed readable controls. Tab reached microphone then Stop; mouse Discard returned to idle with the fixture unchanged. Full keyboard Discard was tested separately at 400% |
+| ChatGPT 400% page zoom | All recording controls fit the 300×228 CSS viewport. Tab reached microphone → Stop → Discard; Space returned to idle and preserved the fixture. **Partial layout acceptance:** the panel obscures part of the composer even though controls remain readable/reachable. This does not satisfy the protocol's broader no-editor-occlusion check |
+| Gmail fullscreen compose, 200% | Idle mic was within the 600×456 viewport. The recording attempt became **Blocked/inconclusive**: browser control timed out on `Page.getFrameTree`; native accessibility and screenshot states disagreed, and the page stopped responding. Discard was attempted but its effect could not be reliably verified. No recording/cancellation pass is claimed, and no extension-specific cause was established |
+| Restore test environment | ChatGPT restored to 100%, idle with original fixture. Gmail restored to 100%; ended the stalled debugging connection and closed the unresponsive tab, leaving a working fresh Gmail tab. A search restricted to drafts and the unique harmless layout phrase found no matching draft. Existing unrelated drafts were not edited. No message sent |
+| Actual VoiceOver spoken output | **Pending.** Listening handoff prepared with the user only needing to report what is spoken. No VoiceOver pass is inferred from accessible names, ARIA attributes or automated keyboard input |
+
+`extension/tests/browser/dictation.spec.js` adds two targeted tests at 300×228 CSS pixels. They
+check both axes of recording/recovery panel fit, center hit targets, keyboard traversal/Discard,
+focus restoration, clipboard-denial reflow, transcript absence from the DOM, reduced-motion styling
+and polite/atomic status versus non-live timer/activity semantics. Both passed; no application
+source fix was needed for these local fixtures. These are **mocked_browser** tests, not actual
+Chrome zoom, Gmail, physical keyboard or VoiceOver evidence.
+
+Full rerun: **295 passed, zero failed/skipped** — 54 extension unit, 125 browser (104 mocked,
+21 unpacked MV3 with synthetic audio/stubbed transcription), 95 backend, 21 website. Browser ran
+under `caffeinate -i`; website followed sequentially. Package check-only and `git diff --check`
+passed. Runtime/dependencies/permissions/defaults/backend were unchanged. No audio or returned
+transcript was saved in the test record.
+
+Remaining work: actual VoiceOver labels/announcements and speech frequency; processing/success/error
+and recovery announcements; live recovery/processing layout at enlarged zoom; ChatGPT composer
+occlusion at 400%; a fresh diagnostic Gmail run without the stalled control connection; fuller
+editor acceptance and pilot measurements. The six release gates remain open. No deployment,
+publication, infrastructure change or Phase 4 work occurred.

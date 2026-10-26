@@ -168,9 +168,26 @@ audio were used in these trials. Evidence stores only results/timing, not audio 
 
 The 10s/30s completion checks now have limited live evidence. They do not complete the broader
 human checklist or pilot and do not justify changing duration limits. Default 10s / maximum 30s
-remain unchanged. Full physical screen-reader, enlarged recording layouts and other editor/pilot
-checks remain pending. The prior automated total remains 293 passing tests; these manual checks
-are separate, not added to that count.
+remain unchanged. At this duration-check checkpoint, full physical screen-reader, enlarged recording
+layouts and other editor/pilot checks were pending. The automated total then was 293 passing tests;
+those manual checks are separate, not added to that count. See the enlarged-layout follow-up below.
+
+## Enlarged-layout follow-up — 2026-10-25
+
+| Check | Method | Result / limits |
+|---|---|---|
+| ChatGPT 200% recording controls | L2 installed extension, brief microphone capture then Discard; no speech/provider completion trial | Mic/panel/timing/activity/Stop/Discard within 600×456 CSS viewport; controls visually readable. Tab reached microphone and Stop; mouse Discard preserved fixture and returned to idle |
+| ChatGPT 400% recording controls | L2 actual Chrome zoom and browser-generated keyboard input | Controls within 300×228; Tab microphone → Stop → Discard, then Space, preserved fixture and returned to idle. **Partial:** panel overlaps composer content, so the broader no-editor-occlusion check remains open |
+| Gmail fullscreen compose, 200% | L2 actual Chrome zoom | Idle mic within viewport. Recording attempt blocked/inconclusive after browser-control timeout and unresponsive page; AX and screenshot states conflicted. Discard attempted; cancellation/recording results unverified. No confirmed extension cause |
+| Restore browser environment | L2 native Chrome UI | Original 100% zoom restored for both sites; ChatGPT original fixture intact/idle. Recovered Gmail in a fresh tab and closed stalled tab/connection. Search for the unique layout fixture in drafts returned no matches. No Send |
+| 300×228 recording/recovery/clipboard error | `mocked_browser`, two new regressions | Passed panel bounds on both axes, control hit targets, keyboard navigation/focus, reduced-motion styles and live-region attributes. Actual enlarged live recovery/processing remains pending |
+| VoiceOver speech | Human listening required | Pending; prepared a short handoff. Accessible names and ARIA inspection do not prove spoken announcements or countdown silence |
+
+No network trace or physical microphone-release measurement was made for the enlarged-layout
+captures. Do not infer upload suppression from UI-only Discard. The real zoom tests and the mocked
+viewport tests remain separate. Full regression rerun: **295 passed, zero failed/skipped** (54 unit,
+125 browser = 104 mocked + 21 unpacked/synthetic, 95 backend, 21 website). Package and whitespace
+checks passed. No application source change was made for this follow-up.
 
 ## Release status
 
