@@ -15,7 +15,7 @@ are historical and MUST NOT be used to upload this changed extension as 0.1.12.
 - The public Store listing was observed at 0.1.12. The developer dashboard required Google sign-in;
   unused-version and active-draft status remain UNVERIFIED. Check them before any upload and do not overwrite a draft.
 
-## Backend evidence already obtained — do not repeat paid tests
+## Backend evidence — corrected vocabulary verification
 
 The approved Render deploy `dep-dbg0udmk1f9s73b0qqqg` went live at
 2026-10-27T02:41:29Z, using the exact accepted SHA above. The service remains
@@ -31,17 +31,56 @@ The owner confirmed a $5 prepaid xAI balance, automatic top-up Off, invoiced all
 and no other applications sharing the credits. These are owner-confirmed billing facts,
 not an independent account inspection or a measured post-smoke remaining balance.
 
-Health returned 200. Exactly two authorized public-audio transcription requests returned
-200 and nonempty transcripts, with no further requests required for preparation:
+Health returned 200. The initial rollout sent two authorized public-audio requests which
+returned 200 and nonempty transcripts. **Correction:** the second request sent `keyterm`
+directly to Dictozy. Its backend ignores vocabulary unless `vocabulary_enabled=true` and a
+JSON `vocabulary` list are supplied. That initial second result verified ordinary
+transcription only; it did NOT verify enabled vocabulary.
 
-| Request | Request ID | Application latency |
-|---|---|---:|
-| Legacy file + language | `dc2472db71344ee4a74a413583c41467` | 542.07 ms |
-| Same file + language + keyterm | `3eb5a4ea981441238e1cfac50422c05e` | 701.44 ms |
+| Request | Request ID | Application latency | Evidence scope |
+|---|---|---:|---|
+| Legacy file + language | `dc2472db71344ee4a74a413583c41467` | 542.07 ms | Ordinary transcription |
+| Same file + language + incorrect direct keyterm | `3eb5a4ea981441238e1cfac50422c05e` | 701.44 ms | Ordinary transcription only; not a vocabulary test |
+| Corrected vocabulary-enabled request, separately authorized Part A | `dictozy-vocab-corrected-20261027-a1` | 582.88 ms | Correct live vocabulary-enabled request contract |
 
-Their inspected application log entries contained request ID, route, status and latency,
-not audio, transcript or vocabulary content. These two observations are not a latency
-benchmark or evidence of improved recognition accuracy.
+### Authorized Part A check — October 27, 2026
+
+The owner explicitly authorized one additional short paid request to correct the earlier
+verification mistake. Exactly one additional POST was sent at `2026-10-27T16:57:45.693Z`,
+without retries or redirects, to the existing `/api/transcribe` endpoint. The fixture was
+the same public `english-tts.mp3`, `audio/mpeg`, 82,754 bytes, from
+`https://donatello.studio/gallery/voice/english-tts.mp3`. No private recording was used.
+
+The verified multipart fields were:
+
+```text
+file=(english-tts.mp3, audio/mpeg)
+language=en
+vocabulary_enabled=true
+vocabulary=["Dictozy"]
+```
+
+The request carried `X-Request-ID: dictozy-vocab-corrected-20261027-a1`; no direct `keyterm`
+field was submitted to Dictozy. HTTP status was **200** and the response echoed that request
+ID. The JSON transcript was a nonempty string (64 characters); its contents were not
+printed or saved. This brings these explicitly authorized rollout checks to three
+transcription POSTs in total, not counting ordinary user traffic.
+
+An independent Render connector lookup found one matching application log entry at
+`2026-10-27T16:57:46.373654593Z`, instance `srv-d8mr1eurnols73d01c8g-mt2pv`, with status 200
+and `latency_ms=582.88`. Its message contained only the request event, ID, method, route,
+status and latency, not audio, transcript contents, vocabulary terms or credentials.
+The connector also reconfirmed that the approved exact backend SHA remained live.
+
+The deployed source validates the opt-in list and forwards it to xAI as repeated `keyterm`
+fields; the corrected live request exercised that code path. The test does not inspect
+xAI's internal use of hints, establish improved recognition accuracy, measure overall
+reliability, or constitute a latency benchmark. It does not prove universal provider or
+infrastructure log retention behavior. No further paid request is authorized by this record.
+
+Part A changed no runtime code, production configuration, billing settings, deployment,
+public policy or Store listing. The release evidence and PR description are corrected;
+publication and merge approval remain separate.
 
 ## Candidate validation and artifacts
 
@@ -102,7 +141,7 @@ Keep site `softwareVersion` at the last observed published version until publica
 | Aggregate usage protection | Local allowance deployed; provider spending settings owner-confirmed as above. No durable shared store added. |
 | Physical microphone/installed package | Existing scoped Gmail/ChatGPT evidence retained. No repeated broad manual acceptance required; final published-package identity smoke remains separate. |
 | Wider editor compatibility | Optional follow-up; untested apps remain unverified. |
-| Production deployment/logging | Approved SHA live; health, two provider paths and their safe application logs verified. |
+| Production deployment/logging | Approved SHA live; health and legacy transcription verified. Corrected vocabulary-enabled request and matching safe application log verified in separately authorized Part A. Earlier direct-keyterm request is not vocabulary evidence. |
 | Privacy publication | OPEN: prepared files remain unpublished; Dashboard declarations and coordinated public policy must be resolved before publication. |
 
 ## Publication hold and safe operations
