@@ -210,3 +210,14 @@
 .voice-dictation-announcement { position: fixed; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .voice-dictation-recovery button[aria-disabled="true"] { cursor: wait; }
 .voice-dictation-status, .voice-dictation-recovery { box-sizing: border-box; }
+
+/* Wider system fonts must not add a fourth compact feedback row. Keep the
+   full activity text in the DOM; only its narrow visual copy is ellipsized. */
+@media (max-height: 320px) {
+  .voice-dictation-status--recording .voice-dictation-activity {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

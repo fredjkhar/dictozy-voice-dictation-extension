@@ -15,6 +15,19 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE = "c8fda6c7d4884297275e1c34eb418fc1c18714f9"
 VERSION = "0.1.13"
 OUTPUT = ROOT / "dist" / f"release-{VERSION}"
+# The sole runtime correction permitted beyond the accepted base. The existing
+# 300x228 regression failed in Linux CI before this font-width containment fix.
+COMPACT_CSS_FIX = b'''\n/* Wider system fonts must not add a fourth compact feedback row. Keep the
+   full activity text in the DOM; only its narrow visual copy is ellipsized. */
+@media (max-height: 320px) {
+  .voice-dictation-status--recording .voice-dictation-activity {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+'''
 
 
 def git(*args: str) -> bytes:
@@ -48,6 +61,8 @@ def main() -> None:
             candidate = json.loads(source)
             candidate["version"] = old_manifest["version"]
             require(candidate == old_manifest, "Manifest changed beyond its version")
+        elif name == "content.css":
+            require(source == accepted + COMPACT_CSS_FIX, "Unexpected CSS change beyond the compact activity fix")
         else:
             require(source == accepted, f"Unreviewed extension runtime change: {name}")
 
@@ -69,6 +84,7 @@ def main() -> None:
         "version": VERSION,
         "source_commit": source_commit,
         "accepted_runtime_commit": BASE,
+        "runtime_remediation": {"content.css": "Compact activity label nowrap/ellipsis; unchanged regression retained"},
         "package": archive_path.name,
         "package_sha256": archive_sha,
         "package_file_count": len(entries),
@@ -83,12 +99,14 @@ def main() -> None:
         ("PRIVACY.md", "PRIVACY-prepared.md"),
         ("site/privacy.html", "privacy-prepared.html"),
         ("store/release-0.1.13.md", "release-0.1.13.md"),
+        ("store/release-0.1.13-remediation.md", "release-0.1.13-remediation.md"),
     ):
         shutil.copyfile(ROOT / source, review / destination)
     (OUTPUT / "README.txt").write_text(
         "DICTOZY 0.1.13: REVIEW ONLY. Nothing was submitted or published.\n"
         "The GitHub artifact is an outer review bundle, NOT the extension ZIP.\n"
         "The inner dictozy-v0.1.13.zip is the candidate; verify SHA256SUMS.\n"
+        "Includes the documented compact-viewport CSS correction beyond the accepted base.\n"
         "Authenticated Store draft/version checks, asset review, coordinated privacy\n"
         "publication, and separate release approval remain required.\n"
         "Do not deploy this branch to Render or enable auto-deploy from older main.\n"
