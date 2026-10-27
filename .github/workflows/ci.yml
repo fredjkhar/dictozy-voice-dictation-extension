@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   backend:
     name: Backend Tests
@@ -12,6 +15,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -38,6 +43,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -89,6 +96,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -116,3 +125,28 @@ jobs:
 
       - name: Run website browser tests
         run: npm run test:site
+
+  release-candidate:
+    name: Review-only Release Package
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'codex/release-')
+    needs: [backend, extension, website]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact tested candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Build and byte-verify review bundle
+        run: python3 scripts/build_release_review.py
+      - name: Upload review artifact without publishing
+        uses: actions/upload-artifact@v4
+        with:
+          name: dictozy-review-${{ github.event.pull_request.head.sha }}
+          path: dist/release-0.1.13/
+          if-no-files-found: error
+          retention-days: 30
