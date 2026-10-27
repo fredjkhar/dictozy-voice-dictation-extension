@@ -216,6 +216,7 @@
     return Object.freeze({
       end: selection.end,
       start: selection.start,
+      value: element.value,
     });
   }
 
@@ -263,7 +264,11 @@
     }
   }
 
-  function insertIntoFormField(element, text, capturedSelection = null) {
+  function insertIntoFormField(element, text, capturedSelection = null, canInsert = () => true) {
+    const originalValue = element.value;
+    if (!canInsert() || (capturedSelection && capturedSelection.value !== originalValue)) {
+      return false;
+    }
     const { end, start } = normalizeFormFieldSelection(element, capturedSelection);
     const before = element.value.slice(0, start);
     const after = element.value.slice(end);
@@ -278,6 +283,14 @@
 
     if (!dispatchBeforeInputEvent(element, nextText)) {
       return false;
+    }
+
+    // Page/framework handlers can synchronously edit, disable, or move focus.
+    if (element.value !== originalValue || !canInsert()) {
+      return false;
+    }
+    if (selectionRestored) {
+      setFormFieldSelection(element, start, end);
     }
 
     const previousValue = element.value;

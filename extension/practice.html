@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Try dictation · Dictozy</title>
+  <link rel="stylesheet" href="practice.css">
+  <link rel="stylesheet" href="content.css">
+</head>
+<body>
+  <main>
+    <header><img src="icons/icon-48.png" width="40" height="40" alt=""><span>DICTOZY · QUICK START</span></header>
+    <h1>Your first dictation</h1>
+    <p class="intro">Say a short sentence. See it appear where you write.</p>
+    <ol>
+      <li>Select <strong>Try dictation</strong> to focus the practice field.</li>
+      <li>Select the microphone beside it, allow microphone access if asked, and speak.</li>
+      <li>Select <strong>Stop</strong> to insert your words, or <strong>Discard</strong> to cancel.</li>
+    </ol>
+    <button id="tryDictation" type="button">Try dictation</button>
+    <p id="practiceAvailability" role="status">Checking Dictozy settings…</p>
+    <label for="practiceField">Practice field</label>
+    <textarea id="practiceField" rows="4" autocomplete="off" spellcheck="false" aria-describedby="practiceHint" placeholder="Try saying: Remember to water the plants."></textarea>
+    <div id="practiceControls"></div>
+    <p id="practiceHint">Your words appear here. You can edit them or use your usual Undo shortcut. Nothing is submitted.</p>
+    <section aria-labelledby="shortcutHeading">
+      <h2 id="shortcutHeading">Prefer the keyboard?</h2>
+      <p>Your shortcut: <kbd id="shortcutValue">Loading</kbd>. On supported webpages it starts or stops recording, and cancels a pending transcription.</p>
+      <p>You can also Tab to the microphone and press Enter or Space. Tab to Stop or Discard during recording.</p>
+      <button id="manageShortcut" class="secondary" type="button">Manage keyboard shortcut</button>
+    </section>
+    <section aria-labelledby="privacyHeading">
+      <h2 id="privacyHeading">You control the microphone</h2>
+      <p>Opening this page or selecting Try dictation does not record. Recording starts only after you activate the microphone or assigned shortcut. The default limit is 10 seconds; you can choose up to 30 seconds in the popup.</p>
+      <p>Audio goes to Dictozy’s backend and xAI for transcription. Existing field text is not sent. There is no saved recording or transcript history; the backend may use temporary upload files. A result that cannot be inserted safely can be copied for 60 seconds.</p>
+      <p>Use a non-sensitive phrase for practice. Returning to another tab stops recording and clears temporary recovery.</p>
+      <a href="https://dictozy.com/privacy.html" target="_blank" rel="noopener noreferrer">Read the privacy policy</a>
+    </section>
+    <details>
+      <summary>Microphone or dictation not working?</summary>
+      <p>Check that Dictozy is on in the popup. Allow microphone access when prompted, and check Chrome and your operating system’s microphone settings if access is blocked. Make sure the correct microphone is connected.</p>
+      <p>Websites request their own microphone permission and some block recording. If practice works but a website does not, try a normal text field on another HTTPS page. Switching tabs or moving to an unsafe field cancels recording.</p>
+      <p>If the field changes while a result is pending, Dictozy preserves your edits and offers Copy or Discard. If Copy fails, keep this page active and try again before the result expires.</p>
+    </details>
+    <footer><a href="https://dictozy.com/support.html" target="_blank" rel="noopener noreferrer">Help and troubleshooting</a><span>Optional · Reopen anytime from the Dictozy popup</span></footer>
+  </main>
+  <script src="dom-utils.js"></script>
+  <script src="dictation-lifecycle.js"></script>
+  <script src="site-preferences.js"></script>
+  <script src="content.js"></script>
+  <script src="practice.js"></script>
+</body>
+</html>

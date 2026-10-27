@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.11` is currently published, and `0.1.12` is an unreleased reliability candidate. Do not replace or alter an active Store draft.
+Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.12` is published, verified from public Store metadata on 2026-10-17 (Store update date September 7, 2026). Phase 1 branch fixes are not part of that publication. Do not replace or alter an active Store draft.
 
 ## Dashboard Product Details
 
@@ -124,7 +124,7 @@ Dictozy lets users dictate short text into supported web fields by recording aud
 `storage`:
 
 ```text
-Stores the enabled state, recording-duration preference, language-formatting preference, and exact origins the user explicitly disables locally in Chrome. No cloud synchronization is used by the extension, and the production backend endpoint is not a stored user setting.
+Stores the enabled state, recording-duration preference, language-formatting preference, explicitly disabled origins, and optional user-entered vocabulary with a separate sharing preference locally in Chrome. No cloud synchronization is used by the extension. Vocabulary is sent with dictation only when explicitly enabled; the production backend endpoint is not a stored user setting.
 ```
 
 Site access on HTTPS pages:
@@ -149,6 +149,10 @@ Allows the Manifest V3 service worker to send user-triggered audio only to https
 
 ## Privacy Dashboard Draft
 
+The vocabulary additions below are prepared for a future approved release, not the published
+extension. Coordinate the backend, extension, policy and Dashboard disclosures before publication;
+do not change the live listing or an active Store draft as part of local development.
+
 Remote code:
 
 ```text
@@ -160,6 +164,7 @@ Data handled:
 - User-provided audio recorded after a visible click or assigned shortcut.
 - Returned transcript text.
 - Extension settings stored locally, including the selected language-formatting preference.
+- Optional user-entered personal-vocabulary terms stored locally and sent with dictation to the backend and xAI only after separate opt-in. Saving does not enable sharing; Clear removes the local list and turns sharing off.
 - Exact origins the user explicitly disables, stored only in local extension storage.
 - The selected language code sent with a user-triggered audio request.
 - Focused field metadata inspected locally for compatibility and safety checks.
@@ -178,6 +183,7 @@ Dashboard selections require manual review rather than copy/paste:
 - Declare the current Dashboard categories that cover user-provided audio, transcripts, personal communications, user-generated content, and form data.
 - Certify that data is used only for the disclosed single purpose, is not sold, is not used for advertising or lending, and is transferred only as needed to provide transcription.
 - Keep the privacy policy URL and Limited Use certifications current.
+- Include opted-in vocabulary in the applicable user-generated-content/personal-information disclosures. Terms may contain names or other personal information; do not claim all local settings remain on-device when vocabulary sharing is enabled.
 
 ## Reviewer Test Instructions
 
@@ -200,7 +206,7 @@ No test account or credentials are required.
 
 Use the existing Dashboard item for extension ID `folpeencabfejhjokmldikaelonphmma`.
 
-Phase 38 changes only the release note in the Chrome Web Store listing. Confirm these existing values before submitting `0.1.12`:
+Historical Phase 38 submission notes for the now-published `0.1.12` release; retain these destinations for future approved updates:
 
 1. Homepage remains `https://dictozy.com/`.
 2. Privacy policy remains `https://dictozy.com/privacy.html`.
@@ -210,7 +216,7 @@ Phase 38 changes only the release note in the Chrome Web Store listing. Confirm 
 Fields and assets that remain unchanged:
 
 - Extension name, category, and language.
-- Published `0.1.11` package until the `0.1.12` update is reviewed and published.
+- Published `0.1.12` package until a future update is explicitly approved and published.
 - Store icon, dictation screenshot, and promotional tile.
 - Long description and short description, which remain accurate.
 - Published homepage, support, and privacy policy destinations.

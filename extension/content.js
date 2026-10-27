@@ -10,6 +10,7 @@
   const MAX_RECORDING_DURATION_MS = 30000;
   const MAX_AUDIO_UPLOAD_BYTES = 10 * 1024 * 1024;
   const TRANSCRIPTION_RESPONSE_TIMEOUT_MS = 55000;
+  const RECOVERY_LIFETIME_MS = 60000;
   const MIC_BUTTON_ICONS = Object.freeze({
     busy: `
       <svg class="voice-dictation-mic-icon voice-dictation-mic-icon--spin" aria-hidden="true" viewBox="0 0 24 24">
@@ -113,14 +114,24 @@
   let activeField = null;
   let activeTextRange = null;
   let micButton = null;
+  let micButtonPlacement = null;
   let statusBubble = null;
   let statusMessageElement = null;
   let statusDismissButton = null;
   let statusIsStandalone = false;
+  let recordingFeedback = null;
+  let timingLabel = null;
+  let activityLabel = null;
+  let recordingStartedAt = 0;
+  let recordingLimitMs = DEFAULT_RECORDING_DURATION_MS;
   let mediaRecorder = null;
   let recordingStream = null;
   let recordingSignalMonitor = null;
+  let recordingSignalResult = null;
   let recordingTimeoutId = null;
+  let recordingSafetyIntervalId = null;
+  let removeTrackListeners = null;
+  let removeRecordingFocusListener = null;
   let recordingAttempt = 0;
   let recordingTargetField = null;
   let recordingTargetSelection = null;
@@ -133,8 +144,14 @@
   let currentMicButtonState = "idle";
   let transcriptionTargetField = null;
   let transcriptionTargetSelection = null;
+  let recovery = null;
+  let recoveryElement = null;
+  let recoveryTimeoutId = null;
+  let announcementElement = null;
   const requestLifecycle = createRequestLifecycle();
   const currentOrigin = normalizeOrigin(window.location.origin);
+  const isPracticePage = window.location.protocol === "chrome-extension:" &&
+    window.location.host === chrome.runtime.id && window.location.pathname === "/practice.html";
 
   function isDictationEnabled() {
     return settingsLoaded && extensionEnabled && siteEnabled;
@@ -155,10 +172,16 @@
   }
 
   function getCurrentEditableField() {
-    const focused = document.activeElement;
+    let focused = document.activeElement;
 
-    if (focused?.shadowRoot?.activeElement) {
-      return getEditableField(focused.shadowRoot.activeElement);
+    if (micButton?.contains(focused) || statusBubble?.contains(focused)) {
+      return getUsableField(activeField);
+    }
+
+    // Focus is retargeted at each shadow host. Follow the active chain just as
+    // composedPath() does for field events, including nested open roots.
+    while (focused?.shadowRoot?.activeElement) {
+      focused = focused.shadowRoot.activeElement;
     }
 
     return getEditableField(focused);
@@ -175,9 +198,11 @@
       event.preventDefault();
     });
 
-    button.addEventListener("click", handleDictationToggle);
+    button.addEventListener("click", (event) => {
+      if (event.isTrusted) void handleDictationToggle();
+    });
 
-    document.documentElement.append(button);
+    (isPracticePage && document.querySelector("#practiceControls") || document.documentElement).append(button);
     return button;
   }
 
@@ -193,12 +218,14 @@
   function createStatusBubble() {
     const bubble = document.createElement("div");
     bubble.className = "voice-dictation-status";
-    bubble.setAttribute("role", "status");
-    bubble.setAttribute("aria-live", "polite");
+    bubble.setAttribute("role", "group");
+    bubble.setAttribute("aria-label", "Dictation controls");
     bubble.hidden = true;
 
     statusMessageElement = document.createElement("span");
     statusMessageElement.className = "voice-dictation-status__message";
+    // The visible copy remains readable; the persistent announcement region is
+    // the only live channel, independent of this bubble's show/hide lifecycle.
 
     statusDismissButton = document.createElement("button");
     statusDismissButton.type = "button";
@@ -212,8 +239,30 @@
     });
     statusDismissButton.addEventListener("click", dismissErrorState);
 
-    bubble.append(statusMessageElement, statusDismissButton);
-    document.documentElement.append(bubble);
+    recordingFeedback = document.createElement("div");
+    recordingFeedback.className = "voice-dictation-feedback";
+    recordingFeedback.hidden = true;
+    timingLabel = document.createElement("span");
+    timingLabel.className = "voice-dictation-timing";
+    timingLabel.setAttribute("aria-live", "off");
+    activityLabel = document.createElement("span");
+    activityLabel.className = "voice-dictation-activity";
+    activityLabel.setAttribute("aria-live", "off");
+    for (const [label, action] of [["Stop recording", stopRecording], ["Discard recording", discardRecording]]) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "voice-dictation-feedback__button";
+      button.textContent = label === "Stop recording" ? "Stop" : "Discard";
+      button.setAttribute("aria-label", label);
+      button.addEventListener("mousedown", (event) => event.preventDefault());
+      button.addEventListener("click", (event) => {
+        if (event.isTrusted && currentMicButtonState === "recording") action();
+      });
+      recordingFeedback.append(button);
+    }
+    recordingFeedback.prepend(timingLabel, activityLabel);
+    bubble.append(statusMessageElement, statusDismissButton, recordingFeedback);
+    (isPracticePage && document.querySelector("#practiceControls") || document.documentElement).append(bubble);
     return bubble;
   }
 
@@ -234,6 +283,7 @@
   }
 
   function hideMicButton({ forceStatus = false } = {}) {
+    if (recordingTargetField) cancelRecording();
     if (micButton) {
       micButton.hidden = true;
     }
@@ -243,11 +293,90 @@
     }
   }
 
+  function positionStatusBubble() {
+    if (!statusBubble || statusBubble.hidden || !micButton) return;
+    const rect = micButton.getBoundingClientRect();
+    const { width, height } = statusBubble.getBoundingClientRect();
+    const top = rect.bottom + height + 6 <= window.innerHeight - BUTTON_EDGE_OFFSET
+      ? rect.bottom + 6 : Math.max(BUTTON_EDGE_OFFSET, rect.top - height - 6);
+    const clamp = ([left, top]) => ({
+      left: Math.floor(Math.max(BUTTON_EDGE_OFFSET, Math.min(left, window.innerWidth - width - BUTTON_EDGE_OFFSET))),
+      top: Math.floor(Math.max(BUTTON_EDGE_OFFSET, Math.min(top, window.innerHeight - height - BUTTON_EDGE_OFFSET))),
+    });
+    let position = clamp([rect.left, top]);
+    if (currentMicButtonState === "recording" && recordingTargetField) {
+      const editor = recordingTargetField.getBoundingClientRect();
+      const clears = (point, bounds) => point.left + width + 6 <= bounds.left ||
+        point.left >= bounds.right + 6 || point.top + height + 6 <= bounds.top ||
+        point.top >= bounds.bottom + 6;
+      // Check the final, viewport-clamped rectangles. At high zoom, anchoring
+      // only to the mic can put the entire panel over the retained editor.
+      const candidates = [
+        [parseFloat(statusBubble.style.left), parseFloat(statusBubble.style.top)],
+        [rect.left, top], [rect.right + 6, rect.top], [rect.left - width - 6, rect.top],
+        ...[editor.left, editor.right - width, BUTTON_EDGE_OFFSET,
+          window.innerWidth - width - BUTTON_EDGE_OFFSET].flatMap(left => [
+          [left, editor.top - height - 6], [left, editor.bottom + 6],
+        ]),
+        [editor.left - width - 6, editor.top], [editor.right + 6, editor.top],
+      ].filter(point => point.every(Number.isFinite)).map(clamp);
+      // Retain a valid position across timer updates. If the editor fills the
+      // viewport, prioritize keeping the mic and explicit controls reachable.
+      position = candidates.find(point => clears(point, rect) && clears(point, editor)) ||
+        candidates.find(point => clears(point, rect)) || position;
+    }
+    statusBubble.style.top = `${position.top}px`;
+    statusBubble.style.left = `${position.left}px`;
+    statusBubble.style.right = "auto";
+  }
+
+  function updateRecordingFeedback() {
+    if (!recordingFeedback) return;
+    recordingFeedback.hidden = false;
+    const elapsed = Math.min(recordingLimitMs, Math.max(0, performance.now() - recordingStartedAt));
+    const text = `${Math.floor(elapsed / 1000)}s elapsed · ${Math.ceil((recordingLimitMs - elapsed) / 1000)}s left`;
+    if (timingLabel.textContent !== text) timingLabel.textContent = text;
+    const activity = recordingSignalMonitor?.getActivity?.();
+    const label = activity == null ? "Activity unavailable" : activity ? "Mic activity" : "Quiet";
+    if (activityLabel.textContent !== label) activityLabel.textContent = label;
+    if (activityLabel.dataset.active !== String(activity === true)) {
+      activityLabel.dataset.active = String(activity === true);
+    }
+    positionStatusBubble();
+  }
+
+  function handleRecordingTab(event) {
+    if (!event.isTrusted || event.defaultPrevented || event.key !== "Tab" ||
+        event.ctrlKey || event.altKey || event.metaKey || currentMicButtonState !== "recording" ||
+        !isRecordingContextSafe() || !hasVisibleRecordingControl()) return;
+    // Controls are appended outside the site's editor. While recording, make
+    // them reachable without crossing unrelated fields (which safely cancels).
+    // Honor editor-owned Tab handlers, and never trap focus in these controls.
+    if (!event.shiftKey && getEditableFieldFromEvent(event) === recordingTargetField) {
+      event.preventDefault();
+      micButton.focus();
+    } else if (event.shiftKey && micButton.contains(event.target)) {
+      event.preventDefault();
+      recordingTargetField.focus();
+    }
+  }
+
+  function discardRecording() {
+    const field = getUsableField(recordingTargetField);
+    // Restore focus before removing keyboard-focused controls, without restoring
+    // an old range or changing the user's current selection.
+    field?.focus();
+    cancelRecording();
+    flashMicButtonState("idle", "Recording discarded");
+    updateMicButton();
+  }
+
   function setStatusMessage(message, { dismissible = false, standalone = false } = {}) {
     const bubble = getStatusBubble();
     statusIsStandalone = standalone;
     statusMessageElement.textContent = message;
     statusDismissButton.hidden = !dismissible;
+    bubble.classList.toggle("voice-dictation-status--recording", currentMicButtonState === "recording");
     bubble.hidden = false;
 
     if (standalone) {
@@ -255,11 +384,9 @@
       bubble.style.right = "16px";
       bubble.style.left = "auto";
     } else if (micButton && !micButton.hidden) {
-      const buttonRect = micButton.getBoundingClientRect();
-      bubble.style.top = `${Math.round(buttonRect.bottom + 6)}px`;
-      bubble.style.left = `${Math.round(buttonRect.left)}px`;
-      bubble.style.right = "auto";
+      positionStatusBubble();
     }
+    announce(message);
   }
 
   function clearTransientStateTimeout() {
@@ -281,6 +408,8 @@
     button.classList.toggle("voice-dictation-mic-button--error", state === "error");
     button.disabled = state === "requesting" || state === "processing" || !isDictationEnabled();
     setMicButtonVisual(button, state);
+
+    if (recordingFeedback) recordingFeedback.hidden = state !== "recording";
 
     if (message || visual.status) {
       setStatusMessage(message || visual.status, { dismissible });
@@ -333,6 +462,13 @@
       return;
     }
 
+    // Hiding a keyboard-focused Dismiss button otherwise leaves focus on body.
+    // Return only its focus, never an earlier recording's text or selection.
+    if (statusDismissButton?.contains(document.activeElement) && !document.hidden &&
+        document.hasFocus?.() !== false) {
+      getUsableField(activeField)?.focus();
+    }
+
     statusIsStandalone = false;
     setMicButtonState("idle");
     updateMicButton();
@@ -341,6 +477,7 @@
   function clearActiveField() {
     activeField = null;
     activeTextRange = null;
+    micButtonPlacement = null;
   }
 
   function getUsableField(field) {
@@ -351,7 +488,136 @@
     return getUsableField(getCurrentEditableField());
   }
 
+  function isRecordingContextSafe() {
+    return !document.hidden && document.hasFocus?.() !== false && getUsableField(recordingTargetField) &&
+      getFocusedSupportedField() === recordingTargetField;
+  }
+
+  function hasVisibleRecordingControl() {
+    if (!micButton?.isConnected || micButton.hidden || !micButton.getClientRects().length) return false;
+    if (micButton.checkVisibility?.({ checkOpacity: true, checkVisibilityCSS: true }) === false) return false;
+    const style = window.getComputedStyle(micButton);
+    const rect = micButton.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    return style.display !== "none" && style.visibility === "visible" && Number(style.opacity) > 0 &&
+      (hit === micButton || micButton.contains(hit));
+  }
+
+  function ensureAnnouncementElement() {
+    if (!announcementElement?.isConnected) {
+      announcementElement = document.createElement("div");
+      announcementElement.className = "voice-dictation-announcement";
+      announcementElement.setAttribute("contenteditable", "false");
+      announcementElement.setAttribute("role", "status");
+      announcementElement.setAttribute("aria-live", "polite");
+      announcementElement.setAttribute("aria-atomic", "true");
+    }
+    // A whole-body editor must not include status text in its content or snapshot.
+    const host = document.body && !document.body.isContentEditable && document.designMode !== "on"
+      ? document.body : document.documentElement;
+    if (announcementElement.parentElement !== host) host.append(announcementElement);
+    return announcementElement;
+  }
+
+  function announce(message) {
+    ensureAnnouncementElement();
+    // Keep the last status available after transient visual notices disappear,
+    // and do not repeat an unchanged status during re-rendering.
+    if (announcementElement.textContent !== message) announcementElement.textContent = message;
+  }
+
+  function clearRecovery(message = "") {
+    const restoreFocus = recoveryElement?.contains(document.activeElement);
+    const returnFocus = recovery?.returnFocus;
+    if (recoveryTimeoutId) window.clearTimeout(recoveryTimeoutId);
+    recoveryTimeoutId = null;
+    if (recovery) recovery.text = "";
+    recovery = null;
+    recoveryElement?.remove();
+    recoveryElement = null;
+    // Only return focus if its control was removed. Never move a typing user's caret.
+    if (restoreFocus && !document.hidden && document.hasFocus?.() !== false && getUsableField(returnFocus)) {
+      returnFocus.focus();
+    }
+    if (message) announce(message);
+  }
+
+  function offerRecovery(text, reason) {
+    clearRecovery();
+    if (!isDictationEnabled() || document.hidden) return;
+    announce("");
+    recovery = { text, expiresAt: Date.now() + RECOVERY_LIFETIME_MS, returnFocus: getFocusedSupportedField(), copying: false };
+    const panel = document.createElement("section");
+    panel.className = "voice-dictation-recovery";
+    panel.setAttribute("aria-label", "Transcript recovery");
+    const message = document.createElement("span");
+    message.textContent = `${reason} Copy within 60 seconds or discard. The transcript is not shown here.`;
+    const copy = document.createElement("button");
+    copy.type = "button";
+    copy.textContent = "Copy transcript";
+    copy.setAttribute("aria-label", "Copy transcript");
+    copy.addEventListener("click", async (event) => {
+      if (!event.isTrusted || !recovery || recovery.copying) return;
+      if (Date.now() >= recovery.expiresAt) { clearRecovery("Transcript expired. Record again when ready."); return; }
+      const pending = recovery;
+      pending.copying = true;
+      copy.setAttribute("aria-disabled", "true");
+      copy.textContent = "Copying…";
+      announce("Copying transcript");
+      try {
+        await navigator.clipboard.writeText(pending.text);
+        if (recovery === pending) clearRecovery("Transcript copied. Paste it where you want.");
+      } catch (_error) {
+        if (recovery === pending) {
+          pending.copying = false;
+          copy.setAttribute("aria-disabled", "false");
+          copy.textContent = "Copy transcript";
+          message.textContent = "Clipboard unavailable. Keep this page active and try Copy again before the transcript expires. Nothing was inserted.";
+          announce(message.textContent);
+        }
+      }
+    });
+    const discard = document.createElement("button");
+    discard.type = "button";
+    discard.textContent = "Discard transcript";
+    discard.addEventListener("click", (event) => { if (event.isTrusted) clearRecovery("Transcript discarded."); });
+    panel.addEventListener("focusin", (event) => {
+      if (recovery && getUsableField(event.relatedTarget)) recovery.returnFocus = event.relatedTarget;
+    });
+    panel.append(message, copy, discard);
+    recoveryElement = panel;
+    document.documentElement.append(panel);
+    if (statusBubble) statusBubble.hidden = true;
+    announce(message.textContent);
+    recoveryTimeoutId = window.setTimeout(() => clearRecovery("Transcript expired. Record again when ready."), RECOVERY_LIFETIME_MS);
+  }
+
+  function handlePageHidden() {
+    if (!document.hidden) { updateMicButton(); return; }
+    handlePageExit();
+  }
+
+  function handlePageExit() {
+    clearRecovery();
+    if (announcementElement) announcementElement.textContent = "";
+    clearTransientStateTimeout();
+    cancelActiveWork();
+    clearActiveField();
+    hideMicButton({ forceStatus: true });
+  }
+
   function reconcileTrackedFields(mutations = []) {
+    // Keep an existing status out of a body that becomes editable while idle.
+    // Only respond to this attribute change, never broadly reattach removed UI.
+    if (announcementElement?.isConnected && mutations.some(({ target, attributeName }) => (
+      attributeName === "contenteditable" &&
+      (target === document.body || target === document.documentElement)
+    ))) {
+      ensureAnnouncementElement();
+    }
+    if (recordingTargetField && (!isRecordingContextSafe() || !hasVisibleRecordingControl())) {
+      cancelRecording();
+    }
     const onlyDictozyMutations = mutations.length > 0 && mutations.every(({ target }) => (
       target === micButton ||
       target === statusBubble ||
@@ -376,6 +642,19 @@
       clearActiveField();
       hideMicButton();
     }
+  }
+
+  function overlapsPageControl(left, top, size) {
+    const offsets = [2, size / 2, size - 2];
+    for (const x of offsets) {
+      for (const y of offsets) {
+        for (const element of document.elementsFromPoint(left + x, top + y)) {
+          if (micButton?.contains(element) || statusBubble?.contains(element) || recoveryElement?.contains(element)) continue;
+          if (element.closest('button, input, textarea, select, iframe, a[href], summary, [role="button"], [role="textbox"], [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])')) return true;
+        }
+      }
+    }
+    return false;
   }
 
   function updateMicButton() {
@@ -403,19 +682,31 @@
     );
     const preferredLeft = rect.right + BUTTON_EDGE_OFFSET;
     const fallbackLeft = rect.left - buttonSize - BUTTON_EDGE_OFFSET;
-    const left = preferredLeft + buttonSize + BUTTON_EDGE_OFFSET <= window.innerWidth
-      ? preferredLeft
-      : Math.max(BUTTON_EDGE_OFFSET, fallbackLeft);
-
-    button.style.top = `${Math.round(top)}px`;
-    button.style.left = `${Math.round(left)}px`;
+    const maxLeft = Math.max(BUTTON_EDGE_OFFSET, window.innerWidth - buttonSize - BUTTON_EDGE_OFFSET);
+    const clampLeft = (left) => Math.max(BUTTON_EDGE_OFFSET, Math.min(maxLeft, left));
+    const candidates = [
+      { side: "right", left: preferredLeft, top },
+      { side: "left", left: fallbackLeft, top },
+      { side: "above", left: clampLeft(rect.right - buttonSize), top: rect.top - buttonSize - BUTTON_EDGE_OFFSET },
+      { side: "below", left: clampLeft(rect.right - buttonSize), top: rect.bottom + BUTTON_EDGE_OFFSET },
+    ];
+    const activeWork = recordingTargetField || transcriptionTargetField;
+    // Keep the chosen side through an active session; toolbar changes must not
+    // make the Stop control jump. A bounded hit test avoids scanning the page.
+    let placement = activeWork === field && micButtonPlacement?.field === field
+      ? candidates.find(({ side }) => side === micButtonPlacement.side)
+      : candidates.find(({ left, top: candidateTop }) => left >= BUTTON_EDGE_OFFSET && left <= maxLeft &&
+          candidateTop >= BUTTON_EDGE_OFFSET && candidateTop + buttonSize + BUTTON_EDGE_OFFSET <= window.innerHeight &&
+          !overlapsPageControl(left, candidateTop, buttonSize));
+    placement ||= candidates[preferredLeft <= maxLeft ? 0 : 1];
+    micButtonPlacement = { field, side: placement.side };
+    button.style.top = `${Math.round(Math.max(BUTTON_EDGE_OFFSET, Math.min(window.innerHeight - buttonSize - BUTTON_EDGE_OFFSET, placement.top)))}px`;
+    button.style.left = `${Math.round(clampLeft(placement.left))}px`;
     button.hidden = false;
 
     if (statusBubble && !statusBubble.hidden) {
       statusIsStandalone = false;
-      statusBubble.style.top = `${Math.round(top + buttonSize + 6)}px`;
-      statusBubble.style.left = `${Math.round(left)}px`;
-      statusBubble.style.right = "auto";
+      positionStatusBubble();
     }
   }
 
@@ -432,12 +723,17 @@
 
     const field = getEditableFieldFromEvent(event);
 
+    if (recordingTargetField && field !== recordingTargetField) cancelRecording();
+
     if (getUsableField(field)) {
       if (field !== activeField && currentMicButtonState === "error") {
         setMicButtonState("idle");
       }
 
       activeField = field;
+      // Recovery controls may be reached through the microphone by Tab. Keep
+      // the last supported field, even when focus enters the panel indirectly.
+      if (recovery) recovery.returnFocus = field;
       rememberTextRange();
       updateMicButton();
     } else {
@@ -452,6 +748,7 @@
     }
 
     window.setTimeout(() => {
+      if (recordingTargetField && !isRecordingContextSafe()) cancelRecording();
       if (!getFocusedSupportedField()) {
         clearActiveField();
         hideMicButton();
@@ -519,7 +816,20 @@
     }
 
     const range = getRichTextInsertionRange(element);
-    return range ? Object.freeze({ kind: "rich-text", range }) : null;
+    return range ? Object.freeze({
+      kind: "rich-text", range, html: element.innerHTML,
+      startContainer: range.startContainer, startOffset: range.startOffset,
+      endContainer: range.endContainer, endOffset: range.endOffset,
+    }) : null;
+  }
+
+  function isCapturedSelectionCurrent(element, captured) {
+    if (!captured) return false;
+    if (captured.kind === "form") return element.value === captured.value;
+    const { range } = captured;
+    return element.innerHTML === captured.html && isRangeInsideField(element, range) &&
+      range.startContainer === captured.startContainer && range.startOffset === captured.startOffset &&
+      range.endContainer === captured.endContainer && range.endOffset === captured.endOffset;
   }
 
   function getTextBeforeRange(element, range) {
@@ -575,7 +885,9 @@
       return false;
     }
 
-    if (!isRangeInsideField(element, insertionRange)) {
+    if (!isRangeInsideField(element, insertionRange) ||
+        !isCapturedSelectionCurrent(element, capturedSelection) ||
+        getTranscriptTargetField(element) !== element) {
       return false;
     }
 
@@ -636,8 +948,12 @@
     if (!field) {
       return {
         ok: false,
-        message: "Focus moved before insertion. Try again.",
+        message: "Focus moved before insertion. Your writing was not replaced.",
       };
+    }
+
+    if (!isCapturedSelectionCurrent(field, capturedSelection)) {
+      return { ok: false, message: "The field changed. Your existing text was not modified." };
     }
 
     activeField = field;
@@ -645,7 +961,7 @@
 
     try {
       const inserted = field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement
-        ? insertIntoFormField(field, text, capturedSelection?.kind === "form" ? capturedSelection : null)
+        ? insertIntoFormField(field, text, capturedSelection, () => getTranscriptTargetField(field) === field)
         : insertIntoRichTextField(
           field,
           text,
@@ -655,13 +971,13 @@
       if (!inserted) {
         return {
           ok: false,
-          message: "Could not insert the transcript. Record again in a supported field.",
+          message: "Could not insert the transcript. The editor could not accept it safely.",
         };
       }
     } catch (_error) {
       return {
         ok: false,
-        message: "Could not insert the transcript. Record again in a supported field.",
+        message: "Could not insert the transcript. The editor could not accept it safely.",
       };
     }
 
@@ -672,6 +988,14 @@
   }
 
   function clearRecordingResources() {
+    if (recordingSafetyIntervalId) window.clearInterval(recordingSafetyIntervalId);
+    recordingSafetyIntervalId = null;
+    if (recordingFeedback) recordingFeedback.hidden = true;
+    recordingStartedAt = 0;
+    removeTrackListeners?.();
+    removeTrackListeners = null;
+    removeRecordingFocusListener?.();
+    removeRecordingFocusListener = null;
     if (recordingTimeoutId) {
       window.clearTimeout(recordingTimeoutId);
       recordingTimeoutId = null;
@@ -688,6 +1012,7 @@
     }
 
     mediaRecorder = null;
+    recordingSignalResult = null;
     recordingChunks = [];
   }
 
@@ -706,13 +1031,18 @@
       try {
         mediaRecorder.stop();
       } catch (_error) {
-        clearRecordingResources();
+        // Tracks still need to stop even if the recorder rejects stop().
       }
-    } else {
-      clearRecordingResources();
     }
 
+    // Do not wait for an asynchronous stop event to release the microphone.
+    clearRecordingResources();
+
     setMicButtonState("idle");
+    if (!getFocusedSupportedField()) {
+      clearActiveField();
+      hideMicButton();
+    }
   }
 
   function sendCancellationToBackground(requestId) {
@@ -848,7 +1178,7 @@
   }
 
   async function startRecording() {
-    if (!isDictationEnabled()) {
+    if (!isDictationEnabled() || document.hidden) {
       hideMicButton();
       return;
     }
@@ -870,13 +1200,27 @@
     }
 
     clearTransientStateTimeout();
+    clearRecovery();
     recordingAttempt += 1;
     const attempt = recordingAttempt;
     activeField = field;
     field.focus();
+    // A page may have made its body editable since startup. Move our region
+    // before capturing content/selection so that movement cannot stale the snapshot.
+    ensureAnnouncementElement();
     recordingCanceled = false;
     recordingTargetField = field;
     recordingTargetSelection = captureFieldSelection(field);
+    // Document focus events can be suppressed when both fields share a shadow
+    // host. Listen on this recording target so unsafe focus ends capture now.
+    const handleRecordingFocusOut = (event) => {
+      if (attempt !== recordingAttempt || micButton?.contains(event.relatedTarget) ||
+          statusBubble?.contains(event.relatedTarget) ||
+          getUsableField(getEditableField(event.relatedTarget)) === field) return;
+      cancelRecording();
+    };
+    field.addEventListener("focusout", handleRecordingFocusOut);
+    removeRecordingFocusListener = () => field.removeEventListener("focusout", handleRecordingFocusOut);
     transcriptionTargetField = null;
     transcriptionTargetSelection = null;
     setMicButtonState("idle");
@@ -885,14 +1229,16 @@
     try {
       const recordingDurationMs = await getRecordingDurationMs();
 
-      if (!isDictationEnabled() || attempt !== recordingAttempt) {
+      if (!isDictationEnabled() || attempt !== recordingAttempt || !isRecordingContextSafe()) {
+        if (attempt === recordingAttempt) cancelRecording();
         return;
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      if (!isDictationEnabled() || attempt !== recordingAttempt) {
+      if (!isDictationEnabled() || attempt !== recordingAttempt || !isRecordingContextSafe()) {
         stream.getTracks().forEach((track) => track.stop());
+        if (attempt === recordingAttempt) cancelRecording();
         return;
       }
 
@@ -905,22 +1251,50 @@
       };
 
       recordingChunks = [];
-      mediaRecorder = new MediaRecorder(recordingStream, options);
+      const recorder = new MediaRecorder(recordingStream, options);
+      mediaRecorder = recorder;
 
-      mediaRecorder.addEventListener("dataavailable", (event) => {
-        if (event.data.size > 0) {
+      recorder.addEventListener("dataavailable", (event) => {
+        if (attempt === recordingAttempt && recorder === mediaRecorder && event.data.size > 0) {
           recordingChunks.push(event.data);
         }
       });
 
-      mediaRecorder.addEventListener("stop", finishRecording, { once: true });
-      mediaRecorder.start();
+      recorder.addEventListener("stop", () => {
+        if (attempt === recordingAttempt && recorder === mediaRecorder) void finishRecording();
+      }, { once: true });
+      recorder.addEventListener("error", () => {
+        if (attempt !== recordingAttempt || recorder !== mediaRecorder) return;
+        cancelRecording();
+        showErrorState("Recording failed. Check your microphone and try again.");
+      }, { once: true });
+      recorder.start();
+      recordingStartedAt = performance.now();
+      recordingLimitMs = recordingDurationMs;
       setMicButtonState("recording", "Recording");
+      updateRecordingFeedback();
+
+      const handleTrackEnded = () => {
+        if (attempt === recordingAttempt && recorder === mediaRecorder) {
+          cancelRecording();
+          showErrorState("Microphone stopped. Check your input and record again.");
+        }
+      };
+      const tracks = stream.getTracks();
+      tracks.forEach((track) => track.addEventListener?.("ended", handleTrackEnded));
+      removeTrackListeners = () => tracks.forEach((track) => track.removeEventListener?.("ended", handleTrackEnded));
+      // Covers CSS/layout changes that don't generate DOM mutations. Hidden-page
+      // and focus transitions use immediate event-driven cancellation above.
+      recordingSafetyIntervalId = window.setInterval(() => {
+        if (!isRecordingContextSafe() || !hasVisibleRecordingControl()) cancelRecording();
+        else if (currentMicButtonState === "recording") updateRecordingFeedback();
+      }, 100);
 
       recordingTimeoutId = window.setTimeout(() => {
         stopRecording();
       }, recordingDurationMs);
     } catch (error) {
+      if (attempt !== recordingAttempt) return;
       clearRecordingResources();
 
       if (isDictationEnabled() && attempt === recordingAttempt) {
@@ -935,16 +1309,31 @@
   }
 
   function stopRecording() {
+    if (recordingTargetField && !isRecordingContextSafe()) {
+      cancelRecording();
+      return;
+    }
     if (!mediaRecorder || mediaRecorder.state === "inactive") {
       clearRecordingResources();
       setMicButtonState("idle");
       return;
     }
 
+    // Disabling a keyboard-focused button moves browser focus to the page body.
+    // Restore the original editor first, so completion still has a safe target.
+    recordingTargetField?.focus();
     setMicButtonState("processing", "Preparing transcription");
+    // A duration timer must not clear a normal stop while its final data event
+    // is still queued by the browser.
+    if (recordingTimeoutId) window.clearTimeout(recordingTimeoutId);
+    recordingTimeoutId = null;
 
     try {
+      // Signal inspection checks track availability. Snapshot it before stopping
+      // tracks immediately; inspecting an intentionally ended track looks silent.
+      recordingSignalResult = recordingSignalMonitor?.getResult() || "unknown";
       mediaRecorder.stop();
+      recordingStream?.getTracks().forEach((track) => track.stop());
     } catch (_error) {
       clearRecordingResources();
       recordingTargetField = null;
@@ -1091,7 +1480,7 @@
         return;
       }
 
-      const signalResult = recordingSignalMonitor?.getResult() || "unknown";
+      const signalResult = recordingSignalResult || recordingSignalMonitor?.getResult() || "unknown";
       const mimeType = mediaRecorder?.mimeType || "audio/webm";
       const targetField = getTranscriptTargetField(recordingTargetField);
       const targetSelection = recordingTargetSelection;
@@ -1160,6 +1549,7 @@
       const insertion = insertTranscript(result.transcript, expectedField, expectedSelection);
       if (!insertion.ok) {
         showFieldFailureState(insertion.message, result.requestId || operation.requestId);
+        offerRecovery(result.transcript, insertion.message);
         return;
       }
 
@@ -1199,13 +1589,13 @@
       });
 
       extensionEnabled = settings.extensionEnabled !== false;
-      siteEnabled = Boolean(currentOrigin) && !isOriginDisabled(
+      siteEnabled = isPracticePage || Boolean(currentOrigin) && !isOriginDisabled(
         settings[DISABLED_ORIGINS_STORAGE_KEY],
         currentOrigin,
       );
     } catch (_error) {
       extensionEnabled = DEFAULT_EXTENSION_ENABLED;
-      siteEnabled = Boolean(currentOrigin);
+      siteEnabled = isPracticePage || Boolean(currentOrigin);
     }
 
     settingsLoaded = true;
@@ -1234,7 +1624,7 @@
     }
 
     if (changes[DISABLED_ORIGINS_STORAGE_KEY]) {
-      siteEnabled = Boolean(currentOrigin) && !isOriginDisabled(
+      siteEnabled = isPracticePage || Boolean(currentOrigin) && !isOriginDisabled(
         changes[DISABLED_ORIGINS_STORAGE_KEY].newValue,
         currentOrigin,
       );
@@ -1247,6 +1637,7 @@
     }
 
     if (!enabled) {
+      clearRecovery();
       clearTransientStateTimeout();
       cancelActiveWork();
       clearActiveField();
@@ -1283,10 +1674,15 @@
   document.addEventListener("focusin", rememberActiveField, true);
   document.addEventListener("focusout", forgetActiveFieldAfterBlur, true);
   document.addEventListener("keyup", rememberActiveField, true);
+  document.addEventListener("keydown", handleRecordingTab);
   document.addEventListener("mouseup", rememberActiveField, true);
   document.addEventListener("selectionchange", rememberTextRange);
   window.addEventListener("scroll", updateMicButton, true);
   window.addEventListener("resize", updateMicButton);
+  document.addEventListener("visibilitychange", handlePageHidden);
+  window.addEventListener("pagehide", handlePageExit);
+  window.addEventListener("pageshow", updateMicButton);
+  window.addEventListener("blur", () => { if (mediaRecorder) cancelRecording(); });
   chrome.runtime.onMessage.addListener(handleRuntimeMessage);
   chrome.storage.onChanged.addListener(handleStorageChanges);
 
@@ -1315,5 +1711,6 @@
     subtree: true,
   });
 
+  announce("");
   loadExtensionState();
 })();

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from ipaddress import ip_network
 import os
 
 from dotenv import load_dotenv
@@ -52,6 +53,9 @@ class Settings:
     transcribe_max_concurrent_requests: int = parse_int_env("TRANSCRIBE_MAX_CONCURRENT_REQUESTS", 2)
     transcribe_rate_limit_requests: int = parse_int_env("TRANSCRIBE_RATE_LIMIT_REQUESTS", 30)
     transcribe_rate_limit_window_seconds: int = parse_int_env("TRANSCRIBE_RATE_LIMIT_WINDOW_SECONDS", 60, min_value=1)
+    transcribe_audio_budget_seconds: int = parse_int_env("TRANSCRIBE_AUDIO_BUDGET_SECONDS", 3600, min_value=1)
+    transcribe_audio_budget_window_seconds: int = parse_int_env("TRANSCRIBE_AUDIO_BUDGET_WINDOW_SECONDS", 86400, min_value=1)
+    forwarded_allow_ips: str = os.getenv("FORWARDED_ALLOW_IPS", "127.0.0.1")
     max_transcribe_content_length_bytes: int = parse_int_env(
         "MAX_TRANSCRIBE_CONTENT_LENGTH_BYTES",
         DEFAULT_MAX_TRANSCRIBE_CONTENT_LENGTH_BYTES,
@@ -65,6 +69,20 @@ class Settings:
             raise ValueError(
                 "Production BACKEND_CORS_ORIGINS must contain only the published Dictozy extension origin."
             )
+
+        if min(self.transcribe_max_concurrent_requests, self.transcribe_rate_limit_requests,
+               self.transcribe_rate_limit_window_seconds, self.max_transcribe_content_length_bytes,
+               self.transcribe_audio_budget_seconds, self.transcribe_audio_budget_window_seconds) <= 0:
+            raise ValueError("Production transcription guards must be positive.")
+        for entry in self.forwarded_allow_ips.split(","):
+            if not entry.strip():
+                continue  # Empty means trust no proxy, which is safe but may group clients.
+            try:
+                network = ip_network(entry.strip(), strict=False)
+            except ValueError:
+                raise ValueError("FORWARDED_ALLOW_IPS must contain explicit trusted IPs or networks.") from None
+            if network.prefixlen == 0:
+                raise ValueError("FORWARDED_ALLOW_IPS must not trust the entire internet.")
 
     @property
     def cors_origins(self) -> list[str]:

@@ -2,6 +2,7 @@ from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 import threading
 import time
+import math
 from typing import AsyncIterator
 
 
@@ -73,3 +74,36 @@ class InProcessConcurrencyLimiter:
     def reset(self) -> None:
         with self._lock:
             self._in_flight = 0
+
+
+class InProcessAudioBudget:
+    """Atomic rolling allowance across clients in one worker, reset on restart.
+
+    Reserve before calling the provider; failed/cancelled attempts are not refunded.
+    Whole-second rounding also bounds the number of retained accounting entries.
+    No client identifiers, audio or transcript data are retained here.
+    """
+
+    def __init__(self) -> None:
+        self._reservations: deque[tuple[float, int]] = deque()
+        self._used = 0
+        self._lock = threading.Lock()
+
+    def reserve(self, seconds: float, *, limit: int, window_seconds: int) -> bool:
+        if not math.isfinite(seconds) or seconds <= 0 or limit <= 0 or window_seconds <= 0:
+            return False
+        cost = math.ceil(seconds)
+        with self._lock:
+            now = time.monotonic()
+            while self._reservations and self._reservations[0][0] <= now - window_seconds:
+                self._used -= self._reservations.popleft()[1]
+            if self._used + cost > limit:
+                return False
+            self._reservations.append((now, cost))
+            self._used += cost
+            return True
+
+    def reset(self) -> None:
+        with self._lock:
+            self._reservations.clear()
+            self._used = 0

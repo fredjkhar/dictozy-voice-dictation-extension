@@ -146,6 +146,7 @@
   function createUnknownSignalMonitor() {
     return Object.freeze({
       getResult: () => "unknown",
+      getActivity: () => null,
       stop: () => Promise.resolve(),
     });
   }
@@ -168,6 +169,7 @@
       source = audioContext.createMediaStreamSource(stream);
       const samples = new Float32Array(512);
       let peak = 0;
+      let recentPeak = 0;
       let sampleCount = 0;
       let stopped = false;
 
@@ -180,9 +182,11 @@
         }
 
         analyser.getFloatTimeDomainData(samples);
+        recentPeak = 0;
         for (const sample of samples) {
-          peak = Math.max(peak, Math.abs(sample));
+          recentPeak = Math.max(recentPeak, Math.abs(sample));
         }
+        peak = Math.max(peak, recentPeak);
         sampleCount += 1;
       }
 
@@ -191,6 +195,10 @@
       Promise.resolve(audioContext.resume?.()).catch(() => {});
 
       return Object.freeze({
+        getActivity() {
+          return stopped ? null : recentPeak > SILENCE_PEAK_THRESHOLD;
+        },
+
         getResult() {
           const audioTracks = typeof stream.getAudioTracks === "function" ? stream.getAudioTracks() : [];
           const trackUnavailable = audioTracks.length === 0 || audioTracks.every(

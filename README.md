@@ -26,7 +26,7 @@ The extension must never call xAI directly. API keys belong only on the backend.
 
 ## Current Status
 
-Version `0.1.11` is published. Version `0.1.12` is an unreleased reliability candidate with clearer, privacy-safe microphone and transcription failure guidance.
+Version `0.1.12` is published (public Store metadata verified 2026-10-17; updated September 7, 2026). This branch contains unpublished Phase 1 fixes and Phase 2 first-use improvements; its source version remains `0.1.12` until a separately approved release is prepared. See [the improvement roadmap](docs/IMPROVEMENT_ROADMAP.md).
 
 - Chrome extension detects supported fields and ignores unsafe fields.
 - Recording starts only after an explicit microphone-button click or assigned browser shortcut.
@@ -78,7 +78,7 @@ cp .env.example .env
 Set `XAI_API_KEY` in `backend/.env`, then run:
 
 ```bash
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --no-access-log
 ```
 
 Extension setup:
@@ -212,3 +212,23 @@ Issue templates are available for:
 - Future feature requests
 
 Use hardening tasks for reliability, privacy, documentation, and QA work. Use feature requests for product scope changes.
+
+
+## Structured improvements
+
+Phase 1 work, acceptance criteria, evidence and deferred phases are tracked in
+[docs/IMPROVEMENT_ROADMAP.md](docs/IMPROVEMENT_ROADMAP.md). This branch is not deployed or published.
+Use [qa/phase-1-acceptance.md](qa/phase-1-acceptance.md) for human checks before a release decision.
+The browser suite distinguishes injected Chrome/media fixtures from an unpacked MV3 extension
+running in bundled Chromium with synthetic audio and a stubbed backend. Neither calls production.
+
+Phase 2 adds optional **Try dictation** practice, elapsed/remaining recording time, Stop/Discard,
+and accessible temporary recovery feedback. See the [Phase 2 report](docs/PHASE_2_REPORT.md)
+and [installed-extension manual checklist](qa/phase-2-acceptance.md). Release gates remain open.
+
+Phase 3 improves open-shadow focus handling and avoids nearby native controls when positioning the
+microphone. See the dated [compatibility matrix](docs/COMPATIBILITY_MATRIX.md),
+[Phase 3 report](docs/PHASE_3_REPORT.md), and [manual pilot checklist](qa/phase-3-acceptance.md).
+Live Gmail/ChatGPT checks establish field detection and selected layout behavior only; full
+named-application dictation and physical-microphone acceptance remain pending. Recording limits
+remain 10/30 seconds. No deployment or publication is included.
