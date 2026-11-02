@@ -1,6 +1,8 @@
 # Store Visual Assets
 
-## Final Files
+The proposed 0.1.14 recording, settings, icon and promo artwork is in [0.1.14/](0.1.14/). See its [capture method, hashes and release order](../release-0.1.14.md) before preparing a future Store draft.
+
+## Earlier prepared assets
 
 - `screenshot-dictation-1280x800.png`: supported field with the actual stop icon recording state and safe sample text.
 - `screenshot-settings-1280x800.png`: popup settings with global and current-site controls, English language formatting, the current keyboard shortcut, 10-second limit, and Reset Site Preferences in the normal settings panel.

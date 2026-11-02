@@ -195,7 +195,7 @@ async function loadSettings() {
   recordingDurationInput.value = String(normalizeRecordingDurationSeconds(settings.recordingDurationMs / 1000));
   transcriptionLanguageSelect.value = normalizeTranscriptionLanguage(settings.transcriptionLanguage);
   updateSiteDescription();
-  setStatus(enabledToggle.checked ? "Ready." : "Dictozy is off.", enabledToggle.checked ? "success" : "warning");
+  setStatus(enabledToggle.checked ? "Ready." : "Dictozy is off.", enabledToggle.checked ? "neutral" : "warning");
 }
 
 async function saveSettings() {

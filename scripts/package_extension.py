@@ -46,6 +46,7 @@ PACKAGE_FILES = (
     "content.css",
     "background.js",
     "popup.html",
+    "popup.css",
     "popup.js",
     "popup-vocabulary.js",
     "practice.html",
@@ -64,18 +65,23 @@ EXPECTED_ICON_SIZES = {
 }
 
 
-class ScriptSourceParser(HTMLParser):
+class PageAssetParser(HTMLParser):
+    """Check every script, stylesheet and image the packaged pages load."""
+
     def __init__(self) -> None:
         super().__init__()
-        self.script_sources: list[str] = []
+        self.assets: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-        if tag.lower() != "script":
+        attributes = dict(attrs)
+        if tag in {"script", "img"}:
+            source = attributes.get("src")
+        elif tag == "link" and "stylesheet" in (attributes.get("rel") or "").lower().split():
+            source = attributes.get("href")
+        else:
             return
-
-        source = dict(attrs).get("src")
         if source:
-            self.script_sources.append(source)
+            self.assets.append(source)
 
 
 def parse_args() -> argparse.Namespace:
@@ -122,6 +128,15 @@ def validate_manifest(manifest: dict[str, object]) -> None:
         if content_scripts[0].get("js") != EXPECTED_CONTENT_SCRIPTS:
             errors.append(f"content scripts must be exactly {EXPECTED_CONTENT_SCRIPTS}")
 
+        if content_scripts[0].get("css") != ["content.css"]:
+            errors.append("content script stylesheet must be the packaged content.css")
+
+    icon_paths = {str(size[0]): name for name, size in EXPECTED_ICON_SIZES.items()}
+    if manifest.get("icons") != icon_paths or manifest.get("action") != {
+        "default_popup": "popup.html", "default_icon": icon_paths,
+    }:
+        errors.append("manifest icon or toolbar popup references differ from the packaged assets")
+
     if manifest.get("background") != {"service_worker": "background.js"}:
         errors.append("background service worker configuration changed")
 
@@ -139,14 +154,12 @@ def validate_files() -> None:
         if actual_size != expected_size:
             raise ValueError(f"{name} must be {expected_size[0]}x{expected_size[1]}, got {actual_size}")
 
-    parser = ScriptSourceParser()
     for page in ("popup.html", "practice.html"):
+        parser = PageAssetParser()
         parser.feed((EXTENSION_DIR / page).read_text(encoding="utf-8"))
-    for source in parser.script_sources:
-        if "://" in source or source.startswith("//"):
-            raise ValueError(f"Remote extension page script is not allowed: {source}")
-        if not (EXTENSION_DIR / source).is_file():
-            raise ValueError(f"Extension page script does not exist: {source}")
+        for source in parser.assets:
+            if source not in PACKAGE_FILES:
+                raise ValueError(f"{page} references an asset outside the package allowlist: {source}")
 
     background = (EXTENSION_DIR / "background.js").read_text(encoding="utf-8")
     if 'importScripts("config.js")' not in background:
