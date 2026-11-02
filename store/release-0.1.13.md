@@ -1,20 +1,40 @@
 # Dictozy 0.1.13 release record
 
-The November 1, 2026 Store inspection recorded submission at 11:37 p.m. EST.
-The dashboard showed **Pending review** for 0.1.13, with automatic publication **Off**
-and 0.1.12 still published. Publication after approval requires a separate manual action.
+**Published November 2, 2026.** Store milestone times are EST (America/Toronto).
 
-| Submitted package | Verified identity |
+| Store milestone | Recorded observation |
+|---|---|
+| November 1, 11:37 p.m. | Version 0.1.13 was submitted with automatic publication Off. The dashboard showed **Pending review** and 0.1.12 remained public. |
+| November 2, 1:52 p.m. | After Google approved the update, manual publication was accepted. The reopened dashboard showed **Published - public** and published version 0.1.13. |
+| November 2, 2:04 p.m. | The public listing showed 0.1.13, updated November 2, with the revised description and release notes, the new recording screenshot first, and all four disclosures (Personally identifiable information, Personal communications, Location, Website content). Its privacy link resolved to the policy effective November 1, 2026. |
+
+The public listing confirms availability. Update status on individual installations was not measured.
+[Chrome Web Store listing](https://chromewebstore.google.com/detail/dictozy-voice-dictation/folpeencabfejhjokmldikaelonphmma)
+
+| Published package | Verified identity |
 |---|---|
 | File | `dictozy-v0.1.13.zip`, 60,859 bytes |
 | Inner ZIP SHA-256 | `909b520149a4d9c0683c5c066ad9d8484a4302fdc40a676a8f80748fb73c2ebf` |
 | Source | `206e5519cd2bda700cc6ad0a516112e9376ad260`, including the compact recording-panel fix from `17256f9` |
 | Original CI evidence | [Run 40546212050](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/40546212050) · [review artifact 12753541613](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/40546212050/artifacts/12753541613) |
 
-The [published privacy policy](https://dictozy.com/privacy.html) took effect November 1, 2026.
-[PR #2](https://github.com/fredjkhar/dictozy-voice-dictation-extension/pull/2) supplied both
-policy files and the version-specific recording assertion. The authorization for PR #1 covers
-the repository merge. Store publication and production deployments require separate authorization.
+PR #2 published the privacy correction with effective date November 1, 2026, in
+`568331eb09412bcceacc753c9a88b680053caca6`. PR #1 reconciled it in
+`9aee8e8853b4ec4b5de8f2d9b96e00bb6c1591c3` and merged the release into main at
+`fe7379c4a847997ba5728654dca7899eb47ace8f`. All 20 packaged files matched the
+submitted source and ZIP after the merge. PR and main CI each passed 381 tests.
+[Privacy policy](https://dictozy.com/privacy.html) · [PR #2](https://github.com/fredjkhar/dictozy-voice-dictation-extension/pull/2) · [PR #1](https://github.com/fredjkhar/dictozy-voice-dictation-extension/pull/1)
+
+After public verification, this closeout updates the homepage’s structured-data
+`softwareVersion` and its matching checks from 0.1.12 to 0.1.13 in the repository.
+The previous [Pages deployment](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/41386282970)
+still served 0.1.11. Only that version value differs in the website being deployed.
+
+Live editor evidence remains limited to the tested workflows. Outlook, Notion and WhatsApp
+remain unverified, and the effect of vocabulary hints on recognition accuracy has not been
+measured. The deployed backend trusts no forwarded client IP headers, so users may share
+a rate quota. Its process-local audio allowance resets on restart and cannot enforce a
+durable financial cap.
 
 <details>
 <summary>October 26–27 preparation checklist and supporting evidence (historical)</summary>

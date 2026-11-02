@@ -2,14 +2,19 @@
 
 These notes preserve the release history without placing every prior version in the Chrome Web Store sales description.
 
-## Unreleased — Phase 4 personal vocabulary
+## 0.1.13 — November 2, 2026
+
+The Store accepted manual publication at 1:52 p.m. EST. The public listing showed
+0.1.13 and the updated listing materials at 2:04 p.m. EST. The closeout updates
+the homepage version metadata to match. [Release record](release-0.1.13.md)
+
+### Phase 4 — Personal vocabulary
 
 - Add an optional local vocabulary list with separate, off-by-default sharing; saving does not enable transmission. Disable retains the list locally; Clear deletes it and turns sharing off.
 - Bound and validate terms in the extension and backend, forwarding opted-in terms through the existing backend-only xAI transcription path. No automatic extraction, rewriting, snippets, extra permissions or recognition-improvement claim.
 - Preserve recording, insertion, native Undo and temporary recovery. Do not persist or log vocabulary on the backend; dispatched requests cannot be recalled.
-- Not deployed or published. A compatible backend and revised privacy disclosures must be coordinated before extension release under separate approval; all six release gates remain open.
 
-## Unreleased — Phase 3
+### Phase 3
 
 - Use one persistent screen-reader status channel, keeping completed messages available after
   visual feedback hides; return keyboard Dismiss focus to the current supported editor without
@@ -25,25 +30,21 @@ These notes preserve the release history without placing every prior version in 
 - Avoid nearby native controls when positioning the microphone; keep its side stable during active work.
 - Added local unpacked-extension compatibility and repeat-session regressions, a dated evidence matrix and a privacy-conscious manual pilot protocol.
 - Kept the 10/30-second recording limits. Limited Gmail/ChatGPT speech checks are recorded;
-  full named-app acceptance remains pending.
-- No release, deployment or infrastructure change. See [Phase 3 report](../docs/PHASE_3_REPORT.md).
+  Outlook, Notion and WhatsApp remain unverified. [Phase 3 report](../docs/PHASE_3_REPORT.md)
 
-## Unreleased — Phase 2
+### Phase 2
 
 - Added optional bundled practice with permission, shortcut, privacy and help guidance.
 - Added elapsed/remaining time, subtle microphone activity and explicit Stop/Discard controls.
 - Clarified temporary recovery and keyboard focus/announcement behavior; kept the 60-second lifetime.
-- Preserved the 10-second default, 30-second maximum and existing permissions/preferences/Undo.
-- Not deployed or published. Physical microphone, screen-reader and live-app validation remain open.
-  See [Phase 2 report](../docs/PHASE_2_REPORT.md).
+- Preserved the 10-second default, 30-second maximum and existing permissions/preferences/Undo. [Phase 2 report](../docs/PHASE_2_REPORT.md)
 
-## Unreleased — Phase 1
+### Phase 1
 
 - Stop and discard unsafe/hidden recording sessions; reject synthetic page activation.
 - Preserve user edits when asynchronous insertion becomes unsafe; provide one temporary recovery result with explicit Copy/Discard.
 - Support keyboard activation while preserving native Undo and existing shortcuts/settings.
-- Harden backend proxy trust, resource limits, aggregate audio allowance, duration validation, logging and retention disclosures.
-- No version assigned, package published, or production deployment performed. See [roadmap](../docs/IMPROVEMENT_ROADMAP.md).
+- Harden backend proxy trust, resource limits, aggregate audio allowance, duration validation, logging and retention disclosures. [Implementation roadmap](../docs/IMPROVEMENT_ROADMAP.md)
 
 ## 0.1.12
 
