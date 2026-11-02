@@ -179,3 +179,26 @@ test("failed initial vocabulary load leaves consent unknown and controls unavail
   await expectSaved(page, initial);
   expect(await page.evaluate(() => window.__vocabularyTest.writes)).toBe(0);
 });
+
+test("a narrow popup keeps sharing and support reachable by keyboard without changing consent", async ({ page }) => {
+  await page.setViewportSize({ width: 280, height: 340 });
+  await openVocabulary(page);
+  const sharing = page.getByRole("switch", { name: "Enable vocabulary assistance" });
+  const email = page.getByRole("link", { name: "Email support" });
+  await expect(sharing).toBeEnabled();
+  await page.locator("#clearVocabulary").focus();
+  await page.keyboard.press("Tab");
+  await expect(sharing).toBeFocused();
+  await expect(sharing).toBeInViewport({ ratio: 1 });
+  await expect(sharing).not.toBeChecked();
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#resetSitePreferences")).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("link", { name: "Help", exact: true })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(email).toBeFocused();
+  await expect(email).toHaveAttribute("href", "mailto:dictozy.support@gmail.com");
+  await expect(email).toBeInViewport({ ratio: 1 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(280);
+  expect(await page.evaluate(() => window.__vocabularyTest.writes)).toBe(0);
+});
