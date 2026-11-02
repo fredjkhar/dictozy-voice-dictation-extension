@@ -231,5 +231,20 @@ test("microphone monitor falls back safely when signal inspection is unavailable
   const monitor = lifecycle.createMicrophoneSignalMonitor({});
 
   assert.equal(monitor.getResult(), "unknown");
+  assert.equal(monitor.getActivity(), null);
   await monitor.stop();
+});
+
+test("activity feedback reflects recent samples without changing whole-recording silence detection", async () => {
+  const lifecycle = loadLifecycle();
+  const fixture = createSignalFixture([0, 0.03, 0]);
+  const monitor = lifecycle.createMicrophoneSignalMonitor(fixture.stream, fixture.options);
+  assert.equal(monitor.getActivity(), false);
+  fixture.sampleAgain();
+  assert.equal(monitor.getActivity(), true);
+  fixture.sampleAgain();
+  assert.equal(monitor.getActivity(), false);
+  assert.equal(monitor.getResult(), "signal");
+  await monitor.stop();
+  assert.equal(monitor.getActivity(), null);
 });

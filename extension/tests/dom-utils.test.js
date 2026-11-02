@@ -363,3 +363,16 @@ test("replaces selected text in textareas", () => {
   assert.equal(textarea.value, "Hello new text");
   assert.equal(textarea.selectionStart, 9);
 });
+
+test("refuses saved offsets after the field value changes", () => {
+  const dom = loadDomUtils();
+  const input = new FakeInput("text");
+  input.value = "Alpha Beta";
+  input.selectionStart = 6;
+  input.selectionEnd = 10;
+  const selection = dom.captureFormFieldSelection(input);
+  input.value = "Dear Alpha Beta";
+  assert.equal(dom.insertIntoFormField(input, "dictated", selection), false);
+  assert.equal(input.value, "Dear Alpha Beta");
+  assert.equal(input.dispatchedEvents.length, 0);
+});

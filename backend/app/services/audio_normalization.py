@@ -11,6 +11,7 @@ import imageio_ffmpeg
 NORMALIZED_AUDIO_CONTENT_TYPE = "audio/wav"
 NORMALIZED_AUDIO_FILENAME = "recording.wav"
 NORMALIZED_AUDIO_MAX_SECONDS = 60
+NORMALIZED_SAMPLE_RATE = 16000
 NORMALIZED_AUDIO_TIMEOUT_SECONDS = 20
 SPEECH_FILTER_CHAIN = "highpass=f=80,lowpass=f=7600,dynaudnorm=f=150:g=15:p=0.95"
 MIN_AUDIO_DURATION_SECONDS = 0.25
@@ -50,19 +51,33 @@ def amplitude_to_dbfs(value: float) -> float:
     return 20 * math.log10(min(1.0, value))
 
 
-def analyze_wav_signal(audio_bytes: bytes) -> AudioSignal:
+def read_normalized_frames(audio_bytes: bytes) -> bytes:
     try:
         with wave.open(BytesIO(audio_bytes), "rb") as wav_file:
             channels = wav_file.getnchannels()
             sample_width = wav_file.getsampwidth()
             frame_rate = wav_file.getframerate()
-            frame_count = wav_file.getnframes()
-            frames = wav_file.readframes(frame_count)
+            if channels != 1 or sample_width != 2 or frame_rate != NORMALIZED_SAMPLE_RATE:
+                raise AudioNormalizationError("Audio normalization failed.")
+            # Piped ffmpeg WAVs use an unknown-length header (often 0xffffffff).
+            # Read a bounded number of actual samples, never trust getnframes().
+            frames = wav_file.readframes(NORMALIZED_SAMPLE_RATE * NORMALIZED_AUDIO_MAX_SECONDS + 1)
     except (EOFError, wave.Error) as exc:
         raise AudioNormalizationError("Audio normalization failed.") from exc
 
-    if channels <= 0 or sample_width != 2 or frame_rate <= 0 or frame_count <= 0 or not frames:
+    if channels != 1 or sample_width != 2 or frame_rate != NORMALIZED_SAMPLE_RATE or not frames:
         raise AudioNormalizationError("Audio normalization failed.")
+
+    if len(frames) % (channels * sample_width):
+        raise AudioNormalizationError("Audio normalization failed.")
+    if len(frames) > NORMALIZED_SAMPLE_RATE * NORMALIZED_AUDIO_MAX_SECONDS * 2:
+        raise AudioNormalizationError("Audio exceeds the duration limit.")
+    return frames
+
+
+def analyze_wav_signal(audio_bytes: bytes) -> AudioSignal:
+    frames = read_normalized_frames(audio_bytes)
+    sample_width, channels, frame_rate = 2, 1, NORMALIZED_SAMPLE_RATE
 
     sample_count = len(frames) // sample_width
     if sample_count == 0:
@@ -78,7 +93,9 @@ def analyze_wav_signal(audio_bytes: bytes) -> AudioSignal:
 
     max_amplitude = float(2 ** ((8 * sample_width) - 1))
     rms = math.sqrt(square_sum / sample_count)
-    duration_seconds = frame_count / float(frame_rate)
+    duration_seconds = len(frames) / (sample_width * channels * float(frame_rate))
+    if duration_seconds > NORMALIZED_AUDIO_MAX_SECONDS:
+        raise AudioNormalizationError("Audio exceeds the duration limit.")
 
     return AudioSignal(
         duration_seconds=duration_seconds,
@@ -100,15 +117,28 @@ def run_ffmpeg_wav_conversion(audio_bytes: bytes, *, audio_filter: str | None = 
         "-hide_banner",
         "-loglevel",
         "error",
+        "-nostdin",
+        "-protocol_whitelist",
+        "pipe",
+        "-probesize",
+        "1048576",
+        "-analyzeduration",
+        "1000000",
+        "-threads",
+        "1",
+        "-filter_threads",
+        "1",
         "-i",
         "pipe:0",
         "-t",
-        str(NORMALIZED_AUDIO_MAX_SECONDS),
+        str(NORMALIZED_AUDIO_MAX_SECONDS + 0.01),
+        "-map",
+        "0:a:0",
         "-vn",
         "-ac",
         "1",
         "-ar",
-        "16000",
+        str(NORMALIZED_SAMPLE_RATE),
         "-sample_fmt",
         "s16",
     ]
@@ -133,7 +163,15 @@ def run_ffmpeg_wav_conversion(audio_bytes: bytes, *, audio_filter: str | None = 
     if completed.returncode != 0 or not completed.stdout:
         raise AudioNormalizationError("Audio normalization failed.")
 
-    return completed.stdout
+    # Give the next conversion/provider a canonical length instead of pipe's unknown header.
+    frames = read_normalized_frames(completed.stdout)
+    buffer = BytesIO()
+    with wave.open(buffer, "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(NORMALIZED_SAMPLE_RATE)
+        wav_file.writeframes(frames)
+    return buffer.getvalue()
 
 
 def normalize_audio_for_stt(audio_bytes: bytes) -> NormalizedAudio:

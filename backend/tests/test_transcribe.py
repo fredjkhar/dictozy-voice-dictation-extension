@@ -28,6 +28,7 @@ def normalized_audio_stub(audio_bytes: bytes) -> NormalizedAudio:
 def reset_launch_guardrails() -> None:
     transcribe.rate_limiter.reset()
     transcribe.concurrency_limiter.reset()
+    transcribe.audio_budget.reset()
 
 
 def test_health_check() -> None:
@@ -416,3 +417,120 @@ def test_content_type_and_filename_helpers() -> None:
     assert normalize_content_type(" AUDIO/WAV ") == "audio/wav"
     assert safe_audio_filename("../recording.webm") == "recording.webm"
     assert safe_audio_filename("unsafe.exe") == "recording.webm"
+
+
+def test_forwarding_headers_do_not_change_direct_client_quota(monkeypatch) -> None:
+    async def provider(*args, **kwargs):
+        return XAITranscriptionResult(text="Safe result")
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
+    monkeypatch.setattr(transcribe, "transcribe_with_xai", provider)
+    monkeypatch.setattr(transcribe, "settings", replace(transcribe.settings, transcribe_rate_limit_requests=1))
+    responses = [client.post("/api/transcribe", headers={"X-Forwarded-For": ip, "X-Real-IP": ip},
+                            files={"file": ("clip.webm", b"audio", "audio/webm")})
+                 for ip in ["198.51.100.1", "198.51.100.2"]]
+    assert [r.status_code for r in responses] == [200, 429]
+
+
+def test_actual_body_limit_applies_without_honest_content_length() -> None:
+    from app.core.config import settings
+    chunk = b"x" * (1024 * 1024)
+    for headers in [{}, {"Content-Length": "1"}]:
+        response = client.post("/api/transcribe", headers=headers,
+                               content=(chunk for _ in range(settings.max_transcribe_content_length_bytes // len(chunk) + 1)))
+        assert response.status_code == 413
+        assert response.headers["x-request-id"]
+
+
+def test_unexpected_exception_returns_safe_response_and_log(monkeypatch, caplog) -> None:
+    import logging
+    from app.main import logger
+    def fail(_audio):
+        raise RuntimeError("private-audio-content-and-secret")
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", fail)
+    logger.addHandler(caplog.handler)
+    try:
+        response = TestClient(app, raise_server_exceptions=False).post(
+            "/api/transcribe", files={"file": ("private-name.webm", b"private audio", "audio/webm")})
+    finally:
+        logger.removeHandler(caplog.handler)
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Transcription service failed. Please try again."}
+    assert response.headers["x-request-id"]
+    assert "private" not in caplog.text
+    assert '"latency_ms"' in caplog.text
+    assert '"status":500' in caplog.text
+
+
+def test_upload_spooling_is_temporary_and_closed_even_on_failure(monkeypatch) -> None:
+    from starlette.datastructures import UploadFile
+    observed = []
+    close = UploadFile.close
+    async def observe_close(file):
+        observed.append((file.file, getattr(file.file, "_rolled", False)))
+        await close(file)
+    monkeypatch.setattr(UploadFile, "close", observe_close)
+    response = client.post("/api/transcribe", files={"file": ("clip.txt", b"x" * (1024 * 1024 + 1), "text/plain")})
+    assert response.status_code == 400
+    assert observed and observed[0][1]
+    assert all(file.closed for file, _ in observed)
+
+
+def test_aggregate_budget_prevents_provider_calls_and_does_not_refund_failure(monkeypatch) -> None:
+    calls = []
+    async def provider(*args, **kwargs):
+        calls.append(1)
+        raise XAIServiceError("private upstream details")
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
+    monkeypatch.setattr(transcribe, "transcribe_with_xai", provider)
+    monkeypatch.setattr(transcribe, "settings", replace(transcribe.settings, transcribe_audio_budget_seconds=1))
+    replies = [client.post("/api/transcribe", files={"file": ("clip.webm", b"audio", "audio/webm")})
+               for _ in range(2)]
+    assert [r.status_code for r in replies] == [502, 429]
+    assert len(calls) == 1
+
+
+def test_budget_is_shared_across_different_clients(monkeypatch) -> None:
+    calls = []
+    async def provider(*args, **kwargs):
+        calls.append(1)
+        return XAITranscriptionResult(text="Safe result")
+    monkeypatch.setattr(transcribe, "normalize_audio_for_stt", normalized_audio_stub)
+    monkeypatch.setattr(transcribe, "transcribe_with_xai", provider)
+    monkeypatch.setattr(transcribe, "settings", replace(transcribe.settings, transcribe_audio_budget_seconds=1))
+    replies = [TestClient(app, client=(ip, 123)).post("/api/transcribe",
+               files={"file": ("clip.webm", b"audio", "audio/webm")}) for ip in ["198.51.100.1", "198.51.100.2"]]
+    assert [r.status_code for r in replies] == [200, 429]
+    assert len(calls) == 1
+
+
+@pytest.mark.parametrize(("peer", "forwarded", "expected"), [
+    ("203.0.113.1", "198.51.100.1", "203.0.113.1"),
+    ("10.0.0.1", "forged-value, 198.51.100.2", "198.51.100.2"),
+    ("::ffff:192.0.2.1", "198.51.100.1", "192.0.2.1"),
+])
+def test_server_proxy_trust_boundary(peer, forwarded, expected) -> None:
+    from starlette.requests import Request
+    from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+    seen = []
+    async def capture(scope, receive, send):
+        seen.append(transcribe.get_rate_limit_key(Request(scope)))
+    scope = {"type": "http", "client": (peer, 123), "headers": [(b"x-forwarded-for", forwarded.encode())]}
+    asyncio.run(ProxyHeadersMiddleware(capture, trusted_hosts="10.0.0.1")(scope, None, None))
+    assert seen == [expected]
+
+
+def test_request_log_includes_safe_identifier_and_latency_only(caplog) -> None:
+    from app.main import logger
+    import json
+    logger.addHandler(caplog.handler)
+    try:
+        response = client.get("/health?private=user-text", headers={"X-Request-ID": "test-safe-id"})
+        client.get("/private-transcript-path")
+    finally:
+        logger.removeHandler(caplog.handler)
+    records = [json.loads(record.message) for record in caplog.records if record.name == "app.requests"]
+    assert records[0]["request_id"] == response.headers["x-request-id"] == "test-safe-id"
+    assert records[0]["latency_ms"] >= 0
+    assert records[1]["path"] == "[unmatched]"
+    assert "private" not in caplog.text
+    assert set(records[0]) == {"event", "request_id", "method", "path", "status", "latency_ms"}

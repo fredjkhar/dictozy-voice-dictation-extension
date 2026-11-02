@@ -1,0 +1,26 @@
+:root { color-scheme: light; font: 16px/1.6 system-ui, -apple-system, sans-serif; color: #17212b; background: #f7f9fb; }
+* { box-sizing: border-box; }
+body { margin: 0; font: inherit; }
+main { max-width: 740px; margin: 32px auto; padding: 28px 48px 32px 24px; }
+header { display: flex; align-items: center; gap: 12px; color: #115e59; font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.2; margin: 24px 0 8px; }
+h2 { font-size: 18px; margin: 0 0 8px; }
+p { margin: 8px 0 16px; }
+.intro { font-size: 19px; color: #475569; }
+ol { padding-left: 24px; }
+li { margin: 8px 0; }
+button { border: 1px solid #0f766e; border-radius: 8px; padding: 10px 16px; background: #0f766e; color: white; font: 650 15px/1.4 system-ui, sans-serif; cursor: pointer; min-height: 42px; }
+button:hover { background: #115e59; }
+button:disabled { background: #475569; border-color: #475569; cursor: not-allowed; }
+button.secondary { background: white; color: #115e59; }
+label { display: block; font-weight: 650; margin-top: 24px; }
+textarea { width: 100%; resize: vertical; padding: 12px; border: 1px solid #64748b; border-radius: 8px; font: inherit; color: #17212b; background: white; }
+textarea::placeholder { color: #536175; }
+#practiceHint, #practiceAvailability, footer { font-size: 14px; color: #475569; }
+section, details { margin-top: 24px; padding-top: 24px; border-top: 1px solid #cbd5e1; }
+kbd { font: 600 14px/1.6 ui-monospace, monospace; padding: 2px 6px; border: 1px solid #94a3b8; border-radius: 4px; background: white; white-space: nowrap; }
+a { color: #115e59; text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid #0369a1; outline-offset: 3px; }
+summary { cursor: pointer; font-weight: 650; }
+footer { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 24px; }
+@media (max-width: 500px) { main { margin: 0; padding: 20px 48px 24px 16px; } }

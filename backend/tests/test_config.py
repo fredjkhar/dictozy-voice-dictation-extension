@@ -89,3 +89,17 @@ def test_invalid_transcription_enabled_prevents_backend_config_import() -> None:
     assert result.returncode != 0
     assert "TRANSCRIPTION_ENABLED must be one of:" in result.stderr
     assert "XAI_API_KEY" not in result.stderr
+
+
+@pytest.mark.parametrize("trusted", ["*", "0.0.0.0/0", "::/0", "not-an-ip"])
+def test_production_rejects_unbounded_or_invalid_proxy_trust(trusted) -> None:
+    with pytest.raises(ValueError, match="FORWARDED_ALLOW_IPS"):
+        Settings(app_env="production", backend_cors_origins=PRODUCTION_EXTENSION_ORIGIN, forwarded_allow_ips=trusted)
+
+
+@pytest.mark.parametrize("field", ["transcribe_max_concurrent_requests", "transcribe_rate_limit_requests",
+                                  "max_transcribe_content_length_bytes", "transcribe_audio_budget_seconds",
+                                  "transcribe_audio_budget_window_seconds"])
+def test_production_cannot_disable_resource_guards(field) -> None:
+    with pytest.raises(ValueError, match="guards must be positive"):
+        Settings(app_env="production", backend_cors_origins=PRODUCTION_EXTENSION_ORIGIN, **{field: 0})

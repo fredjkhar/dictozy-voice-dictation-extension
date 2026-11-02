@@ -37,6 +37,7 @@ The popup stores local settings with `chrome.storage.local`:
 - Keyboard shortcut: the `toggle-dictation` command suggests `Ctrl+Shift+Y` by default and `Command+Shift+Y` on macOS. Chrome may leave it unassigned after a conflict; the popup shows the current assignment and opens `chrome://extensions/shortcuts` for remapping.
 - Language formatting: defaults to English. Automatic asks the backend to omit provider language and formatting parameters; an explicit choice sends its language code so xAI can guide written formatting for numbers, currencies, and units. It is not a guarantee of improved speech recognition.
 - Recording limit: defaults to 10 seconds and is clamped between 1 and 30 seconds.
+- Personal vocabulary (unpublished): save user-entered terms locally; a separate, off-by-default choice enables sending saved terms with future dictation requests. See the Phase 4 notes below.
 - Reset Site Preferences: removes only explicitly disabled origins and leaves the global enabled state, recording limit, language formatting, and keyboard shortcut unchanged.
 
 The release build pins transcription to `https://voice-dictation-extension.onrender.com/api/transcribe`. Popup messages, page data, and stored settings cannot select another endpoint. xAI remains backend-only.
@@ -64,7 +65,7 @@ Configure the backend environment as documented in `../backend/.env.example`, th
 
 ```bash
 source .venv/bin/activate
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --no-access-log
 ```
 
 The production extension does not connect to localhost. Test a local backend directly with `python scripts/smoke_test.py http://127.0.0.1:8000 --allow-http`; mocked extension browser tests exercise the fixed production endpoint without contacting production.
@@ -122,3 +123,100 @@ For structured QA, use the checklist and local test page in `../qa/`.
 - If transcription fails, check the FastAPI terminal logs first. The extension intentionally shows safe, generic error messages.
 - If the production backend is unavailable, open its `/health` URL directly and check the hosting provider logs, TLS certificate, and CORS configuration.
 - Canvas-based editors and custom widgets without a standard writable DOM input or contenteditable surface remain unsupported.
+
+
+## Phase 1 safety behavior (unpublished)
+
+- Only trusted mouse/keyboard clicks or extension commands can activate recording. Page scripts
+  cannot start recording by dispatching a click. Enter and Space on the microphone use the retained
+  supported field; successful insertion restores focus and retains native Undo.
+- Unsafe focus, a hidden tab, page exit, loss of the recording control, or loss of window focus
+  during active recording discards the recording and stops tracks. Pending permission results
+  and recorder events are tied to their originating session and cannot revive cancelled work.
+- Field contents and rich-text selection boundaries are captured temporarily in memory and
+  rechecked before insertion and after `beforeinput` page handlers. Caret-only movement remains
+  supported; intervening text/markup edits cause refusal rather than stale-offset replacement.
+- When a completed result cannot be safely inserted, a small Copy/Discard notice retains one
+  transcript per page in memory for at most 60 seconds. It never displays transcript content or
+  inserts into a different field. Copy requires an explicit trusted action and browser clipboard
+  availability; failure leaves the result available until expiry. Copy/discard/expiry/new recording,
+  disable, hidden tab and page exit clear it. Deliberately cancelled operations have no recovery.
+- No new permissions, storage keys, preferences, language options or duration changes were added.
+  Full recovery UX, timers, onboarding, editor expansion and longer clips remain later phases.
+
+See [Phase 1 manual acceptance](../qa/phase-1-acceptance.md) and
+[implementation tracking](../docs/IMPROVEMENT_ROADMAP.md). `npm run test:browser` includes ordinary
+page tests with Chrome/media mocks and separate unpacked-MV3 Chromium tests using a synthetic
+microphone and stubbed backend. Neither establishes physical-microphone or named-site compatibility.
+
+## Phase 2 first use and feedback (unpublished)
+
+Open **Try dictation** in the popup to revisit the optional bundled practice page. Its Try action
+focuses a practice textarea; microphone capture still requires explicit activation of the ordinary
+microphone control or assigned shortcut. The page reuses the existing engine and backend, respects
+the master toggle, shows the assigned shortcut, and includes permission/privacy/help guidance.
+It does not add an install-time tab, onboarding tracking, permissions, account or stored practice text.
+
+During recording, the existing status area shows elapsed/remaining seconds, a small current-activity
+indicator, and Stop/Discard buttons. Timing uses the existing recording loop and activity uses the
+existing sampler. The default/max remain 10/30 seconds. Status announcements are separate from the
+non-live timer/activity text. While recording, Tab from the editor reaches its Stop icon, then Stop
+and Discard; Shift+Tab from the icon returns to the editor. Editor handlers that prevent Tab are
+respected. Keyboard focus returns to the original editor when stopping or discarding.
+
+Recovery remains one in-memory result per page for 60 seconds. It now explains refusal, confirms
+Copy/Discard/expiry, supports retry after clipboard denial, and returns focus only when removing a
+focused recovery control. It never automatically pastes or rebases stale offsets. A late copy result
+cannot remove a newer result; a clipboard operation already handed to the browser cannot be revoked.
+
+See [Phase 2 manual acceptance](../qa/phase-2-acceptance.md) and the
+[Phase 2 report](../docs/PHASE_2_REPORT.md). Physical microphone, screen-reader, live-editor and
+production validation remain open; bundled Chromium/synthetic audio is a separate test method.
+
+## Phase 3 compatibility validation (unpublished)
+
+Focus resolution follows nested open shadow roots. Recording ends immediately when the target loses
+focus to another editor or unsafe target, while movement within one rich editor and to DICTOZY's
+controls remains valid. Iframe and closed-shadow editors are still unsupported.
+
+The microphone checks nearby page controls before choosing a position and retains that side during
+recording/transcription. This avoids the observed ChatGPT native-voice-button collision, but does
+not guarantee collision-free placement in every crowded layout. No site-specific permissions or
+framework integrations were added. Recording remains 10 seconds by default, at most 30 seconds.
+
+See the [dated compatibility matrix](../docs/COMPATIBILITY_MATRIX.md) and
+[Phase 3 acceptance procedure](../qa/phase-3-acceptance.md). Local native-browser tests cover open
+shadow fields, native Undo, rich DOM replacement, iframe exclusion, Permissions Policy and repeated
+insert/discard sessions. Their synthetic audio and stubbed backend do not establish speech accuracy,
+production latency or full Gmail/ChatGPT/Notion/Outlook/WhatsApp compatibility.
+
+## Phase 4 personal vocabulary (unpublished)
+
+The popup accepts one term per line, up to 100 terms of at most 50 Unicode code points each.
+Saving keeps the list local and does not enable transmission. Enable the separate sharing control
+only if you want the saved terms sent with future dictation to Dictozy's backend and xAI as hints.
+Editing and saving an already enabled list updates the terms used by future requests. Hints do
+not guarantee better recognition; no automatic term extraction, text rewriting or spoken snippets
+are included. Opening, saving or enabling vocabulary never starts recording.
+
+The `personalVocabulary` key in `chrome.storage.local` holds `{ enabled, terms }`; missing data
+defaults to `{ enabled: false, terms: [] }`. No Chrome Sync, account, extra permission or transcript history is used. Disable
+sharing to retain the list locally without sending it; Clear removes this key and turns sharing
+off. Already dispatched requests cannot be recalled. Global and site controls remain independent.
+
+The service worker reads current local storage for each upload, validates the list, and includes
+optional `vocabulary_enabled=true` and a JSON `vocabulary` array only when enabled and nonempty.
+Page/content-script messages cannot supply these terms. Both extension and backend trim terms,
+normalize Unicode to NFC and remove case-insensitive duplicates. The backend forwards valid terms
+to the existing xAI endpoint as repeated `keyterm` fields and does not persist or log them.
+
+Release coordination is still required: the live backend is unchanged and vocabulary handling
+has not been verified there. An older backend may ignore the new fields. Under separate release
+approval, deploy and verify the backward-compatible backend before distributing this extension
+change, and publish the matching privacy disclosures. All six release gates remain open.
+
+For a focused local check, use the existing mocked browser tests: save a small list with sharing
+off, reopen the popup, enable it, then disable and clear it. Confirm disabled/empty requests omit
+both fields and enabled requests contain only saved terms; use synthetic fixtures, not private
+vocabulary. This is not a live-provider recognition test. Loading this unpacked extension still
+uses the fixed production backend; starting local FastAPI does not redirect it.

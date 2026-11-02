@@ -10,12 +10,12 @@ function readExtensionFile(name) {
   return fs.readFileSync(path.join(extensionDir, name), "utf8");
 }
 
-test("manifest is prepared for Dictozy 0.1.12 with production-only backend access", () => {
+test("manifest is prepared for Dictozy 0.1.13 with production-only backend access", () => {
   const manifest = JSON.parse(readExtensionFile("manifest.json"));
 
   assert.equal(manifest.name, "Dictozy: Voice Dictation");
   assert.equal(manifest.short_name, "Dictozy");
-  assert.equal(manifest.version, "0.1.12");
+  assert.equal(manifest.version, "0.1.13");
   assert.equal(
     manifest.description,
     "Write faster in Chrome by dictating messages, notes, searches, and form entries - no account required.",
@@ -75,8 +75,8 @@ test("background pins transcription and removes the obsolete endpoint setting", 
   const config = readExtensionFile("config.js");
 
   assert.match(background, /fetch\(TRANSCRIPTION_ENDPOINT/);
-  assert.match(background, /chrome\.runtime\.onInstalled/);
   assert.match(background, /OBSOLETE_BACKEND_URL_STORAGE_KEY/);
+  assert.match(background, /chrome\.runtime\.onInstalled/);
   assert.equal(/settings\.backendUrl|message\.backendUrl|VOICE_DICTATION_TEST_BACKEND/.test(background), false);
   assert.equal(/localhost|127\.0\.0\.1/.test(config), false);
 });

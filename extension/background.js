@@ -1,6 +1,7 @@
 importScripts("config.js");
 importScripts("dictation-lifecycle.js");
 importScripts("background-utils.js");
+importScripts("vocabulary.js");
 
 const TRANSCRIBE_AUDIO_MESSAGE = "VOICE_DICTATION_TRANSCRIBE_AUDIO";
 const CANCEL_TRANSCRIPTION_MESSAGE = "VOICE_DICTATION_CANCEL_TRANSCRIPTION";
@@ -44,6 +45,7 @@ const {
 } = globalThis.VoiceDictationConfig;
 const { normalizeRequestId } = globalThis.DictozyLifecycle;
 const { prepareAudioDataUrl } = globalThis.DictozyBackgroundUtils;
+const { STORAGE_KEY: VOCABULARY_STORAGE_KEY, normalizeVocabularySettings } = globalThis.DictozyVocabulary;
 const activeTranscriptions = new Map();
 
 function hasOnlyKeys(message, allowedKeys) {
@@ -144,6 +146,7 @@ function invalidResponse(requestId) {
 function getStoredSettings() {
   return chrome.storage.local.get({
     transcriptionLanguage: DEFAULT_TRANSCRIPTION_LANGUAGE,
+    [VOCABULARY_STORAGE_KEY]: null,
   });
 }
 
@@ -189,8 +192,14 @@ async function transcribeAudio(message) {
 
   try {
     const settings = await getStoredSettings();
+    // Read consent and terms together for every upload; never accept them from a page message.
+    const vocabulary = normalizeVocabularySettings(settings[VOCABULARY_STORAGE_KEY]);
     const formData = new FormData();
     formData.append("language", normalizeTranscriptionLanguage(settings.transcriptionLanguage));
+    if (vocabulary.enabled && vocabulary.terms.length > 0) {
+      formData.append("vocabulary_enabled", "true");
+      formData.append("vocabulary", JSON.stringify(vocabulary.terms));
+    }
     formData.append("file", audio.blob, `recording.${audio.extension}`);
     const response = await fetch(TRANSCRIPTION_ENDPOINT, {
       method: "POST",

@@ -4,6 +4,7 @@ import logging
 import httpx
 
 from app.core.config import settings
+from app.core.vocabulary import InvalidVocabularyError, normalize_vocabulary
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +32,15 @@ async def transcribe_audio(
     filename: str,
     content_type: str,
     language: str | None,
+    keyterms: list[str] | None = None,
 ) -> XAITranscriptionResult:
     if not settings.xai_api_key:
         raise XAIConfigurationError("XAI_API_KEY is not configured.")
+
+    try:
+        normalized_keyterms = normalize_vocabulary(keyterms) if keyterms is not None else []
+    except InvalidVocabularyError:
+        raise XAIServiceError("Invalid transcription vocabulary.") from None
 
     endpoint = f"{settings.xai_api_base_url.rstrip('/')}/v1/stt"
     headers = {"Authorization": f"Bearer {settings.xai_api_key}"}
@@ -42,6 +49,10 @@ async def transcribe_audio(
     if language is not None:
         data["language"] = language
         data["format"] = "true"
+
+    if normalized_keyterms:
+        # httpx emits a repeated multipart field for each list item, before files.
+        data["keyterm"] = normalized_keyterms
 
     files = {
         "file": (filename or "recording.webm", audio_bytes, content_type or "audio/webm"),

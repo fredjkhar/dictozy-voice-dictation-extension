@@ -269,6 +269,60 @@ test("background sends explicit and automatic language values only to the backen
   assert.equal(await getSubmittedLanguage("unsupported"), "en");
 });
 
+test("disabled, unconsented and corrupt vocabulary never enters the upload", async () => {
+  for (const personalVocabulary of [undefined, { terms: ["Private name"] },
+    { enabled: false, terms: ["Private name"] }, { enabled: "true", terms: ["Private name"] },
+    { enabled: true, terms: ["Valid name", "private\ninvalid"] }, { enabled: true, terms: Array(101).fill("Private name") }]) {
+    const background = createBackground({
+      storageValues: { personalVocabulary },
+      fetchImpl: async () => new Response(JSON.stringify({ transcript: "Unchanged provider result" })),
+    });
+    const result = await background.dispatch({ type: TRANSCRIBE_MESSAGE, requestId: "vocabulary-private-1234", audioDataUrl: AUDIO_DATA_URL });
+    assert.equal(result.ok, true);
+    const { body, headers } = background.fetchCalls[0].options;
+    assert.deepEqual([...body.keys()], ["language", "file"]);
+    assert.equal(JSON.stringify(headers).includes("Private name"), false);
+    assert.equal(JSON.stringify(result).includes("Private name"), false);
+  }
+});
+
+test("each upload uses current consent and saved terms, preserving language and provider text", async () => {
+  const storageValues = { transcriptionLanguage: "fr" };
+  const background = createBackground({
+    storageValues,
+    fetchImpl: async () => new Response(JSON.stringify({ transcript: "Provider text is never rewritten" })),
+  });
+  const changes = [
+    [{ enabled: true, terms: ["  Dictozy ", "DICTOZY", "Cafe\u0301", "Ada Lovelace"] }, ["Dictozy", "Café", "Ada Lovelace"]],
+    [{ enabled: true, terms: ["Edited name", "Ada Lovelace"] }, ["Edited name", "Ada Lovelace"]],
+    [{ enabled: true, terms: ["Edited name"] }, ["Edited name"]],
+    [{ enabled: false, terms: ["Edited name"] }, null],
+    [{ enabled: true, terms: [] }, null],
+    [undefined, null],
+  ];
+  for (const [index, [settings, expected]] of changes.entries()) {
+    if (settings === undefined) delete storageValues.personalVocabulary;
+    else storageValues.personalVocabulary = settings;
+    const result = await background.dispatch({ type: TRANSCRIBE_MESSAGE, requestId: `vocabulary-current-${index}`, audioDataUrl: AUDIO_DATA_URL });
+    assert.equal(result.transcript, "Provider text is never rewritten");
+    const form = background.fetchCalls.at(-1).options.body;
+    assert.equal(form.get("language"), "fr");
+    assert.equal(form.get("vocabulary_enabled"), expected ? "true" : null);
+    assert.deepEqual(form.has("vocabulary") ? JSON.parse(form.get("vocabulary")) : null, expected);
+    assert.equal([...form.keys()].at(-1), "file");
+  }
+});
+
+test("page messages cannot supply vocabulary or grant consent", async () => {
+  const background = createBackground();
+  for (const extra of [{ vocabulary: ["Private name"] }, { vocabulary_enabled: true }, { personalVocabulary: { enabled: true, terms: ["Private name"] } }]) {
+    const result = await background.dispatch({ type: TRANSCRIBE_MESSAGE, requestId: "vocabulary-forged-1234", audioDataUrl: AUDIO_DATA_URL, ...extra });
+    assert.equal(result.ok, false);
+    assert.equal(result.message, "Invalid transcription request.");
+  }
+  assert.equal(background.fetchCalls.length, 0);
+});
+
 test("provider failures remain safe and do not expose upstream details", async () => {
   const background = createBackground({
     fetchImpl: async () => new Response(JSON.stringify({ detail: "private provider response body" }), {
@@ -415,6 +469,7 @@ test("treats missing and malformed successful responses as invalid responses", a
 
 test("background cancellation aborts the active request", async () => {
   const background = createBackground({
+    storageValues: { personalVocabulary: { enabled: true, terms: ["Private name"] } },
     fetchImpl: async (_url, options) => new Promise((_resolve, reject) => {
       const rejectAsAborted = () => reject(new DOMException("Aborted", "AbortError"));
 

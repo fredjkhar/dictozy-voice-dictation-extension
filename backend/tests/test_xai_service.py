@@ -1,6 +1,9 @@
 import asyncio
 from dataclasses import replace
+from email import policy
+from email.parser import BytesParser
 
+import httpx
 import pytest
 
 from app.services import xai_service
@@ -128,3 +131,50 @@ def test_unusable_provider_responses_do_not_log_payload_keys(monkeypatch, caplog
     assert "private-provider-marker" not in caplog.text
     assert "must-not-be-logged" not in caplog.text
     assert "status=200" in caplog.text
+
+
+@pytest.mark.parametrize("language", ["en", "fr", None])
+@pytest.mark.parametrize("terms", [None, [], ["  Cafe\u0301 ", "CAFÉ", "Private term"]])
+def test_provider_multipart_wire_preserves_language_and_emits_repeated_keyterms_before_audio(monkeypatch, language, terms) -> None:
+    seen = []
+
+    async def handle(request):
+        body = await request.aread()
+        message = BytesParser(policy=policy.default).parsebytes(
+            b"Content-Type: " + request.headers["content-type"].encode() + b"\r\nMIME-Version: 1.0\r\n\r\n" + body,
+        )
+        parts = [(part.get_param("name", header="content-disposition"), part.get_payload(decode=True))
+                 for part in message.iter_parts()]
+        seen.extend(parts)
+        assert request.url == "https://api.x.ai/v1/stt"
+        assert request.headers["authorization"] == "Bearer backend-only-test-key"
+        return httpx.Response(200, json={"text": "Safe result"})
+
+    original_client = httpx.AsyncClient
+    monkeypatch.setattr(xai_service.httpx, "AsyncClient", lambda **kwargs: original_client(
+        **kwargs, transport=httpx.MockTransport(handle),
+    ))
+    monkeypatch.setattr(xai_service, "settings", replace(xai_service.settings,
+        xai_api_key="backend-only-test-key", xai_api_base_url="https://api.x.ai"))
+    result = asyncio.run(xai_service.transcribe_audio(
+        b"audio payload", filename="recording.wav", content_type="audio/wav", language=language, keyterms=terms,
+    ))
+    expected = [] if language is None else [("language", language.encode()), ("format", b"true")]
+    if terms:
+        expected.extend([("keyterm", "Café".encode()), ("keyterm", b"Private term")])
+    expected.append(("file", b"audio payload"))
+    assert seen == expected
+    assert result.text == "Safe result"
+
+
+@pytest.mark.parametrize("terms", [["private\nterm"], ["private"] * 101, "private", [None]])
+def test_invalid_provider_vocabulary_never_opens_client_or_logs_terms(monkeypatch, caplog, terms) -> None:
+    def must_not_connect(**kwargs):
+        raise AssertionError("Invalid vocabulary must fail before opening an HTTP client")
+    monkeypatch.setattr(xai_service.httpx, "AsyncClient", must_not_connect)
+    monkeypatch.setattr(xai_service, "settings", replace(xai_service.settings, xai_api_key="backend-only-test-key"))
+    with pytest.raises(xai_service.XAIServiceError, match="^Invalid transcription vocabulary.$"):
+        asyncio.run(xai_service.transcribe_audio(
+            b"audio", filename="recording.wav", content_type="audio/wav", language="en", keyterms=terms,
+        ))
+    assert "private" not in caplog.text
