@@ -2,14 +2,18 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://dictozy.com/</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-11-02</lastmod>
+  </url>
+  <url>
+    <loc>https://dictozy.com/guide.html</loc>
+    <lastmod>2026-11-02</lastmod>
   </url>
   <url>
     <loc>https://dictozy.com/privacy.html</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-11-01</lastmod>
   </url>
   <url>
     <loc>https://dictozy.com/support.html</loc>
-    <lastmod>2026-09-06</lastmod>
+    <lastmod>2026-11-02</lastmod>
   </url>
 </urlset>

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from html.parser import HTMLParser
 import json
 from pathlib import Path
@@ -15,28 +16,22 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 SITE_DIR = ROOT / "site"
 PRIVACY_SOURCE = ROOT / "PRIVACY.md"
-PUBLIC_PAGES = ("index.html", "privacy.html", "support.html", "404.html")
-INDEXABLE_PAGES = ("index.html", "privacy.html", "support.html")
+INDEXABLE_PAGES = ("index.html", "guide.html", "privacy.html", "support.html")
+PUBLIC_PAGES = (*INDEXABLE_PAGES, "404.html")
 VERIFICATION_FILE = "google477277a037f62b85.html"
 VERIFICATION_CONTENT = b"google-site-verification: google477277a037f62b85.html"
 STORE_URL = "https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma"
 PUBLIC_ROOT = "https://dictozy.com/"
 LEGACY_PUBLIC_ROOT = "https://fredjkhar.github.io/dictozy-voice-dictation-extension/"
-STYLESHEET_URL = "styles.css?v=20260826-seo"
 PUBLISHED_EXTENSION_VERSION = "0.1.13"
 HOMEPAGE_DESCRIPTION = (
-    "Dictozy is a Chrome voice dictation extension for quickly entering messages, notes, searches, and form text "
-    "into supported web fields with no account required."
+    "Dictate short messages, notes, and searches in supported Chrome fields. Explore Dictozy’s recording controls, "
+    "safe transcript recovery, and optional vocabulary."
 )
+SOCIAL_IMAGE = f"{PUBLIC_ROOT}assets/dictozy-social.png"
 EXPECTED_CANONICALS = {
-    "index.html": PUBLIC_ROOT,
-    "privacy.html": f"{PUBLIC_ROOT}privacy.html",
-    "support.html": f"{PUBLIC_ROOT}support.html",
-}
-EXPECTED_SOCIAL_IMAGES = {
-    "index.html": f"{PUBLIC_ROOT}assets/screenshot-dictation-1280x800.png",
-    "privacy.html": f"{PUBLIC_ROOT}assets/screenshot-dictation-1280x800.png",
-    "support.html": f"{PUBLIC_ROOT}assets/screenshot-settings-1280x800.png",
+    name: PUBLIC_ROOT if name == "index.html" else f"{PUBLIC_ROOT}{name}"
+    for name in INDEXABLE_PAGES
 }
 POLICY_SECTIONS = (
     "Data Handled",
@@ -108,7 +103,6 @@ class ParsedPage:
     text_parts: list[str] = field(default_factory=list)
     headings: list[tuple[str, str]] = field(default_factory=list)
     ids: set[str] = field(default_factory=set)
-    classes: set[str] = field(default_factory=set)
     links: list[str] = field(default_factory=list)
     resources: list[tuple[str, str]] = field(default_factory=list)
     metadata: list[dict[str, str]] = field(default_factory=list)
@@ -134,6 +128,7 @@ class PageParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.page = ParsedPage(path=path)
         self._inside_title = False
+        self._inside_heading = False
         self._script_attributes: dict[str, str] | None = None
         self._script_parts: list[str] = []
 
@@ -144,12 +139,12 @@ class PageParser(HTMLParser):
         element_id = attributes.get("id")
         if element_id:
             self.page.ids.add(element_id)
-        self.page.classes.update(attributes.get("class", "").split())
 
         if tag == "title":
             self._inside_title = True
         elif tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
             self.page.headings.append((tag, ""))
+            self._inside_heading = True
         elif tag == "a" and attributes.get("href"):
             self.page.links.append(attributes["href"])
         elif tag == "img":
@@ -182,6 +177,8 @@ class PageParser(HTMLParser):
         tag = tag.casefold()
         if tag == "title":
             self._inside_title = False
+        elif tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
+            self._inside_heading = False
         elif tag == "script" and self._script_attributes is not None:
             self.page.scripts.append(ScriptBlock(self._script_attributes, "".join(self._script_parts)))
             self._script_attributes = None
@@ -196,7 +193,7 @@ class PageParser(HTMLParser):
             self.page.text_parts.append(data)
             if self._inside_title:
                 self.page.title += data
-            if self.page.headings:
+            if self._inside_heading:
                 tag, heading_text = self.page.headings[-1]
                 self.page.headings[-1] = (tag, heading_text + data)
 
@@ -254,16 +251,27 @@ def validate_page_metadata(pages: dict[str, ParsedPage], errors: list[str]) -> N
 
         if h1_count != 1:
             errors.append(f"{name}: expected one H1, found {h1_count}")
+        last_level = 0
+        for tag, heading in page.headings:
+            level = int(tag[1])
+            if not heading.strip() or level > last_level + 1:
+                errors.append(f"{name}: empty heading or skipped heading level at {tag}")
+            last_level = level
         if page.canonical_urls != [EXPECTED_CANONICALS[name]]:
             errors.append(f"{name}: canonical must be {EXPECTED_CANONICALS[name]}")
         if page.meta("property", "og:url") != EXPECTED_CANONICALS[name]:
             errors.append(f"{name}: og:url must match the canonical")
-        if page.meta("property", "og:image") != EXPECTED_SOCIAL_IMAGES[name]:
+        if "noindex" in normalize(page.meta("name", "robots") or ""):
+            errors.append(f"{name}: indexable page contains noindex")
+        if page.meta("property", "og:image") != SOCIAL_IMAGE:
             errors.append(f"{name}: og:image must use the production domain")
-        if page.meta("name", "twitter:image") != EXPECTED_SOCIAL_IMAGES[name]:
+        if page.meta("name", "twitter:image") != SOCIAL_IMAGE:
             errors.append(f"{name}: twitter:image must use the production domain")
-        if ("link", STYLESHEET_URL) not in page.resources:
-            errors.append(f"{name}: cache-busted stylesheet reference must be {STYLESHEET_URL}")
+        if not any(
+            kind == "link" and urlsplit(ref).path.lstrip("/") == "styles.css" and urlsplit(ref).query
+            for kind, ref in page.resources
+        ):
+            errors.append(f"{name}: missing cache-busted shared stylesheet")
 
         for metadata_name, metadata_key in (
             ("Open Graph title", ("property", "og:title")),
@@ -290,6 +298,8 @@ def validate_references(pages: dict[str, ParsedPage], errors: list[str]) -> None
 
     for name, page in pages.items():
         for reference in page.links:
+            if urlsplit(reference).scheme not in {"", "https", "mailto"}:
+                errors.append(f"{name}: unsafe link scheme in {reference}")
             if unquote(urlsplit(reference).path) in {"index.html", "./index.html", "/index.html"}:
                 errors.append(f"{name}: internal homepage link must use the canonical root URL: {reference}")
 
@@ -345,9 +355,23 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
             source = script.attributes.get("src")
             script_type = script.attributes.get("type", "").casefold()
             if source:
-                errors.append(f"{name}: executable script dependency is not allowed: {source}")
+                script_url = urlsplit(source)
+                allowed_guide_script = (
+                    name == "guide.html"
+                    and script_url.path in {"guide.js", "/guide.js"}
+                    and not script_url.netloc
+                    and not script_url.scheme
+                    and (script_type == "module" or "defer" in script.attributes)
+                    and (SITE_DIR / "guide.js").is_file()
+                )
+                if not allowed_guide_script:
+                    errors.append(f"{name}: unexpected executable script dependency: {source}")
             elif script_type != "application/ld+json":
                 errors.append(f"{name}: inline executable scripts are not allowed")
+
+    guide_scripts = pages["guide.html"].scripts
+    if len(guide_scripts) != 1 or not guide_scripts[0].attributes.get("src"):
+        errors.append("guide.html: expected just the local guide script")
 
     homepage_scripts = pages["index.html"].scripts
     if len(homepage_scripts) != 1:
@@ -368,7 +392,7 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
         )
     if structured_data.get("url") != PUBLIC_ROOT:
         errors.append("index.html: JSON-LD url must use the production homepage")
-    if structured_data.get("image") != EXPECTED_SOCIAL_IMAGES["index.html"]:
+    if structured_data.get("image") != SOCIAL_IMAGE:
         errors.append("index.html: JSON-LD image must use the production domain")
     if structured_data.get("installUrl") != STORE_URL:
         errors.append("index.html: JSON-LD installUrl is incorrect")
@@ -382,21 +406,15 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
 
 def validate_product_previews(pages: dict[str, ParsedPage], errors: list[str]) -> None:
     homepage = pages["index.html"]
-    required_classes = {
-        "dictation-demo",
-        "voice-dictation-mic-button",
-        "voice-dictation-status",
-        "popup-preview",
-        "popup-settings",
-    }
-    missing_classes = sorted(required_classes - homepage.classes)
-    if missing_classes:
-        errors.append(f"index.html: product component previews are missing classes: {missing_classes}")
-
-    for image in homepage.images:
-        source = image.get("src", "")
-        if "screenshot-" in source:
-            errors.append(f"index.html: raster product screenshot must not be rendered as page UI: {source}")
+    for anchor in ("hero-title", "how-it-works", "controls", "privacy", "faq", "install", "compatibility-title"):
+        if anchor not in homepage.ids:
+            errors.append(f"index.html: missing homepage destination #{anchor}")
+    guide = pages["guide.html"]
+    for anchor in ("install", "record", "insert", "recover", "vocabulary", "troubleshoot"):
+        if anchor not in guide.ids:
+            errors.append(f"guide.html: missing walkthrough destination #{anchor}")
+    if "interactive demo — no microphone access or audio is sent." not in normalize(guide.text):
+        errors.append("guide.html: missing static simulation boundary")
 
 
 def validate_policy_and_support(pages: dict[str, ParsedPage], errors: list[str]) -> None:
@@ -437,12 +455,16 @@ def validate_policy_and_support(pages: dict[str, ParsedPage], errors: list[str])
         "browser or device behavior",
     )
     for term in accuracy_terms:
-        if normalize(term) not in homepage_text:
-            errors.append(f"index.html: accuracy disclosure is missing {term}")
+        if normalize(term) not in homepage_text and normalize(term) not in support_text:
+            errors.append(f"Home/support: accuracy disclosure is missing {term}")
+
+    for feature in ("record", "recovery", "vocabulary", "shortcut", "supported", "account"):
+        if feature not in homepage_text:
+            errors.append(f"index.html: missing product explanation about {feature}")
 
     if STORE_URL not in pages["support.html"].links:
         errors.append("support.html: published Chrome Web Store support destination is missing")
-    if "support.html" not in pages["privacy.html"].links:
+    if not {"support.html", "/support.html"}.intersection(pages["privacy.html"].links):
         errors.append("privacy.html: first-party support link is missing")
     if f"{PUBLIC_ROOT}support.html" not in markdown:
         errors.append("PRIVACY.md: first-party support URL is missing")
@@ -456,9 +478,14 @@ def validate_sitemap_and_404(pages: dict[str, ParsedPage], errors: list[str]) ->
         return
 
     namespace = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    for entry in root.findall("sm:url", namespace):
+        try:
+            date.fromisoformat(entry.findtext("sm:lastmod", "", namespace))
+        except ValueError:
+            errors.append("sitemap.xml: every page needs an ISO modification date")
     sitemap_urls = [element.text or "" for element in root.findall("sm:url/sm:loc", namespace)]
     expected_urls = [EXPECTED_CANONICALS[name] for name in INDEXABLE_PAGES]
-    if sitemap_urls != expected_urls:
+    if sorted(sitemap_urls) != sorted(expected_urls):
         errors.append(f"sitemap.xml: URLs must be exactly {expected_urls}")
     if any("404.html" in url for url in sitemap_urls):
         errors.append("sitemap.xml: 404.html must not be included")
@@ -469,7 +496,7 @@ def validate_sitemap_and_404(pages: dict[str, ParsedPage], errors: list[str]) ->
         errors.append("404.html: robots noindex is required")
     if sum(tag == "h1" for tag, _ in not_found.headings) != 1:
         errors.append("404.html: expected exactly one H1")
-    for required_link in ("/", "support.html", STORE_URL):
+    for required_link in ("/", "/guide.html", "/support.html", STORE_URL):
         if required_link not in not_found.links:
             errors.append(f"404.html: required destination is missing: {required_link}")
 
@@ -485,7 +512,7 @@ def validate_artifact(errors: list[str]) -> None:
     elif verification_path.read_bytes() != VERIFICATION_CONTENT:
         errors.append(f"site/{VERIFICATION_FILE}: verification token changed")
 
-    for required_file in (".nojekyll", "robots.txt", "sitemap.xml", "styles.css"):
+    for required_file in (".nojekyll", "robots.txt", "sitemap.xml", "styles.css", "assets/dictozy-social.png"):
         if not (SITE_DIR / required_file).is_file():
             errors.append(f"missing required public file: site/{required_file}")
 
@@ -504,9 +531,10 @@ def validate_artifact(errors: list[str]) -> None:
     if markdown_files:
         errors.append(f"developer Markdown must not be deployed from site/: {markdown_files}")
 
-    css = (SITE_DIR / "styles.css").read_text(encoding="utf-8") if (SITE_DIR / "styles.css").is_file() else ""
-    if "http://" in css or "https://" in css or "@import" in css.casefold():
-        errors.append("styles.css: remote dependencies and @import are not allowed")
+    for path in SITE_DIR.glob("*.css"):
+        css = path.read_text(encoding="utf-8").casefold()
+        if "http://" in css or "https://" in css or "@import" in css:
+            errors.append(f"{path.name}: remote dependencies and @import are not allowed")
 
 
 def main() -> int:
