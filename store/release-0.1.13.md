@@ -1,19 +1,26 @@
-# Dictozy 0.1.13 — review-only release candidate
+# Dictozy 0.1.13 release record
 
-Prepared after the approved backend rollout on October 26, 2026 (America/Toronto).
-This is the current candidate checklist. The 0.1.12 directions in `release-checklist.md`
-are historical and MUST NOT be used to upload this changed extension as 0.1.12.
+The November 1, 2026 Store inspection recorded submission at 11:37 p.m. EST.
+The dashboard showed **Pending review** for 0.1.13, with automatic publication **Off**
+and 0.1.12 still published. Publication after approval requires a separate manual action.
 
-## Scope and identity
+| Submitted package | Verified identity |
+|---|---|
+| File | `dictozy-v0.1.13.zip`, 60,859 bytes |
+| Inner ZIP SHA-256 | `909b520149a4d9c0683c5c066ad9d8484a4302fdc40a676a8f80748fb73c2ebf` |
+| Source | `206e5519cd2bda700cc6ad0a516112e9376ad260`, including the compact recording-panel fix from `17256f9` |
+| Original CI evidence | [Run 40546212050](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/40546212050) · [review artifact 12753541613](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/40546212050/artifacts/12753541613) |
 
-- Proposed version: **0.1.13**, not submitted, approved by the Store, or published.
-- Source base and deployed backend: `c8fda6c7d4884297275e1c34eb418fc1c18714f9`.
-- Preparation changes only version metadata, its existing static expectations, release tooling and documentation.
-- All packaged runtime bytes other than the manifest version must match the accepted source.
-- Existing permissions, shortcuts, 10/30-second limits, safe insertion, Undo, cancellation and memory-only recovery remain unchanged.
-- No merge to `main`, backend deployment, Store upload, billing change or public website change is authorized by preparation.
-- The public Store listing was observed at 0.1.12. The developer dashboard required Google sign-in;
-  unused-version and active-draft status remain UNVERIFIED. Check them before any upload and do not overwrite a draft.
+The [published privacy policy](https://dictozy.com/privacy.html) took effect November 1, 2026.
+[PR #2](https://github.com/fredjkhar/dictozy-voice-dictation-extension/pull/2) supplied both
+policy files and the version-specific recording assertion. The authorization for PR #1 covers
+the repository merge. Store publication and production deployments require separate authorization.
+
+<details>
+<summary>October 26–27 preparation checklist and supporting evidence (historical)</summary>
+
+The following notes record the candidate as prepared, before privacy publication and Store submission.
+The accepted backend revision used in these checks was `c8fda6c7d4884297275e1c34eb418fc1c18714f9`.
 
 ## Backend evidence — corrected vocabulary verification
 
@@ -156,3 +163,5 @@ a standard deployment and safe 503 verification. Render Restart is not a substit
 applying saved environment changes. In-flight provider calls can finish. The old `c1f2487`
 backend is not a security-equivalent rollback; do not restore it without explicit risk acceptance.
 Extension rollback needs an approved higher corrective version, not a promised immediate downgrade.
+
+</details>
