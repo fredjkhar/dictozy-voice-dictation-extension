@@ -253,7 +253,10 @@ test("the reflowed guide index clears the active workspace at tablet width and e
       return {
         viewport: document.documentElement.clientWidth,
         total: document.documentElement.scrollWidth,
-        overlap: Math.min(index.bottom, paper.bottom) - Math.max(index.top, paper.top),
+        overlap: Math.min(
+          Math.min(index.bottom, paper.bottom) - Math.max(index.top, paper.top),
+          Math.min(index.right, paper.right) - Math.max(index.left, paper.left),
+        ),
       };
     }, fontSize);
     expect(dimensions.total, fontSize).toBeLessThanOrEqual(dimensions.viewport + 1);
