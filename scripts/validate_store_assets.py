@@ -11,9 +11,10 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_IMAGES = {
     ROOT / "extension/icons/icon-128.png": (128, 128),
-    ROOT / "store/assets/screenshot-dictation-1280x800.png": (1280, 800),
-    ROOT / "store/assets/screenshot-settings-1280x800.png": (1280, 800),
-    ROOT / "store/assets/promo-small-440x280.png": (440, 280),
+    ROOT / "store/assets/0.1.14/icon-128.png": (128, 128),
+    ROOT / "store/assets/0.1.14/screenshot-dictation-1280x800.png": (1280, 800),
+    ROOT / "store/assets/0.1.14/screenshot-settings-1280x800.png": (1280, 800),
+    ROOT / "store/assets/0.1.14/promo-small-440x280.png": (440, 280),
 }
 REQUIRED_FILES = (
     ROOT / "PRIVACY.md",

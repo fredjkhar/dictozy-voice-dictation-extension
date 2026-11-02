@@ -9,7 +9,7 @@
 </head>
 <body>
   <main>
-    <header><img src="icons/icon-48.png" width="40" height="40" alt=""><span>DICTOZY · QUICK START</span></header>
+    <header><img src="icons/icon-48.png" width="40" height="40" alt=""><span>Dictozy</span><span class="practice-label">Practice</span></header>
     <h1>Your first dictation</h1>
     <p class="intro">Say a short sentence. See it appear where you write.</p>
     <ol>
@@ -17,12 +17,14 @@
       <li>Select the microphone beside it, allow microphone access if asked, and speak.</li>
       <li>Select <strong>Stop</strong> to insert your words, or <strong>Discard</strong> to cancel.</li>
     </ol>
-    <button id="tryDictation" type="button">Try dictation</button>
-    <p id="practiceAvailability" role="status">Checking Dictozy settings…</p>
-    <label for="practiceField">Practice field</label>
-    <textarea id="practiceField" rows="4" autocomplete="off" spellcheck="false" aria-describedby="practiceHint" placeholder="Try saying: Remember to water the plants."></textarea>
-    <div id="practiceControls"></div>
-    <p id="practiceHint">Your words appear here. You can edit them or use your usual Undo shortcut. Nothing is submitted.</p>
+    <div class="practice-workspace">
+      <button id="tryDictation" type="button">Try dictation</button>
+      <p id="practiceAvailability" role="status">Checking Dictozy settings…</p>
+      <label for="practiceField">Practice field</label>
+      <textarea id="practiceField" rows="4" autocomplete="off" spellcheck="false" aria-describedby="practiceHint" placeholder="Try saying: Remember to water the plants."></textarea>
+      <div id="practiceControls"></div>
+      <p id="practiceHint">Your words appear here. You can edit them or use your usual Undo shortcut. Nothing is submitted.</p>
+    </div>
     <section aria-labelledby="shortcutHeading">
       <h2 id="shortcutHeading">Prefer the keyboard?</h2>
       <p>Your shortcut: <kbd id="shortcutValue">Loading</kbd>. On supported webpages it starts or stops recording, and cancels a pending transcription.</p>
@@ -42,7 +44,7 @@
       <p>Websites request their own microphone permission and some block recording. If practice works but a website does not, try a normal text field on another HTTPS page. Switching tabs or moving to an unsafe field cancels recording.</p>
       <p>If the field changes while a result is pending, Dictozy preserves your edits and offers Copy or Discard. If Copy fails, keep this page active and try again before the result expires.</p>
     </details>
-    <footer><a href="https://dictozy.com/support.html" target="_blank" rel="noopener noreferrer">Help and troubleshooting</a><span>Optional · Reopen anytime from the Dictozy popup</span></footer>
+    <footer><a href="https://dictozy.com/support.html" target="_blank" rel="noopener noreferrer">Help and troubleshooting</a><a href="mailto:dictozy.support@gmail.com">Email support</a><span>Optional · Reopen anytime from the Dictozy popup</span></footer>
   </main>
   <script src="dom-utils.js"></script>
   <script src="dictation-lifecycle.js"></script>
