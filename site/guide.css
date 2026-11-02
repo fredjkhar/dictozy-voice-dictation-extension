@@ -1,4 +1,4 @@
-/* The sample microphone and feedback panel retain the installed extension's colours. */
+/* Simulated controls follow the recording and recovery colours of the refreshed extension. */
 .guide-page [hidden] { display: none !important; }
 .guide-intro, .guide-layout { width: min(1184px, calc(100% - 48px)); margin-inline: auto; }
 .guide-intro { padding-block: clamp(2.25rem, 6vw, 5rem) clamp(1.75rem, 4vw, 3rem); }
@@ -52,25 +52,30 @@ html:has(.guide-page) { scroll-padding-block-start: 5rem; }
 .guide-example-line { margin: .7rem 0; }
 .guide-example-line q { font-weight: 650; color: #0f172a; }
 .guide-rec-controls { display: flex; align-items: flex-start; gap: .75rem; flex-wrap: wrap; }
-.guide-mic { flex: 0 0 44px; padding: 0; width: 44px; height: 44px; background: #0f766e; border: 1px solid #0f766e; border-radius: 50%; display: grid; place-items: center; color: white; box-shadow: 0 3px 9px #0f172a24; }
+.guide-mic { flex: 0 0 44px; padding: 0; width: 44px; height: 44px; background: var(--brand-primary); border: 1px solid var(--brand-primary); border-radius: 50%; display: grid; place-items: center; color: white; box-shadow: 0 3px 9px #0f172a24; }
 .guide-mic svg { width: 22px; height: 22px; }
-.guide-mic[data-state="recording"] { background: #dc2626; border-color: #dc2626; }
-.guide-mic[data-state="processing"] { background: #2563eb; border-color: #2563eb; }
+.guide-mic[data-state="recording"] { background: var(--recording); border-color: var(--recording); }
+.guide-mic[data-state="processing"] { background: var(--brand-primary); border-color: var(--brand-primary); }
 .guide-mic:not([data-state="idle"]) svg { display: none; }
 .guide-mic[data-state="recording"]::before { content: ""; width: 13px; height: 13px; background: white; border-radius: 2px; }
 .guide-mic[data-state="processing"]::before { content: "×"; font: 700 1.5rem/1 system-ui, sans-serif; }
 .guide-mic-hint { align-self: center; color: #475569; font-size: .88rem; }
-.guide-rec-panel, .guide-recovery { border-radius: 8px; color: white; background: #111827; padding: .75rem; font-size: .9rem; box-shadow: 0 4px 12px #11182722; }
-.guide-rec-panel { display: grid; gap: .2rem; min-width: min(100%, 11rem); }
+.guide-rec-panel, .guide-recovery { border-radius: 10px; border: 1px solid var(--border-subtle); color: var(--text-primary); background: var(--surface); padding: .75rem; font-size: .9rem; box-shadow: 0 4px 16px rgb(11 18 32 / 18%); }
+.guide-rec-panel { display: grid; gap: .2rem; width: min(100%, 15rem); }
+.guide-rec-panel > strong::before { content: ""; display: inline-block; vertical-align: .05em; width: .45rem; height: .45rem; border-radius: 50%; margin-right: .45rem; background: var(--recording); }
 .guide-rec-panel > div, .guide-actions { display: flex; flex-wrap: wrap; gap: .45rem; }
-.guide-rec-panel > div { margin-top: .35rem; }
-.guide-activity { color: #cbd5e1; }
-.guide-activity::before { content: ""; display: inline-block; width: .5rem; height: .5rem; border-radius: 50%; margin-right: .4rem; background: #5eead4; }
+.guide-rec-panel > div { display: grid; grid-template-columns: 1fr 1fr; margin-top: .35rem; }
+#rec-timer { font-variant-numeric: tabular-nums; }
+.guide-activity, #rec-timer { color: var(--text-secondary); }
+.guide-activity::before { content: ""; display: inline-block; width: .5rem; height: .5rem; border-radius: 50%; margin-right: .4rem; background: var(--brand-primary); }
 .guide-page button:not([disabled]), .guide-page summary { cursor: pointer; }
-.guide-rec-panel button, .guide-recovery button { background: #fff; border: 1px solid #94a3b8; border-radius: 5px; font: 650 .85rem/1.3 system-ui, sans-serif; min-height: 44px; color: #111827; padding: .4rem .75rem; }
+.guide-rec-panel button, .guide-recovery button { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 6px; font: 650 .85rem/1.3 system-ui, sans-serif; min-height: 44px; color: var(--destructive); padding: .4rem .75rem; }
+#stop-recording, #copy-sample { color: white; background: var(--brand-primary); border-color: var(--brand-primary); }
+#stop-recording:hover, #copy-sample:hover, .guide-mic[data-state="idle"]:hover { background: var(--brand-primary-hover); }
+#discard-recording:hover, #discard-sample:hover { background: #fef2f2; }
 .guide-recovery { max-width: 25rem; margin-block: .75rem; }
 .guide-recovery p { margin: .35rem 0 .65rem; }
-.guide-recovery :focus-visible, .guide-rec-panel :focus-visible { outline: 3px solid #7dd3fc; outline-offset: 2px; }
+.guide-recovery :focus-visible, .guide-rec-panel :focus-visible { outline: 3px solid var(--brand-primary-hover); outline-offset: 2px; }
 .guide-control, .guide-reset, .guide-pager a { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; border-radius: 8px; padding: .55rem .85rem; background: #fff; color: #0f172a; border: 1px solid #94a3b8; font: 650 .9rem/1.35 system-ui, sans-serif; }
 .guide-control:hover:not(:disabled), .guide-reset:hover, .guide-pager a:hover { background: #eff6ff; }
 .guide-page button:disabled { cursor: default; color: #5f6e82; background: #f1f5f9; }
@@ -87,7 +92,7 @@ html:has(.guide-page) { scroll-padding-block-start: 5rem; }
 .guide-page [role="switch"] { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .45rem .6rem; text-align: left; min-height: 44px; font: 650 .94rem/1.3 system-ui, sans-serif; background: #fff; color: #0f172a; border: 1px solid #94a3b8; border-radius: 8px; }
 .guide-switch-track { width: 1.85rem; height: 1.1rem; border-radius: 1rem; padding: .14rem; display: inline-flex; align-items: center; background: #64748b; }
 .guide-switch-track::before { content: ""; border-radius: 50%; width: .8rem; height: .8rem; background: white; }
-[aria-checked="true"] .guide-switch-track { background: #0f766e; justify-content: end; }
+[aria-checked="true"] .guide-switch-track { background: var(--brand-primary); justify-content: end; }
 .guide-term-result { margin-top: .85rem; font-size: .82rem; color: #475569; }
 .guide-term-result strong { color: #0f172a; }
 #cancel-recording-result { margin-top: .6rem; }

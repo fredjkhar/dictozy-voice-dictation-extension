@@ -11,7 +11,8 @@
   --accent-highlight: #38bdf8;
   --success: #15803d;
   --blue-wash: #eaf2ff;
-  --recording: #dc2626;
+  --recording: #b91c1c;
+  --destructive: #991b1b;
   --warning: #92400e;
   --space-1: 4px;
   --space-2: 8px;
@@ -56,9 +57,9 @@ img { display: block; max-width: 100%; height: auto; }
 .skip-link:focus { transform: translateY(0); }
 .site-header { background: var(--surface); border-bottom: 1px solid var(--border-subtle); }
 .site-header__inner { display: flex; gap: clamp(1rem, 3vw, 3rem); align-items: center; min-height: 76px; }
-.brand, .footer-brand { display: inline-flex; gap: .65rem; align-items: center; color: var(--brand-deep); text-decoration: none; font-size: 1.5rem; font-weight: 730; letter-spacing: -.065em; }
+.brand, .footer-brand { display: inline-flex; flex-shrink: 0; align-items: center; }
 .brand { margin-right: auto; min-height: 44px; }
-.brand img { width: 34px; }
+.brand img { width: 132px; }
 .primary-nav, .site-footer nav { display: flex; align-items: center; flex-wrap: wrap; gap: clamp(.75rem, 2.2vw, 2.25rem); }
 .primary-nav a, .site-footer nav a { display: inline-flex; align-items: center; min-height: 44px; color: var(--text-secondary); text-decoration: none; font-size: .95rem; font-weight: 550; }
 .primary-nav a[aria-current], .primary-nav a:hover, .site-footer nav a:hover, .site-footer nav a[aria-current] { color: var(--brand-primary-hover); text-decoration: underline; text-underline-offset: .4em; }
@@ -70,7 +71,7 @@ img { display: block; max-width: 100%; height: auto; }
 .button--secondary:hover { background: var(--blue-wash); border-color: var(--brand-primary); }
 .text-link { display: inline-flex; align-items: center; gap: .55em; min-height: 44px; width: fit-content; font-weight: 650; }
 .button span, .header-install span, .text-link span { display: inline-block; font-size: 1.12em; }
-.eyebrow, .plate-label, .diagram-legend, .diagram-scale, figcaption > span, .step-number, .version {
+.eyebrow, .step-number, .version {
   font: 600 var(--type-label)/1.4 var(--font-mono); letter-spacing: .105em; text-transform: uppercase;
 }
 .eyebrow { display: flex; align-items: center; gap: .7rem; color: var(--brand-primary-hover); }
@@ -86,13 +87,7 @@ img { display: block; max-width: 100%; height: auto; }
 .hero-note { margin-top: .85rem; display: flex; align-items: center; gap: .48em; color: var(--text-secondary); font-size: .88rem; }
 .hero-visual { min-width: 0; }
 .diagram { position: relative; overflow: hidden; isolation: isolate; aspect-ratio: 1.16; border: 1px solid #b9cce9; border-radius: var(--radius-lg); background-color: #e6effe; background-image: linear-gradient(90deg, rgb(88 130 190 / 13%) 1px, transparent 1px), linear-gradient(rgb(88 130 190 / 13%) 1px, transparent 1px); background-size: 24px 24px; }
-.diagram-legend, .diagram-scale { position: absolute; left: 6%; right: 6%; display: flex; align-items: center; justify-content: space-between; color: #345888; font-size: clamp(.56rem, .85vw, .72rem); }
-.diagram-legend { top: 6%; }
-.diagram-legend span:first-child { display: inline-flex; align-items: center; gap: .6em; }
-.diagram-legend i { display: inline-block; width: .75em; height: .75em; background: var(--brand-primary); }
-.diagram-scale { bottom: 6%; gap: 10px; }
-.diagram-scale i { height: 1px; flex: 1; background: linear-gradient(90deg, var(--accent-highlight), #aabfdf 35%); }
-.scene { position: absolute; inset: 15% 5% 14%; perspective: 900px; }
+.scene { position: absolute; inset: 12% 5%; perspective: 900px; }
 .orbit { position: absolute; border: 1px dashed #afc4e2; border-radius: 50%; width: 75%; aspect-ratio: 1; top: -4%; left: 12%; }
 .orbit--two { width: 59%; top: 9%; left: 20%; }
 .signal-card, .draft-card { position: absolute; border-radius: var(--radius-md); background: white; border: 1px solid #aec2de; }
@@ -116,7 +111,6 @@ img { display: block; max-width: 100%; height: auto; }
   .draft-card { transform: rotateY(-8deg) rotateX(4deg) rotateZ(3deg) translateZ(18px); }
 }
 figcaption { margin-top: .7rem; font-size: .84rem; color: var(--text-secondary); }
-figcaption > span { margin-right: .65em; font-size: .67rem; color: var(--brand-primary-hover); }
 .section { padding-block: clamp(3.25rem, 5.8vw, 5.35rem); }
 .workflow { border-top: 1px solid var(--border-subtle); }
 .section-head { display: flex; align-items: end; justify-content: space-between; gap: 1.1rem 2rem; margin-bottom: var(--space-8); }
@@ -127,7 +121,6 @@ figcaption > span { margin-right: .65em; font-size: .67rem; color: var(--brand-p
 .steps p, .feature-grid p:not(.eyebrow), .faq-intro > p:not(.eyebrow), .faq-list p { margin-top: .65rem; color: var(--text-secondary); max-width: 56ch; }
 .features { background: var(--surface); border-block: 1px solid var(--border-subtle); }
 .product-plate { border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: clamp(1rem, 2.2vw, 2rem); background: var(--page); }
-.plate-label { display: flex; justify-content: space-between; color: var(--text-secondary); margin-bottom: 1rem; }
 .capture-link { display: block; width: fit-content; margin-inline: auto; }
 .capture-link img { border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); }
 .product-plate figcaption { margin-top: .8rem; }
@@ -161,8 +154,7 @@ figcaption > span { margin-right: .65em; font-size: .67rem; color: var(--brand-p
 .install-inner .hero-actions { margin-top: 0; }
 .site-footer { background: var(--surface); border-top: 1px solid var(--border-subtle); }
 .site-footer__inner { padding-block: 1.4rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-.footer-brand { font-size: 1.15rem; letter-spacing: -.045em; }
-.footer-brand img { width: 26px; }
+.footer-brand img { width: 99px; }
 /* Reading layouts retain the published section anchors. */
 .page-hero { background: var(--blue-wash); border-bottom: 1px solid var(--border-subtle); }
 .page-hero__inner { padding-block: clamp(2.8rem, 5vw, 4.8rem); }
@@ -217,8 +209,7 @@ figcaption > span { margin-right: .65em; font-size: .67rem; color: var(--brand-p
 }
 @media (max-width: 530px) {
   .site-header__inner { display: grid; grid-template-columns: 1fr auto; gap: 0 1rem; padding-top: var(--space-2); }
-  .brand { font-size: 1.32rem; }
-  .brand img { width: 30px; }
+  .brand img { width: 116px; }
   .header-install { grid-column: 2; grid-row: 1; }
   .primary-nav { grid-column: 1 / -1; gap: 1.55rem; }
   .hero-actions .button { font-size: .94rem; }

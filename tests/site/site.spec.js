@@ -84,6 +84,12 @@ test("internal links resolve and installation actions use the published Store it
     await page.goto(path);
     await expect(page.locator("header nav a[href$='guide.html']").first()).toBeVisible();
     await expect(page.locator("footer a[href$='guide.html']")).toBeVisible();
+    await expect(page.locator("footer").getByRole("link", { name: "Email support", exact: true }))
+      .toHaveAttribute("href", "mailto:dictozy.support@gmail.com");
+    if (path === "/support.html") {
+      await expect(page.locator("main").getByRole("link", { name: "dictozy.support@gmail.com", exact: true }))
+        .toHaveAttribute("href", "mailto:dictozy.support@gmail.com");
+    }
     const hrefs = await page.locator("a[href]").evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href")));
 
     expect(
@@ -159,11 +165,12 @@ test("indexable metadata and crawler files use the production domain", async ({ 
   expect(sitemap).not.toContain(LEGACY_ROOT);
 });
 
-test("the conceptual hero has a caption and no controls that imply real recording", async ({ page }) => {
+test("the illustrated hero is described accessibly without design-study labels or live controls", async ({ page }) => {
   await page.goto("/");
   const visual = page.locator(".hero-visual");
   await expect(visual).toBeVisible();
-  await expect(visual.locator("figcaption")).toContainText(/illustration/i);
+  await expect(visual.getByRole("img")).toHaveAccessibleName(/illustration.*voice waveform.*draft note/i);
+  await expect(page.locator("main")).not.toContainText(/fig\. 0\d|signal study|field note \/|product capture|concept illustration/i);
   await expect(visual.locator("button,input,textarea,[contenteditable=true]")).toHaveCount(0);
   await expect(page.locator(".hero h1")).toBeVisible();
 });

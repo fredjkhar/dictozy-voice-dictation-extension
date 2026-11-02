@@ -22,10 +22,11 @@
     <meta name="twitter:image" content="https://dictozy.com/assets/dictozy-social.png">
     <meta name="twitter:image:alt" content="Dictozy voice dictation for Chrome, illustrated with a voice waveform and a draft note">
     <meta name="theme-color" content="#f8fafc">
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/icon-32.png">
-    <link rel="icon" type="image/png" sizes="128x128" href="/assets/icon-128.png">
-    <link rel="apple-touch-icon" href="/assets/icon-256.png">
-    <link rel="stylesheet" href="/styles.css?v=20261102">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/dictozy-icon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/assets/dictozy-icon-48.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="/assets/dictozy-icon-128.png">
+    <link rel="apple-touch-icon" href="/assets/dictozy-icon-256.png">
+    <link rel="stylesheet" href="/styles.css?v=20261102b">
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -53,8 +54,7 @@
     <header class="site-header">
       <div class="site-header__inner">
         <a class="brand" href="/" aria-label="Dictozy home">
-          <img src="/assets/icon-48.png" width="48" height="48" alt="">
-          <span>Dictozy</span>
+          <img src="/assets/dictozy-lockup.svg" width="132" height="32" alt="">
         </a>
         <nav class="primary-nav" aria-label="Primary navigation">
           <a href="/" aria-current="page">Overview</a>
@@ -79,12 +79,11 @@
         </div>
 
         <figure class="hero-visual">
-          <div class="diagram" role="img" aria-label="A blue voice waveform becomes a draft note that reads: Bring the blue notebook tomorrow.">
-            <div class="diagram-legend" aria-hidden="true"><span><i></i> SIGNAL STUDY</span><span>FIG. 01</span></div>
+          <div class="diagram" role="img" aria-label="Illustration of a voice waveform becoming a draft note that says “Bring the blue notebook tomorrow.”">
             <div class="scene" aria-hidden="true">
               <div class="orbit orbit--one"></div><div class="orbit orbit--two"></div>
               <div class="signal-card">
-                <div class="signal-top"><span>01 / VOICE INPUT</span><span class="window-dots"><i></i><i></i><i></i></span></div>
+                <div class="signal-top"><span>Voice input</span><span class="window-dots"><i></i><i></i><i></i></span></div>
                 <div class="signal-body">
                   <span class="signal-mic">
                     <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v4m-4 0h8"/></svg>
@@ -97,19 +96,17 @@
                 <div class="ruler"></div>
               </div>
               <div class="draft-card">
-                <div class="draft-top"><span class="note-icon">▤</span> 02 / DRAFT NOTE</div>
+                <div class="draft-top"><span class="note-icon">▤</span> Draft note</div>
                 <div class="draft-text">Bring the blue notebook tomorrow.<span class="caret"></span></div>
               </div>
             </div>
-            <div class="diagram-scale" aria-hidden="true"><span>VOICE</span><i></i><span>TEXT</span></div>
           </div>
-          <figcaption><span>FIG. 01</span> Voice to text · Concept illustration</figcaption>
         </figure>
       </section>
 
       <section class="workflow section wrap" id="how-it-works" aria-labelledby="workflow-title">
         <div class="section-head">
-          <div><p class="eyebrow">01 / How it works</p><h2 id="workflow-title">From a thought to a draft.</h2></div>
+          <div><p class="eyebrow">How it works</p><h2 id="workflow-title">From a thought to a draft.</h2></div>
           <p>One short clip at a time, in the field you chose.</p>
         </div>
         <ol class="steps">
@@ -122,15 +119,14 @@
       <section class="features section" id="controls" aria-labelledby="controls-title">
         <div class="wrap">
           <div class="section-head">
-            <div><p class="eyebrow">02 / Inside the extension</p><h2 id="controls-title">Controls that stay in reach.</h2></div>
+            <div><p class="eyebrow">Inside the extension</p><h2 id="controls-title">Controls that stay in reach.</h2></div>
             <a class="text-link" href="/guide.html#record">Try the recording demo <span aria-hidden="true">→</span></a>
           </div>
           <figure class="product-plate">
-            <div class="plate-label"><span>FIELD NOTE / 01</span><span>RECORDING</span></div>
-            <a id="dictation-preview" class="capture-link" href="/assets/recording-0.1.13.webp" aria-label="Open the full-size recording screenshot">
-              <img src="/assets/recording-0.1.13.webp" alt="The Dictozy recording panel beside a sample note shows 3 seconds elapsed, 7 seconds left, microphone activity, Stop and Discard." width="1140" height="346" loading="lazy" decoding="async">
+            <a id="dictation-preview" class="capture-link" href="/assets/recording-0.1.14.webp" aria-label="Open the full-size recording screenshot">
+              <img src="/assets/recording-0.1.14.webp" alt="Dictozy is recording beside a sample notebook draft. The panel shows 2 seconds elapsed, 8 seconds left, Quiet, Stop and Discard." width="1128" height="352" loading="lazy" decoding="async">
             </a>
-            <figcaption><span>PRODUCT CAPTURE</span> Dictozy 0.1.13 recording in an example Chrome field.</figcaption>
+            <figcaption>Stop to transcribe, or discard the recording and keep writing.</figcaption>
           </figure>
           <div class="feature-grid">
             <article><p class="eyebrow">Recording</p><h3>See the time you have.</h3><p>See elapsed time, time remaining, and mic activity. The limit is 10 seconds by default and adjustable up to 30. Stop early whenever you like.</p></article>
@@ -143,7 +139,7 @@
 
       <section class="trust-section" id="privacy" aria-labelledby="privacy-title">
         <div class="wrap trust-inner">
-          <div><p class="eyebrow">03 / Privacy and control</p><h2 id="privacy-title">Where your words go.</h2>
+          <div><p class="eyebrow">Privacy and control</p><h2 id="privacy-title">Where your words go.</h2>
             <a class="text-link" href="/privacy.html">Read the privacy policy <span aria-hidden="true">→</span></a>
           </div>
           <div class="privacy-path">
@@ -155,7 +151,7 @@
       </section>
 
       <section class="section wrap homepage-faq" id="faq" aria-labelledby="compatibility-title">
-        <div id="homepage-faq-title" class="faq-intro"><p class="eyebrow">04 / Compatibility</p><h2 id="compatibility-title">Before you dictate.</h2>
+        <div id="homepage-faq-title" class="faq-intro"><p class="eyebrow">Compatibility</p><h2 id="compatibility-title">Before you dictate.</h2>
           <p>Start with ordinary text fields in Chrome. Complex editors can handle focus and Undo differently.</p>
           <a id="support-title" href="/support.html" class="text-link">Visit support <span aria-hidden="true">→</span></a>
         </div>
@@ -176,12 +172,13 @@
 
     <footer class="site-footer">
       <div class="site-footer__inner">
-        <div class="footer-brand"><img src="/assets/icon-32.png" alt="" width="32" height="32" loading="lazy"> Dictozy</div>
+        <div class="footer-brand"><img src="/assets/dictozy-lockup.svg" alt="Dictozy" width="99" height="24" loading="lazy"></div>
         <nav aria-label="Footer navigation">
           <a href="/" aria-current="page">Home</a>
           <a href="/guide.html">Interactive guide</a>
           <a href="/privacy.html">Privacy</a>
           <a href="/support.html">Support</a>
+          <a href="mailto:dictozy.support@gmail.com">Email support</a>
           <a href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Chrome Web Store</a>
         </nav>
       </div>
