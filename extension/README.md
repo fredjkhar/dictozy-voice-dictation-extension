@@ -18,7 +18,7 @@ Form values are updated through native input and textarea setters followed by on
 
 The extension includes PNG icons at `16`, `32`, `48`, and `128` pixels under `icons/`. They are referenced by `manifest.json` for Chrome extension surfaces.
 
-The normalized source image is `icons/icon-source.png`, with larger exported sizes available at `256`, `512`, and `1024` pixels for future Store or site use. The release package includes only the PNG icon files listed by `scripts/package_extension.py`.
+The editable vector master is [the Dictozy mark](../store/brand-0.1.14/mark.svg). The [brand export instructions](../store/brand-0.1.14/README.md) cover toolbar sizes, Store padding, website artwork and larger PNGs. The release package includes only the PNG icon files listed by `scripts/package_extension.py`.
 
 ## Load Locally
 
