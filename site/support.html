@@ -3,44 +3,30 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Support And Troubleshooting | Dictozy</title>
-    <meta
-      name="description"
-      content="Troubleshoot Dictozy microphone controls, Chrome permissions, shortcuts, transcription failures, supported fields, and site settings."
-    >
+    <title>Dictozy support — Chrome dictation setup and troubleshooting</title>
+    <meta name="description" content="Find help with microphone permissions, keyboard shortcuts, supported fields, transcript recovery, and vocabulary settings in the Dictozy Chrome extension.">
     <link rel="canonical" href="https://dictozy.com/support.html">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Dictozy">
     <meta property="og:locale" content="en_US">
-    <meta property="og:title" content="Support And Troubleshooting | Dictozy">
-    <meta
-      property="og:description"
-      content="Get privacy-safe help with Dictozy controls, permissions, shortcuts, supported fields, and transcription failures."
-    >
+    <meta property="og:title" content="Dictozy support — Chrome dictation setup and troubleshooting">
+    <meta property="og:description" content="Find help with microphone permissions, keyboard shortcuts, supported fields, transcript recovery, and vocabulary settings in the Dictozy Chrome extension.">
     <meta property="og:url" content="https://dictozy.com/support.html">
-    <meta
-      property="og:image"
-      content="https://dictozy.com/assets/screenshot-settings-1280x800.png"
-    >
-    <meta property="og:image:width" content="1280">
-    <meta property="og:image:height" content="800">
-    <meta property="og:image:alt" content="Dictozy popup settings in Chrome">
+    <meta property="og:image" content="https://dictozy.com/assets/dictozy-social.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Dictozy voice dictation for Chrome, illustrated with a voice waveform and a draft note">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Support And Troubleshooting | Dictozy">
-    <meta
-      name="twitter:description"
-      content="Get privacy-safe help with Dictozy controls, permissions, shortcuts, supported fields, and transcription failures."
-    >
-    <meta
-      name="twitter:image"
-      content="https://dictozy.com/assets/screenshot-settings-1280x800.png"
-    >
-    <meta name="twitter:image:alt" content="Dictozy popup settings for voice dictation in Chrome">
-    <meta name="theme-color" content="#f4f8f7">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
-    <link rel="icon" type="image/png" sizes="128x128" href="assets/icon-128.png">
-    <link rel="apple-touch-icon" href="assets/icon-256.png">
-    <link rel="stylesheet" href="styles.css?v=20260826-seo">
+    <meta name="twitter:title" content="Dictozy support — Chrome dictation setup and troubleshooting">
+    <meta name="twitter:description" content="Find help with microphone permissions, keyboard shortcuts, supported fields, transcript recovery, and vocabulary settings in the Dictozy Chrome extension.">
+    <meta name="twitter:image" content="https://dictozy.com/assets/dictozy-social.png">
+    <meta name="twitter:image:alt" content="Dictozy voice dictation for Chrome, illustrated with a voice waveform and a draft note">
+    <meta name="theme-color" content="#f8fafc">
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/dictozy-icon-32.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="/assets/dictozy-icon-48.png">
+    <link rel="icon" type="image/png" sizes="128x128" href="/assets/dictozy-icon-128.png">
+    <link rel="apple-touch-icon" href="/assets/dictozy-icon-256.png">
+    <link rel="stylesheet" href="/styles.css?v=20261102b">
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -48,19 +34,14 @@
     <header class="site-header">
       <div class="site-header__inner">
         <a class="brand" href="/" aria-label="Dictozy home">
-          <img src="assets/icon-48.png" alt="" width="48" height="48">
-          <span>Dictozy</span>
+          <img src="/assets/dictozy-lockup.svg" width="132" height="32" alt="">
         </a>
         <nav class="primary-nav" aria-label="Primary navigation">
-          <a href="/#how-it-works">How it works</a>
-          <a class="nav-optional" href="/#controls">Controls</a>
-          <a href="privacy.html">Privacy</a>
-          <a href="support.html" aria-current="page">Support</a>
+          <a href="/">Overview</a>
+          <a href="/guide.html">Guide</a>
+          <a href="/support.html" aria-current="page">Support</a>
         </nav>
-        <a
-          class="header-install"
-          href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma"
-        >Install</a>
+        <a class="header-install" href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Add to Chrome <span aria-hidden="true">↗</span></a>
       </div>
     </header>
 
@@ -71,7 +52,7 @@
           <h1>Support and troubleshooting</h1>
           <p class="page-lead">
             Start with the checks below when a control, recording, or transcription does not behave as expected.
-            They are ordered from the quickest local checks to service availability.
+            For a guided introduction, <a href="/guide.html">explore the interactive guide</a> without using your microphone.
           </p>
         </div>
       </header>
@@ -83,6 +64,8 @@
           <a href="#microphone">Microphone</a>
           <a href="#shortcut">Shortcut</a>
           <a href="#transcription">Transcription</a>
+          <a href="#recovery">Recovering text</a>
+          <a href="#vocabulary">Vocabulary</a>
           <a href="#fields">Supported fields</a>
           <a href="#reporting">Report a problem</a>
           <a href="#faq">FAQ</a>
@@ -96,8 +79,9 @@
               <li>Confirm <strong>Enable on this site</strong> is on for the current website.</li>
               <li>Reload the page after installing or updating Dictozy, then focus a supported field again.</li>
               <li>Check that the field is not sensitive, hidden, disabled, or readonly.</li>
-              <li>Try a short phrase in a normal textarea on an HTTPS page.</li>
+              <li>In the popup, select <strong>Try dictation</strong> to open the practice page. It requests microphone access only when you choose to start recording.</li>
             </ol>
+            <p><a class="text-link" href="/assets/settings-0.1.14.webp">View the Dictozy settings popup</a></p>
           </section>
 
           <section class="support-section" id="microphone" aria-labelledby="microphone-title">
@@ -116,7 +100,7 @@
             <h3>No microphone is found or the microphone is busy</h3>
             <p>
               Confirm your browser is using the intended input, the microphone is connected and not muted, and another application is not
-              preventing access. Close other recording apps if necessary, then record a new short phrase. Dictozy does not store this check.
+              preventing access. Microphone quality, background noise, pronunciation, and browser or device behavior can affect recognition. Try a short phrase in a quiet space.
             </p>
           </section>
 
@@ -149,6 +133,22 @@
             </p>
           </section>
 
+          <section class="support-section" id="recovery" aria-labelledby="recovery-title">
+            <h2 id="recovery-title">Text was not inserted</h2>
+            <p>If the original field changes, Dictozy can offer Copy and Discard instead of overwriting the draft.
+              Keep the tab visible and choose Copy within 60 seconds, then paste where you want the result.
+              If the clipboard is unavailable, retry before expiry. Cancelled recordings have no recoverable result.</p>
+            <a class="text-link" href="/guide.html#recover">Try the recovery example</a>
+          </section>
+
+          <section class="support-section" id="vocabulary" aria-labelledby="vocabulary-title">
+            <h2 id="vocabulary-title">Personal vocabulary and sharing</h2>
+            <p>Save words or short phrases under Personal vocabulary in the popup. Saving keeps them in Chrome.
+              Only enabling vocabulary assistance sends them with future dictations to Dictozy’s backend and xAI.
+              A hint does not guarantee a spelling. Disable sharing to keep your list local, or clear it to delete the list.</p>
+            <a class="text-link" href="/guide.html#vocabulary">Try the vocabulary example</a>
+          </section>
+
           <section class="support-section" id="fields" aria-labelledby="fields-title">
             <h2 id="fields-title">Supported and excluded fields</h2>
             <p>
@@ -164,7 +164,8 @@
           <section class="support-section" id="reporting" aria-labelledby="reporting-title">
             <h2 id="reporting-title">Report a problem safely</h2>
             <p>
-              Open the published <a href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Dictozy Chrome Web Store listing</a>
+              Email support at <a href="mailto:dictozy.support@gmail.com">dictozy.support@gmail.com</a>.
+              You can also open the published <a href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Dictozy Chrome Web Store listing</a>
               and use the support option shown there. Chrome may require you to sign in before submitting feedback.
             </p>
             <p>Helpful, non-sensitive details include:</p>
@@ -232,14 +233,13 @@
 
     <footer class="site-footer">
       <div class="site-footer__inner">
-        <div class="footer-brand">
-          <img src="assets/icon-32.png" alt="" width="32" height="32" loading="lazy" decoding="async">
-          <span>Dictozy: Voice Dictation</span>
-        </div>
+        <div class="footer-brand"><img src="/assets/dictozy-lockup.svg" alt="Dictozy" width="99" height="24" loading="lazy"></div>
         <nav aria-label="Footer navigation">
           <a href="/">Home</a>
-          <a href="privacy.html">Privacy</a>
-          <a href="support.html" aria-current="page">Support</a>
+          <a href="/guide.html">Interactive guide</a>
+          <a href="/privacy.html">Privacy</a>
+          <a href="/support.html" aria-current="page">Support</a>
+          <a href="mailto:dictozy.support@gmail.com">Email support</a>
           <a href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Chrome Web Store</a>
         </nav>
       </div>

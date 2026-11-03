@@ -1,13 +1,15 @@
 const { test, expect } = require("@playwright/test");
+const { createHash } = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const PUBLIC_PAGES = ["/index.html", "/privacy.html", "/support.html", "/404.html"];
+const PUBLIC_PAGES = ["/index.html", "/guide.html", "/privacy.html", "/support.html", "/404.html"];
 const STORE_URL = "https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma";
 const PRODUCTION_ROOT = "https://dictozy.com/";
 const LEGACY_ROOT = "https://fredjkhar.github.io/dictozy-voice-dictation-extension/";
 const HOMEPAGE_DESCRIPTION =
-  "Dictozy is a Chrome voice dictation extension for quickly entering messages, notes, searches, and form text into supported web fields with no account required.";
+  "Dictate short messages, notes, and searches in supported Chrome fields. Explore Dictozy’s recording controls, safe transcript recovery, and optional vocabulary.";
+const SOCIAL_IMAGE = `${PRODUCTION_ROOT}assets/dictozy-social.png`;
 const REQUIRED_VIEWPORTS = [
   { name: "phone-small", width: 320, height: 568 },
   { name: "phone", width: 390, height: 844 },
@@ -80,6 +82,14 @@ for (const path of PUBLIC_PAGES) {
 test("internal links resolve and installation actions use the published Store item", async ({ page, request, baseURL }) => {
   for (const path of PUBLIC_PAGES) {
     await page.goto(path);
+    await expect(page.locator("header nav a[href$='guide.html']").first()).toBeVisible();
+    await expect(page.locator("footer a[href$='guide.html']")).toBeVisible();
+    await expect(page.locator("footer").getByRole("link", { name: "Email support", exact: true }))
+      .toHaveAttribute("href", "mailto:dictozy.support@gmail.com");
+    if (path === "/support.html") {
+      await expect(page.locator("main").getByRole("link", { name: "dictozy.support@gmail.com", exact: true }))
+        .toHaveAttribute("href", "mailto:dictozy.support@gmail.com");
+    }
     const hrefs = await page.locator("a[href]").evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute("href")));
 
     expect(
@@ -98,11 +108,10 @@ test("internal links resolve and installation actions use the published Store it
   }
 
   await page.goto("/index.html");
-  await expect(page.getByRole("link", { name: "Install from Chrome Web Store" })).toHaveAttribute("href", STORE_URL);
-  await expect(page.getByRole("link", { name: "See how it works" })).toHaveAttribute("href", "#how-it-works");
-
-  const storeLinks = page.locator(`a[href="${STORE_URL}"]`);
-  expect(await storeLinks.count()).toBeGreaterThanOrEqual(3);
+  const hero = page.locator(".hero");
+  await expect(hero.getByRole("link", { name: "Add to Chrome" })).toHaveAttribute("href", STORE_URL);
+  await expect(hero.getByRole("link", { name: /interactive guide/i })).toHaveAttribute("href", /guide\.html$/);
+  expect(await page.locator(`a[href="${STORE_URL}"]`).count()).toBeGreaterThanOrEqual(3);
 });
 
 test("public pages contain no source repository destinations", async ({ page }) => {
@@ -116,29 +125,18 @@ test("public pages contain no source repository destinations", async ({ page }) 
 
 test("indexable metadata and crawler files use the production domain", async ({ page, request }) => {
   const expectedPages = [
-    {
-      path: "/index.html",
-      canonical: PRODUCTION_ROOT,
-      image: `${PRODUCTION_ROOT}assets/screenshot-dictation-1280x800.png`,
-    },
-    {
-      path: "/privacy.html",
-      canonical: `${PRODUCTION_ROOT}privacy.html`,
-      image: `${PRODUCTION_ROOT}assets/screenshot-dictation-1280x800.png`,
-    },
-    {
-      path: "/support.html",
-      canonical: `${PRODUCTION_ROOT}support.html`,
-      image: `${PRODUCTION_ROOT}assets/screenshot-settings-1280x800.png`,
-    },
+    { path: "/index.html", canonical: PRODUCTION_ROOT },
+    { path: "/guide.html", canonical: `${PRODUCTION_ROOT}guide.html` },
+    { path: "/privacy.html", canonical: `${PRODUCTION_ROOT}privacy.html` },
+    { path: "/support.html", canonical: `${PRODUCTION_ROOT}support.html` },
   ];
 
   for (const expected of expectedPages) {
     await page.goto(expected.path);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", expected.canonical);
     await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", expected.canonical);
-    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", expected.image);
-    await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", expected.image);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", SOCIAL_IMAGE);
+    await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute("content", SOCIAL_IMAGE);
     expect((await page.content()).includes(LEGACY_ROOT)).toBe(false);
   }
 
@@ -149,8 +147,8 @@ test("indexable metadata and crawler files use the production domain", async ({ 
 
   const structuredData = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
   expect(structuredData.url).toBe(PRODUCTION_ROOT);
-  expect(structuredData.image).toBe(`${PRODUCTION_ROOT}assets/screenshot-dictation-1280x800.png`);
-  expect(structuredData.softwareVersion).toBe("0.1.13");
+  expect(structuredData.image).toBe(SOCIAL_IMAGE);
+  expect(structuredData.softwareVersion).toBe("0.1.14");
   expect(structuredData.installUrl).toBe(STORE_URL);
   expect(structuredData.aggregateRating).toBeUndefined();
   expect(structuredData.review).toBeUndefined();
@@ -161,29 +159,45 @@ test("indexable metadata and crawler files use the production domain", async ({ 
 
   const sitemap = await (await request.get("/sitemap.xml")).text();
   expect(sitemap).toContain(`<loc>${PRODUCTION_ROOT}</loc>`);
+  expect(sitemap).toContain(`<loc>${PRODUCTION_ROOT}guide.html</loc>`);
   expect(sitemap).toContain(`<loc>${PRODUCTION_ROOT}privacy.html</loc>`);
   expect(sitemap).toContain(`<loc>${PRODUCTION_ROOT}support.html</loc>`);
   expect(sitemap).not.toContain(LEGACY_ROOT);
 });
 
-test("homepage presents the real Dictozy controls as crisp components", async ({ page }) => {
-  await page.goto("/index.html");
+test("the illustrated hero is described accessibly without design-study labels or live controls", async ({ page }) => {
+  await page.goto("/");
+  const visual = page.locator(".hero-visual");
+  await expect(visual).toBeVisible();
+  await expect(visual.getByRole("img")).toHaveAccessibleName(/illustration.*voice waveform.*draft note/i);
+  await expect(page.locator("main")).not.toContainText(/fig\. 0\d|signal study|field note \/|product capture|concept illustration/i);
+  await expect(visual.locator("button,input,textarea,[contenteditable=true]")).toHaveCount(0);
+  await expect(page.locator(".hero h1")).toBeVisible();
+});
 
-  await expect(page.locator(".dictation-demo")).toBeVisible();
-  await expect(page.locator(".voice-dictation-mic-button")).toBeVisible();
-  await expect(page.locator(".voice-dictation-status")).toHaveText("Recording");
-  await expect(page.locator(".popup-preview")).toBeVisible();
-  await expect(page.locator(".popup-switch")).toHaveCount(2);
-  await expect(page.locator('main img[src*="screenshot-"]')).toHaveCount(0);
+test("the hero communicates its example without scripting or motion", async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, javaScriptEnabled: false, reducedMotion: "reduce" });
+  try {
+    const page = await context.newPage();
+    await page.goto("/");
+    const figure = page.locator(".hero-visual");
+    await expect(figure.getByRole("img")).toHaveAccessibleName(/blue notebook/i);
+    await expect(page.locator(".hero .button--primary")).toHaveAttribute("href", STORE_URL);
+    await figure.hover();
+    expect(await figure.evaluate(node => node.getAnimations({ subtree: true }).length)).toBe(0);
+  } finally {
+    await context.close();
+  }
 });
 
 test("homepage FAQ is concise, keyboard operable, and linked to first-party help", async ({ page }) => {
   await page.goto("/index.html");
 
   const faq = page.locator("#faq");
-  await expect(faq.locator("details")).toHaveCount(5);
-  await expect(faq.getByRole("link", { name: "Dictozy support" })).toHaveAttribute("href", "support.html");
-  await expect(faq.locator('a[href="privacy.html"]')).toHaveAttribute("href", "privacy.html");
+  const details = faq.locator("details");
+  await expect(details).toHaveCount(5);
+  await expect(faq.locator('a[href$="support.html"]').first()).toBeVisible();
+  await expect(faq.locator('a[href*="privacy.html"]')).toHaveAttribute("href", /privacy\.html#storage-retention$/);
 
   const firstDetails = faq.locator("details").first();
   const firstSummary = firstDetails.locator("summary");
@@ -217,93 +231,94 @@ test("images declare dimensions and external new-tab links are isolated", async 
   }
 });
 
-test("homepage refinements keep the hero neutral and primary sections aligned", async ({ page }) => {
-  for (const viewport of [
-    { width: 390, height: 844 },
-    { width: 1920, height: 960 },
-  ]) {
-    await page.setViewportSize(viewport);
-    await page.goto("/index.html");
-
-    const layout = await page.evaluate(() => {
-      const bodyStyle = getComputedStyle(document.body);
-      const hero = document.querySelector(".hero");
-      const heroPanel = document.querySelector(".hero-panel");
-      const assuranceElement = document.querySelector(".assurance-band");
-      const assuranceItem = assuranceElement.firstElementChild;
-      const assurance = assuranceElement.getBoundingClientRect();
-      const content = document.querySelector(".content-section").getBoundingClientRect();
-      const assuranceStyle = getComputedStyle(assuranceElement);
-      const assuranceItemStyle = getComputedStyle(assuranceItem);
-      const supportStyle = getComputedStyle(document.querySelector(".support-callout"));
-
-      return {
-        bodyBackground: bodyStyle.backgroundColor,
-        heroBackground: getComputedStyle(hero).backgroundColor,
-        heroPanelBackground: getComputedStyle(heroPanel).backgroundColor,
-        assuranceLeft: assurance.left,
-        assuranceWidth: assurance.width,
-        contentLeft: content.left,
-        contentWidth: content.width,
-        assuranceBorderWidths: [
-          assuranceStyle.borderTopWidth,
-          assuranceStyle.borderRightWidth,
-          assuranceStyle.borderBottomWidth,
-          assuranceStyle.borderLeftWidth,
-        ],
-        assuranceMarginTop: assuranceStyle.marginTop,
-        assuranceAlignment: assuranceItemStyle.alignContent,
-        assurancePaddingLeft: Number.parseFloat(assuranceItemStyle.paddingLeft),
-        assurancePaddingRight: Number.parseFloat(assuranceItemStyle.paddingRight),
-        assurancePaddingTop: assuranceItemStyle.paddingTop,
-        assurancePaddingBottom: assuranceItemStyle.paddingBottom,
-        supportBorderTopWidth: supportStyle.borderTopWidth,
-      };
-    });
-
-    expect(layout.heroBackground).toBe(layout.bodyBackground);
-    expect(layout.heroPanelBackground).toBe(layout.bodyBackground);
-    expect(Math.abs(layout.assuranceLeft - layout.contentLeft)).toBeLessThanOrEqual(1);
-    expect(Math.abs(layout.assuranceWidth - layout.contentWidth)).toBeLessThanOrEqual(1);
-    expect(layout.assuranceBorderWidths).toEqual(["1px", "1px", "1px", "1px"]);
-    expect(layout.assuranceMarginTop).toBe("24px");
-    expect(layout.assuranceAlignment).toBe("start");
-    expect(layout.assurancePaddingLeft).toBeLessThanOrEqual(26);
-    expect(layout.assurancePaddingRight).toBeLessThanOrEqual(26);
-    expect(layout.assurancePaddingTop).toBe(layout.assurancePaddingBottom);
-    expect(layout.supportBorderTopWidth).toBe("1px");
+test("hero copy and illustration remain visible and legible in both layouts", async ({ page }) => {
+  for (const size of [{ width: 360, height: 800 }, { width: 1440, height: 960 }]) {
+    await page.setViewportSize(size);
+    await page.goto("/");
+    const title = await page.locator(".hero h1").boundingBox();
+    const visual = await page.locator(".hero-visual").boundingBox();
+    expect(title.width).toBeGreaterThan(200);
+    expect(visual.width).toBeGreaterThan(200);
+    const horizontalOverlap = Math.min(title.x + title.width, visual.x + visual.width) - Math.max(title.x, visual.x);
+    const verticalOverlap = Math.min(title.y + title.height, visual.y + visual.height) - Math.max(title.y, visual.y);
+    expect(Math.min(horizontalOverlap, verticalOverlap)).toBeLessThanOrEqual(1);
+    expect(visual.x).toBeGreaterThanOrEqual(0);
+    expect(visual.x + visual.width).toBeLessThanOrEqual(size.width + 1);
   }
 });
 
-test("section and page navigation preserves clear destinations and browser history", async ({ page }) => {
-  await page.goto("/index.html");
-  await page.locator('.primary-nav a[href="#controls"]').click();
-  await expect.poll(() => new URL(page.url()).hash).toBe("#controls");
-  await expect(page.locator("#controls")).toBeInViewport();
+test("the reflowed guide index clears the active workspace at tablet width and enlarged text", async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 900 });
+  await page.goto("/guide.html#recover");
+  await page.locator("#edit-draft").click();
+  for (const fontSize of ["100%", "200%"]) {
+    const dimensions = await page.evaluate(size => {
+      document.documentElement.style.fontSize = size;
+      document.querySelector(".guide-workspace").scrollIntoView({ block: "start" });
+      const index = document.querySelector(".guide-index").getBoundingClientRect();
+      const paper = document.querySelector(".guide-paper").getBoundingClientRect();
+      return {
+        viewport: document.documentElement.clientWidth,
+        total: document.documentElement.scrollWidth,
+        overlap: Math.min(
+          Math.min(index.bottom, paper.bottom) - Math.max(index.top, paper.top),
+          Math.min(index.right, paper.right) - Math.max(index.left, paper.left),
+        ),
+      };
+    }, fontSize);
+    expect(dimensions.total, fontSize).toBeLessThanOrEqual(dimensions.viewport + 1);
+    expect(dimensions.overlap, fontSize).toBeLessThanOrEqual(1);
+  }
+});
 
-  await page.getByRole("link", { name: "Privacy", exact: true }).first().click();
+test("section and page navigation preserves destinations and browser history", async ({ page }) => {
+  await page.goto("/#controls");
+  await expect(page.locator("#controls")).toBeInViewport();
+  await page.locator('footer a[href$="privacy.html"]').click();
   await expect(page).toHaveURL(/\/privacy\.html$/);
-  await expect(page.locator('.primary-nav a[aria-current="page"]')).toHaveText("Privacy");
 
   await page.getByRole("link", { name: "Security", exact: true }).click();
-  await expect.poll(() => new URL(page.url()).hash).toBe("#security");
+  await expect(page).toHaveURL(/#security$/);
   await expect(page.locator("#security")).toBeInViewport();
 
-  await page.locator('.primary-nav a[href="support.html"]').click();
-  await expect(page).toHaveURL(/\/support\.html$/);
-  await expect(page.locator('.primary-nav a[aria-current="page"]')).toHaveText("Support");
-
+  await page.locator('.primary-nav a[href$="support.html"]').click();
+  await expect(page.locator('.primary-nav [aria-current="page"]')).toHaveText("Support");
   await page.getByRole("link", { name: "FAQ", exact: true }).click();
-  await expect.poll(() => new URL(page.url()).hash).toBe("#faq");
   await expect(page.locator("#faq")).toBeInViewport();
 
-  await page.locator('.primary-nav a[href="/#how-it-works"]').click();
-  await expect(page).toHaveURL(/\/#how-it-works$/);
-  await expect(page.locator("#how-it-works")).toBeInViewport();
-
+  // The footer is next to the FAQ. Clicking the header would scroll away from the
+  // section before leaving, and Back correctly restores that different position.
+  await page.locator('footer a[href$="guide.html"]').click();
+  await expect(page.locator('.primary-nav [aria-current="page"]')).toContainText("Guide");
   await page.goBack();
   await expect(page).toHaveURL(/\/support\.html#faq$/);
   await expect(page.locator("#faq")).toBeInViewport();
+});
+
+test("the published privacy text and effective date are preserved", async ({ page }) => {
+  await page.goto("/privacy.html");
+  await expect(page.getByText("Effective date: November 1, 2026", { exact: true })).toBeVisible();
+  // Hash the published article at f682d10, excluding markup, navigation and layout whitespace.
+  const article = (await page.locator("main article").textContent()).replace(/\s+/g, " ").trim();
+  expect(createHash("sha256").update(article).digest("hex")).toBe(
+    "93b0bd4da220d3d463a4a33282508e571ae125b88ec58c6d51f2363a61cc38ac",
+  );
+});
+
+test("nested missing paths retain a 404 and working recovery links", async ({ page, request }) => {
+  const missing = "/a/missing/page";
+  expect((await request.get(missing)).status()).toBe(404);
+  // Serve Pages' custom body at the requested nested URL to exercise relative resolution locally.
+  const body = await (await request.get("/404.html")).text();
+  await page.route(`**${missing}`, route => route.fulfill({ status: 404, contentType: "text/html", body }));
+  expect((await page.goto(missing)).status()).toBe(404);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  for (const selector of ["header nav a", "footer nav a", 'link[rel="stylesheet"]', "img[src]"]) {
+    const urls = await page.locator(selector).evaluateAll(items => items.map(el => el.href || el.src));
+    for (const url of urls.filter(url => new URL(url).origin === new URL(page.url()).origin)) {
+      expect((await request.get(url)).status(), url).toBe(200);
+    }
+  }
 });
 
 for (const viewport of REQUIRED_VIEWPORTS) {
