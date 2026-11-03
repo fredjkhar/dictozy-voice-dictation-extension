@@ -2,11 +2,11 @@
 
 These notes preserve the release history without placing every prior version in the Chrome Web Store sales description.
 
-## 0.1.14 — Proposed
+## 0.1.14 — Public listing updated November 3, 2026
 
 - New Dictozy mark and blue/light popup, practice, recording and recovery controls.
 - Help includes a direct email support link. The existing settings and vocabulary-sharing choice carry forward.
-- [Candidate package, genuine captures and release order](release-0.1.14.md).
+- [Published release, original package and capture evidence](release-0.1.14.md).
 
 ## 0.1.13 — November 2, 2026
 

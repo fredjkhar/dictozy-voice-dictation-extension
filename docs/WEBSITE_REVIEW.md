@@ -2,11 +2,13 @@
 
 Preview the branch locally with `python3 -m http.server 4174 --bind 127.0.0.1 --directory site`. Open the homepage at `http://127.0.0.1:4174/` and follow **Explore the interactive guide**. Run `python3 scripts/validate_site.py` and `npm run test:site` after installing the locked development dependencies and Playwright Chromium. Use loopback for review. The production pages retain their indexable metadata.
 
-## Coordinated brand refresh and deployment hold
+## Release status · November 3, 2026
 
-PR #4 is a review preview. Keep the redesigned website undeployed until the approved extension update is publicly visible in the existing Chrome Web Store item. The homepage badge and SoftwareApplication metadata still say **0.1.13**, the current published version. The new recording and settings captures are candidate assets.
+The [modernized website and guide launched on November 2](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/41566346843) with 0.1.13 version information and screenshots. The [0.1.14 release record](../store/release-0.1.14.md) now confirms public availability. This PR prepares the version and screenshot switch. Merge and deployment await approval.
 
-For release, approve the extension identity, UI, package and Store assets first. Submit and publish the extension under separate authorization, then verify the public version, icon and screenshots. Compare the candidate captures with the released UI; recapture any differences. Synchronize the homepage badge, structured version and exact matching website assertions on this branch. Website merge and Pages deployment require their own authorization.
+## Original brand and capture review · November 2, 2026
+
+The evidence below describes the assets and checks at review time. The website wordmark and mobile navigation were refined later. Use the existing capture files for the release synchronization; do not regenerate the website lockup.
 
 All five public pages link directly to `mailto:dictozy.support@gmail.com`. The support page also displays the address alongside its existing troubleshooting and Store routes. The guide models the candidate controls with the same primary, recording and destructive-action colours. The guide's network restrictions, sample text and separate sharing opt-in are intact. The shared footer is outside the published privacy article; the policy content and November 1, 2026 effective date are unchanged.
 
