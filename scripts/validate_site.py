@@ -23,7 +23,7 @@ VERIFICATION_CONTENT = b"google-site-verification: google477277a037f62b85.html"
 STORE_URL = "https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma"
 PUBLIC_ROOT = "https://dictozy.com/"
 LEGACY_PUBLIC_ROOT = "https://fredjkhar.github.io/dictozy-voice-dictation-extension/"
-PUBLISHED_EXTENSION_VERSION = "0.1.14"
+PUBLISHED_EXTENSION_VERSION = "0.1.13"
 HOMEPAGE_DESCRIPTION = (
     "Dictate short messages, notes, and searches in supported Chrome fields. Explore Dictozy’s recording controls, "
     "safe transcript recovery, and optional vocabulary."
