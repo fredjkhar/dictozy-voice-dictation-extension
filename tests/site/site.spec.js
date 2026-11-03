@@ -82,7 +82,7 @@ for (const path of PUBLIC_PAGES) {
 test("internal links resolve and installation actions use the published Store item", async ({ page, request, baseURL }) => {
   for (const path of PUBLIC_PAGES) {
     await page.goto(path);
-    await expect(page.locator("header nav a[href$='guide.html']").first()).toBeVisible();
+    await expect(page.locator(".primary-nav a[href$='guide.html']")).toBeVisible();
     await expect(page.locator("footer a[href$='guide.html']")).toBeVisible();
     await expect(page.locator("footer").getByRole("link", { name: "Email support", exact: true }))
       .toHaveAttribute("href", "mailto:dictozy.support@gmail.com");
@@ -97,7 +97,7 @@ test("internal links resolve and installation actions use the published Store it
       `${path} should link to the canonical homepage URL`,
     ).toEqual([]);
 
-    for (const href of hrefs) {
+    for (const href of new Set(hrefs)) {
       const destination = new URL(href, page.url());
       if (destination.origin !== baseURL) {
         continue;
@@ -314,7 +314,7 @@ test("nested missing paths retain a 404 and working recovery links", async ({ pa
   await page.route(`**${missing}`, route => route.fulfill({ status: 404, contentType: "text/html", body }));
   expect((await page.goto(missing)).status()).toBe(404);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
-  for (const selector of ["header nav a", "footer nav a", 'link[rel="stylesheet"]', "img[src]"]) {
+  for (const selector of ["header nav a", "footer nav a", 'link[rel="stylesheet"]', "img[src]", "script[src]"]) {
     const urls = await page.locator(selector).evaluateAll(items => items.map(el => el.href || el.src));
     for (const url of urls.filter(url => new URL(url).origin === new URL(page.url()).origin)) {
       expect((await request.get(url)).status(), url).toBe(200);
@@ -336,6 +336,111 @@ for (const viewport of REQUIRED_VIEWPORTS) {
     }
   });
 }
+
+test("the mobile header fits on one row and restores desktop navigation when space permits", async ({ page }) => {
+  await page.goto("/");
+  const header = page.locator("header");
+  const install = header.getByRole("link", { name: "Add Dictozy to Chrome" });
+  const summary = header.locator("summary");
+  const label = install.getByText("Add to Chrome", { exact: true });
+  await expect(install).toHaveAttribute("href", STORE_URL);
+
+  for (const width of [320, 360, 390, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    await expect(header.locator(".primary-nav")).toBeHidden();
+    await expect(label).toBeHidden();
+    await expect(summary).toHaveAccessibleName("Menu");
+    const [logo, arrow, menu] = await Promise.all([header.locator(".brand"), install, summary].map(el => el.boundingBox()));
+    expect(logo.x + logo.width).toBeLessThanOrEqual(arrow.x);
+    expect(arrow.x + arrow.width).toBeLessThanOrEqual(menu.x);
+    expect(menu.x + menu.width).toBeLessThanOrEqual(width);
+    for (const control of [arrow, menu]) {
+      expect(control.width).toBeGreaterThanOrEqual(44);
+      expect(control.height).toBeGreaterThanOrEqual(44);
+      expect(Math.abs(control.y + control.height / 2 - logo.y - logo.height / 2)).toBeLessThanOrEqual(2);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  }
+  for (const width of [768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(header.locator(".primary-nav")).toBeVisible();
+    await expect(label).toBeVisible();
+    await expect(summary).toBeHidden();
+  }
+});
+
+test("mobile navigation closes on Escape, outside interaction, destination selection, and desktop resize", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const details = page.locator("details.site-menu");
+  const summary = details.locator("summary");
+  const nav = page.getByRole("navigation", { name: "Mobile navigation" });
+  const logo = page.getByRole("link", { name: "Dictozy home" });
+  await logo.focus();
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("link", { name: "Add Dictozy to Chrome" })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(summary).toBeFocused();
+  expect(await summary.evaluate(el => el.matches(":focus-visible") && getComputedStyle(el).outlineStyle !== "none")).toBe(true);
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Tab");
+  await expect(nav.getByRole("link", { name: "Overview" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(nav).toBeHidden();
+  await expect(summary).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(page.locator("main :focus")).toHaveCount(1);
+
+  await summary.click();
+  await page.locator("header").click({ position: { x: 190, y: 2 } });
+  await expect(details).toHaveJSProperty("open", false);
+  await summary.click();
+  await page.setViewportSize({ width: 768, height: 844 });
+  await expect(details).toHaveJSProperty("open", false);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(nav).toBeHidden();
+
+  await summary.click();
+  await nav.getByRole("link", { name: "Interactive guide" }).click();
+  await expect(page).toHaveURL(/\/guide\.html$/);
+  await page.goBack();
+  await expect(details).toHaveJSProperty("open", false);
+});
+
+test.describe("mobile navigation without JavaScript", () => {
+  test.use({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+
+  test("all pages expose the right menu destinations, current page and footer links", async ({ page }) => {
+    const internal = { Overview: "/", "Interactive guide": "/guide.html", Support: "/support.html", Privacy: "/privacy.html" };
+    for (const path of PUBLIC_PAGES) {
+      await page.goto(path);
+      const summary = page.locator("header summary");
+      const nav = page.getByRole("navigation", { name: "Mobile navigation" });
+      await expect(nav).toBeHidden();
+      await summary.press("Space");
+      await expect(nav).toBeVisible();
+      const footer = page.locator("footer");
+      for (const [section, links] of [
+        [nav, { ...internal, "Add to Chrome": STORE_URL }],
+        [footer, { ...internal, "Chrome Web Store": STORE_URL, "Email support": "mailto:dictozy.support@gmail.com" }],
+      ]) {
+        for (const [name, href] of Object.entries(links)) {
+          const link = section.getByRole("link", { name, exact: true });
+          await expect(link).toBeVisible();
+          await expect(link).toHaveAttribute("href", href);
+        }
+        const current = section.locator('[aria-current="page"]');
+        if (path === "/404.html") await expect(current).toHaveCount(0);
+        else await expect(current).toHaveAttribute("href", path === "/index.html" ? "/" : path);
+      }
+      await summary.press("Space");
+      await expect(nav).toBeHidden();
+    }
+    await page.locator("header summary").click();
+    await page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link", { name: "Privacy" }).click();
+    await expect(page).toHaveURL(/\/privacy\.html$/);
+  });
+});
 
 test("skip navigation is first, visible on focus, and moves focus to main content", async ({ page }) => {
   await page.goto("/index.html");

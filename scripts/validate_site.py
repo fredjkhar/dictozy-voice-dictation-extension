@@ -351,29 +351,25 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
             if image.get("width") == "1" or image.get("height") == "1":
                 errors.append(f"{name}: possible tracking pixel detected")
 
+        expected_sources = ["/navigation.js"]
+        if name == "guide.html":
+            expected_sources.append("guide.js")
+        external = [script for script in page.scripts if "src" in script.attributes]
+        if sorted(script.attributes["src"] for script in external) != sorted(expected_sources):
+            errors.append(f"{name}: expected only these local script dependencies: {expected_sources}")
+        for script in external:
+            source = script.attributes["src"]
+            if "defer" not in script.attributes or "async" in script.attributes:
+                errors.append(f"{name}: external script must be deferred: {source}")
+            if source in expected_sources and not (SITE_DIR / source.lstrip("/")).is_file():
+                errors.append(f"{name}: missing script: {source}")
         for script in page.scripts:
-            source = script.attributes.get("src")
-            script_type = script.attributes.get("type", "").casefold()
-            if source:
-                script_url = urlsplit(source)
-                allowed_guide_script = (
-                    name == "guide.html"
-                    and script_url.path in {"guide.js", "/guide.js"}
-                    and not script_url.netloc
-                    and not script_url.scheme
-                    and (script_type == "module" or "defer" in script.attributes)
-                    and (SITE_DIR / "guide.js").is_file()
-                )
-                if not allowed_guide_script:
-                    errors.append(f"{name}: unexpected executable script dependency: {source}")
-            elif script_type != "application/ld+json":
-                errors.append(f"{name}: inline executable scripts are not allowed")
+            if "src" not in script.attributes and (
+                name == "guide.html" or script.attributes.get("type", "").casefold() != "application/ld+json"
+            ):
+                errors.append(f"{name}: unexpected inline script")
 
-    guide_scripts = pages["guide.html"].scripts
-    if len(guide_scripts) != 1 or not guide_scripts[0].attributes.get("src"):
-        errors.append("guide.html: expected just the local guide script")
-
-    homepage_scripts = pages["index.html"].scripts
+    homepage_scripts = [script for script in pages["index.html"].scripts if "src" not in script.attributes]
     if len(homepage_scripts) != 1:
         errors.append("index.html: expected exactly one JSON-LD block")
         return
