@@ -1,15 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="264" height="64" viewBox="0 0 264 64">
-<rect id="tile" width="64" height="64" rx="16" fill="#2563EB"/>
+<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dictozy" width="264" height="64" viewBox="0 0 264 64">
+  <rect id="tile" width="64" height="64" rx="16" fill="#2563EB"/>
   <path id="letter-and-capsule" fill="#FFFFFF" d="M13 12h18a20 20 0 0 1 0 40H13v-8h18a12 12 0 1 0 0-24H21v12a4 4 0 1 1-8 0Z"/>
   <path id="pickup-arc" d="M28 27.5v2c0 6-4.5 10-11 10" fill="none" stroke="#7DD3FC" stroke-width="5.5" stroke-linecap="round"/>
-  <g color="#0F172A" transform="translate(80 1) scale(1.59)"><g fill="none" stroke="currentColor" stroke-width="4.5" stroke-linejoin="round">
-    <path d="M3 6h6.5C17 6 21 11 21 17s-4 11-11.5 11H3Z"/>
-    <path d="M27 12v16"/>
-    <path d="M46 14.5c-1.5-1.6-3.2-2.2-5.3-2.2-4.6 0-7.5 3.5-7.5 8s2.9 7.8 7.5 7.8c2.1 0 4.1-.9 5.5-2.4"/>
-    <path d="M53.4 7.3v15.5c0 4.8 2.7 5.9 6.6 4.9M49.4 13h10.3"/>
-    <ellipse cx="71" cy="20.2" rx="7.5" ry="8"/>
-    <path d="M83 13h12.5L83 27.4h13"/>
-    <path d="m98.5 12.2 7.2 16m6.6-16-7.6 18.6c-1.4 3.4-3.5 4.6-7 4"/>
+  <g id="wordmark" fill="#0F172A">
+    <path transform="translate(79.600 46.200) scale(0.0246094 -0.0246094)" d="M627 0C1083 0 1356 286 1356 747C1356 1205 1081 1490 638 1490H124V0ZM388 226V1264H621C935 1264 1089 1075 1089 747C1089 416 937 226 613 226Z"/>
+    <path transform="translate(115.041 46.200) scale(0.0246094 -0.0246094)" d="M112 0H364V1056H112ZM238 1213C324 1213 389 1275 389 1357C389 1438 324 1500 238 1500C152 1500 87 1438 87 1357C87 1275 152 1213 238 1213Z"/>
+    <path transform="translate(127.059 46.200) scale(0.0246094 -0.0246094)" d="M579 -24C846 -24 1040 148 1058 379H809C785 262 714 186 582 186C416 186 318 319 318 527C318 736 417 870 582 870C713 870 792 791 811 678H1058C1036 913 844 1080 579 1080C270 1080 63 853 63 527C63 201 270 -24 579 -24Z"/>
+    <path transform="translate(154.797 46.200) scale(0.0246094 -0.0246094)" d="M669 1056H454V1344H201V1056H17V853H201V266C201 85 302 0 517 0H669V203H561C479 203 454 228 454 303V853H669Z"/>
+    <path transform="translate(172.706 46.200) scale(0.0246094 -0.0246094)" d="M584 -24C895 -24 1105 199 1105 527C1105 855 895 1080 584 1080C273 1080 63 855 63 527C63 199 273 -24 584 -24ZM584 187C421 187 318 316 318 527C318 739 422 869 584 869C745 869 849 738 849 527C849 317 746 187 584 187Z"/>
+    <path transform="translate(201.334 46.200) scale(0.0246094 -0.0246094)" d="M95 0H945V206H406V209L939 871V1056H95V849H637V846L95 175Z"/>
+    <path transform="translate(226.213 46.200) scale(0.0246094 -0.0246094)" d="M131 -418H296C449 -418 553 -339 616 -174L1088 1056H824L631 506C604 428 579 350 555 272C531 350 505 428 479 506L285 1056H18L425 6L386 -96C356 -179 324 -213 256 -213H131Z"/>
   </g>
-  <circle cx="27" cy="6.6" r="2.6" fill="currentColor"/></g>
 </svg>
