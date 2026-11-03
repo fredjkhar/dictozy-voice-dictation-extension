@@ -1,0 +1,23 @@
+digraph dictozy_recording_lifecycle {
+  graph [rankdir=TB, bgcolor="#F8FAFC", pad="0.3", nodesep="0.38", ranksep="0.75", splines=polyline, outputorder=edgesfirst, fontname="DejaVu Sans"];
+  node [shape=box, style="rounded,filled", color="#CBD5E1", penwidth=1.5, fillcolor="#FFFFFF", fontname="DejaVu Sans", fontcolor="#0F172A", fontsize=14, margin="0.21,0.16"];
+  edge [color="#2563EB", penwidth=2.4, arrowsize=0.8, fontname="DejaVu Sans", fontcolor="#334155", fontsize=10];
+
+  start [shape=ellipse, fillcolor="#DBEAFE", color="#93C5FD", label=<<B>User action</B><BR/><FONT POINT-SIZE="11">Mic / shortcut</FONT>>];
+  recording [fillcolor="#EFF6FF", color="#93C5FD", label=<<B>Recording</B><BR/><FONT POINT-SIZE="11">10 s default</FONT><BR/><FONT POINT-SIZE="11">1–30 s configurable</FONT>>];
+  pending [fillcolor="#EFF6FF", color="#93C5FD", label=<<B>Transcribing</B><BR/><FONT POINT-SIZE="11">Request in flight</FONT>>];
+  safe [shape=diamond, style="filled", color="#93C5FD", fillcolor="#DBEAFE", label=<<B>Original field</B><BR/><B>still safe?</B>>, width=1.75, height=1.05];
+  inserted [fillcolor="#F0FDF4", color="#86EFAC", label=<<B>Insert transcript</B><BR/><FONT POINT-SIZE="11">At intended caret</FONT><BR/><FONT POINT-SIZE="11">Undo where supported</FONT>>];
+  recovered [fillcolor="#FFFBEB", color="#FCD34D", label=<<B>Copy / Discard</B><BR/><FONT POINT-SIZE="11">One result in page memory</FONT><BR/><FONT POINT-SIZE="11">Up to 60 seconds</FONT>>];
+  stopped [fillcolor="#F1F5F9", color="#CBD5E1", label=<<B>Cancelled</B><BR/><FONT POINT-SIZE="11">No text insertion</FONT>>];
+  failure [fillcolor="#FEF2F2", color="#FECACA", label=<<B>Request failed</B><BR/><FONT POINT-SIZE="11">Clear error / fresh retry</FONT>>];
+
+  start -> recording;
+  recording -> pending [label="Stop / time limit"];
+  pending -> safe [label="transcript ready"];
+  safe -> inserted [label="yes", color="#16A34A", penwidth=2.4, fontcolor="#15803D"];
+  safe -> recovered [label="no", color="#D97706", penwidth=2.4, fontcolor="#92400E"];
+  recording -> stopped [label="Discard / hide tab", color="#64748B", fontcolor="#475569", constraint=false];
+  pending -> stopped [label="Cancel", color="#64748B", fontcolor="#475569", constraint=false];
+  pending -> failure [label="error / timeout", color="#DC2626", fontcolor="#991B1B", constraint=false];
+}
