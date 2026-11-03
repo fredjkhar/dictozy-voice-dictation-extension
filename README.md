@@ -1,71 +1,95 @@
-# Dictozy: Voice Dictation
+<p align="center">
+  <img src="site/assets/dictozy-lockup.svg" alt="Dictozy" width="238">
+</p>
 
-Dictozy is a Chrome extension for dictating short text into supported web fields. Focus a field, use the visible microphone button or assigned browser shortcut, speak, and Dictozy inserts the returned transcript where you were writing.
+<h1 align="center">Voice dictation for Chrome</h1>
 
-The project includes both the Chrome Manifest V3 extension and the FastAPI backend that performs speech-to-text through xAI. The extension never calls xAI directly and never contains the xAI API key.
+<p align="center">
+  Speak a short message, note, search, or form entry directly into a supported Chrome field.
+  Start recording yourself, then keep editing where you left off.
+</p>
 
-![Voice dictation MVP flow](docs/images/extension-flow.svg)
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/dictozy-voice-dictation/folpeencabfejhjokmldikaelonphmma">Chrome Web Store</a> ·
+  <a href="https://dictozy.com/">Website</a> ·
+  <a href="site/guide.html">Interactive guide source</a> ·
+  <a href="https://dictozy.com/privacy.html">Privacy policy</a> ·
+  <a href="mailto:dictozy.support@gmail.com">Email support</a>
+</p>
 
-## Landing Page
+![Actual Dictozy 0.1.14 candidate recording controls in a Chrome field, captured with synthetic audio.](store/assets/0.1.14/screenshot-dictation-1280x800.png)
 
-A self-contained static product website is available at [site/index.html](site/index.html). It includes first-party privacy, support, and 404 pages and can be previewed with `python3 -m http.server 8080 --directory site`. Follow [docs/site-deployment.md](docs/site-deployment.md) for the manual GitHub Pages workflow and post-deployment checks.
+*Actual 0.1.14 candidate UI, captured with synthetic audio. This image is **not** a claim that 0.1.14 is already publicly available.*
 
-## Architecture
+## Release status
 
-The browser extension interacts with supported page fields, records short audio clips after explicit user action, and sends audio to the FastAPI backend. The backend calls xAI Speech-to-Text and returns a transcript for insertion into the active field.
+**Snapshot — November 2, 2026.** Repository source, Chrome Web Store publication, and website deployment are separate milestones.
 
-The extension must never call xAI directly. API keys belong only on the backend.
+| Surface | Verified state |
+| --- | --- |
+| Chrome Web Store | **0.1.13 public.** Version 0.1.14 was submitted for review; automatic publication is **off**, so approval alone will not publish it. |
+| `main` extension | **0.1.14**: refreshed blue icon, popup, practice page, recording and recovery UI, with existing dictation behaviour preserved. |
+| `main` website | Modernized blue design and a six-step interactive guide are merged but **not yet deployed**. Its 0.1.14 version metadata is staged only in source. |
+| Public website | The prior live site remains on 0.1.13 until the matching Store release is verified and GitHub Pages is manually deployed. |
+| Backend | Existing approved FastAPI deployment remains live. Render auto-deploy is **off**; the 0.1.14 update does not require a backend release. |
 
-## MVP Stack
+See the [0.1.14 candidate record](store/release-0.1.14.md), [0.1.13 published release record](store/release-0.1.13.md), and [website review](docs/WEBSITE_REVIEW.md) for dated evidence. Check the Store listing for the latest public version rather than treating this snapshot as a live status indicator.
 
-- Chrome Extension Manifest V3
-- Plain JavaScript
-- HTML/CSS
-- Python FastAPI
-- xAI Speech-to-Text API
+## What Dictozy does
 
-## Current Status
+- **Record on purpose.** Click the microphone beside a supported field or use your assigned Chrome shortcut. Stop to transcribe or Discard to cancel. Recording defaults to 10 seconds, configurable from 1 to 30 seconds.
+- **Keep your place.** The returned plain-text transcript is inserted only when the intended field and selection are still safe. Standard Undo works in supported editors; compatibility with complex editors varies.
+- **Recover a result safely.** If a completed transcript cannot be inserted, one result may be offered for **Copy / Discard** in page memory for up to 60 seconds. Cancelled dictation is not recoverable, and Dictozy does not keep a permanent transcript history.
+- **Adjust to your workflow.** The popup includes language formatting (Automatic plus 25 explicit choices), a global toggle, per-site control, recording limit, shortcut management, and an optional practice page.
+- **Keep vocabulary under your control.** Save up to 100 terms (50 characters each) locally. A **separate, off-by-default** choice is required to send them as transcription hints. Hints do not guarantee improved recognition.
 
-Version `0.1.12` is published (public Store metadata verified 2026-10-17; updated September 7, 2026). This branch contains unpublished Phase 1 fixes and Phase 2 first-use improvements; its source version remains `0.1.12` until a separately approved release is prepared. See [the improvement roadmap](docs/IMPROVEMENT_ROADMAP.md).
+Dictozy supports ordinary text, search, email, URL and telephone inputs; textareas; and supported contenteditable/ARIA-editable textboxes. It skips password, payment, hidden, disabled, and read-only fields. Selected Gmail and ChatGPT workflows have been checked; Notion, Outlook and WhatsApp Web compatibility remains unverified. The public website's [support page](https://dictozy.com/support.html) covers common troubleshooting.
 
-- Chrome extension detects supported fields and ignores unsafe fields.
-- Recording starts only after an explicit microphone-button click or assigned browser shortcut.
-- A configurable browser shortcut starts, stops, or cancels dictation through the same lifecycle as the visible page control.
-- A popup language-formatting preference offers Automatic plus 25 explicit languages. English is the default.
-- The popup includes a global master toggle plus an exact-origin control for the current supported site.
-- Only sites the user explicitly disables are retained in local extension storage; site preferences are never sent to the backend.
-- Extension sends audio only to the fixed Dictozy production backend.
-- Backend calls xAI Speech-to-Text.
-- Transcript is inserted back into the focused field.
-- Supported Chromium fields use a native editing transaction so the standard Undo command can reverse a recent transcript insertion; the established setter and Range paths remain as compatibility fallbacks.
-- Dynamically added fields work through delegated focus handling, and detached or newly unsupported targets are never given a late transcript.
-- xAI API key stays backend-only in `.env`.
-- Pending transcription can be cancelled from the on-page control without inserting a late result.
-- Failures remain visible with a fresh-recording retry state and a short support reference.
-- Microphone, connection, overload, timeout, service, and malformed-response failures use bounded internal classifications and actionable customer-facing messages.
-- A conservative local signal check rejects clearly silent microphone input without storing or transmitting signal data.
-- Backend tests, Node extension tests, Chromium workflow tests, and a local manual QA page are available.
-- Backend Docker deployment files are available.
-- Production endpoint validation and deployment smoke tests are available.
-- Chrome Web Store copy, screenshots, promo tile, icon, and release notes are available under `store/`.
-- Store discovery strategy, optimized listing copy, website deployment guidance, and Search Console and website-quality checklists are available under `store/`, `docs/`, and `qa/`.
-- Post-publish monitoring and support triage checklists are available under `qa/`.
-- Release packages keep the current Dictozy icons consistent across the toolbar, popup, and Chrome extensions page.
+## How it works
 
-## Local Development
+Dictozy is a **Manifest V3 Chrome extension** built with plain JavaScript. Its content script interacts with the selected field; its background service worker sends a bounded, user-initiated audio request to the fixed Dictozy FastAPI backend on Render. The backend validates and normalizes audio, calls xAI Speech-to-Text, and returns text through the extension. **The extension never talks directly to xAI and never contains `XAI_API_KEY`.**
 
-The extension records a short user-triggered clip, sends it to the fixed Dictozy production backend, and inserts the transcript returned by the backend. The backend calls xAI Speech-to-Text using `XAI_API_KEY` from environment variables.
+![Architecture diagram: Chrome's field and MV3 service worker send explicitly recorded audio to the Dictozy FastAPI backend, which contacts xAI. Local preferences remain in Chrome.](docs/images/extension-flow.svg)
 
-## Quick Start
+*Blue arrows show request flow. The transcript returns via FastAPI and the service worker; it reaches the page only when insertion is safe. [Editable diagram source](docs/diagrams/architecture.dot).*
 
-Clone and enter the project:
+### Recording and safe insertion
+
+![Recording lifecycle: explicit activation, recording, transcription, safe-field check, then insertion or temporary recovery; cancellation and errors are separate paths.](docs/images/recording-lifecycle.svg)
+
+*Discarding or hiding the tab cancels active recording; cancelling a pending request prevents late text insertion. Recovery is available only for eligible **completed** results, not cancelled requests. [Editable diagram source](docs/diagrams/recording-lifecycle.dot).*
+
+### Data boundary
+
+- Audio is sent from the extension to Dictozy's backend, then to xAI for transcription. The chosen language is included; vocabulary terms accompany a request **only when sharing has been explicitly enabled**.
+- Global/site settings and saved vocabulary live in `chrome.storage.local`. The extension does **not** send the page URL, existing field contents, or surrounding page text as part of the dictation request.
+- The backend enforces upload and resource limits, but its in-process controls are **not a durable billing cap**. The health endpoint checks service liveness, not provider or billing readiness.
+- The [privacy policy](PRIVACY.md) describes technical metadata, provider processing, temporary audio-upload spooling and retention boundaries. Do not treat “no account required” as “offline transcription.”
+
+## Run locally
+
+Requirements: Chrome/Chromium, Node.js, Python, and development dependencies defined by this repository.
 
 ```bash
 git clone https://github.com/fredjkhar/dictozy-voice-dictation-extension.git
 cd dictozy-voice-dictation-extension
+npm ci
+npx playwright install chromium
 ```
 
-Backend setup:
+**Load the unpacked extension:** open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select the repository's `extension/` directory. Reload a normal HTTPS test page after loading the extension.
+
+> **Important:** The unpacked extension in `main` still targets the fixed **production** Dictozy backend. Running FastAPI locally does not redirect it. An ordinary recording can reach xAI and consume paid credits. For provider-free verification, use the repository's mocked/synthetic Chromium workflows below; do not use a real microphone for routine testing.
+
+**Preview the website and six-step guide** without installing the extension or making transcription requests:
+
+```bash
+python3 -m http.server 8080 --bind 127.0.0.1 --directory site
+```
+
+Open `http://127.0.0.1:8080/` and `http://127.0.0.1:8080/guide.html`. The guide's recording and vocabulary interactions are **simulations**; no microphone access or audio upload occurs.
+
+**Run the backend locally** for backend development (this alone does not change the extension's endpoint):
 
 ```bash
 cd backend
@@ -73,162 +97,67 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
 cp .env.example .env
-```
-
-Set `XAI_API_KEY` in `backend/.env`, then run:
-
-```bash
+# Put your own XAI_API_KEY in backend/.env only if an authorized provider call is needed.
 uvicorn app.main:app --reload --no-access-log
 ```
 
-Extension setup:
+`GET http://127.0.0.1:8000/health` returns a liveness result. Keep `backend/.env` and any secrets out of Git.
 
-1. Open `chrome://extensions`.
-2. Enable Developer mode.
-3. Click Load unpacked.
-4. Select the `extension/` folder.
-5. Reload any test page after loading or reloading the extension.
-6. Open the extension popup to use the global or current-site control, view or manage the keyboard shortcut, choose language formatting, adjust the recording limit, or reset disabled-site preferences.
+## Tests and packaging
 
-QA page:
+From the repository root, after `npm ci` and the Playwright browser install:
 
 ```bash
-python3 -m http.server 8080
+node --test extension/tests/*.test.js     # extension unit tests
+npm run test:browser                      # MV3/Chromium workflows, stubbed provider
+npm run test:site                         # website and interactive guide
+python3 scripts/validate_site.py         # site links, policy and SEO invariants
+python3 scripts/validate_store_assets.py # Store image checks
+python3 scripts/package_extension.py --check-only
 ```
 
-Open:
-
-```text
-http://127.0.0.1:8080/qa/manual-test-page.html
-```
-
-![Manual QA page preview](docs/images/manual-test-page.svg)
-
-## Verification
-
-Run backend tests:
+Backend tests (with the Python environment above):
 
 ```bash
 cd backend
-source .venv/bin/activate
-pytest
+python -m pytest -q
 ```
 
-Run extension syntax checks from the repository root:
-
-```bash
-python3 -m json.tool extension/manifest.json >/dev/null
-node --check extension/content.js
-node --check extension/dom-utils.js
-node --check extension/dictation-lifecycle.js
-node --check extension/site-preferences.js
-node --check extension/background.js
-node --check extension/popup.js
-node --check extension/config.js
-node --test extension/tests/*.test.js
-```
-
-Run mocked Chromium workflows without contacting the production backend:
-
-```bash
-npm ci
-npm run test:browser
-npm run test:site
-```
-
-Validate and create the Chrome Web Store draft ZIP:
+The browser suites use isolated fixtures and synthetic audio; they are **not** a live-provider, physical-microphone or universal editor-compatibility certification. Build a Store ZIP only when preparing an explicitly authorized extension release:
 
 ```bash
 python3 scripts/package_extension.py
 ```
 
-Validate the Chrome Web Store visual assets:
+The generated `dist/` output is ignored by Git. The published package and version provenance must remain distinct from later documentation/website commits.
+
+## Project map
+
+| Path | Purpose |
+| --- | --- |
+| [`extension/`](extension/) | MV3 content script, service worker, popup, practice, state management and icons |
+| [`backend/`](backend/) | FastAPI route, audio validation/normalization, xAI service and tests |
+| [`site/`](site/) | Static website, support/privacy pages and the six-step guide; manual Pages deployment |
+| [`store/`](store/) | Release notes, package/capture provenance, Store icons and screenshots |
+| [`docs/`](docs/) | Architecture diagrams, compatibility evidence and implementation reports |
+| [`qa/`](qa/) | Browser fixtures, test procedures, smoke checks and support triage |
+| [`scripts/`](scripts/) | Site/Store validators, package build and asset utilities |
+
+### Documentation and support
+
+- [Interactive guide (repository version)](site/guide.html) · [Website deployment procedure](docs/site-deployment.md)
+- [Backend deployment and environment safeguards](backend/DEPLOYMENT.md) · [Compatibility matrix](docs/COMPATIBILITY_MATRIX.md)
+- [Release evidence](store/release-0.1.14.md) · [Improvement roadmap](docs/IMPROVEMENT_ROADMAP.md)
+- [Privacy policy](PRIVACY.md) · [Support triage](qa/support-triage.md) · **dictozy.support@gmail.com**
+
+## Diagram maintenance
+
+The two diagrams above were authored with **Graphviz** as editable DOT sources in [`docs/diagrams/`](docs/diagrams/) and rendered as scalable SVG, using Dictozy's blue design system. To regenerate after changing their architecture or flow:
 
 ```bash
-python3 scripts/validate_store_assets.py
+dot -Tsvg docs/diagrams/architecture.dot -o docs/images/extension-flow.svg
+dot -Tsvg docs/diagrams/recording-lifecycle.dot -o docs/images/recording-lifecycle.svg
 ```
 
-## Troubleshooting
+Keep the alt text and documentation in step with any diagram changes. Graphviz is a documentation tool, not an extension or website runtime dependency.
 
-- `502 Bad Gateway`: FastAPI reached xAI but xAI failed or rejected the request. Check backend logs for `xAI STT` warning lines.
-- `403` from xAI: the xAI team may need credits or Speech-to-Text access.
-- `503`: `XAI_API_KEY` is missing or not loaded by the backend.
-- Extension stays on `Transcribing`: click the cancel icon, then record again. Dictozy also returns to an actionable error state after its timeout.
-- Error includes `Reference`: include that short reference when reporting the failure; do not include private transcript or field content.
-- No microphone signal detected: confirm Chrome is using the intended input and that the input is not muted, then record again.
-- Microphone button does not appear: reload the page after loading the extension and focus a supported non-sensitive field.
-- Microphone button does not appear on one site: confirm both the global Dictozy toggle and `Enable on this site` are on. Restricted Chrome pages do not support the current-site control.
-- Keyboard shortcut does not work: open the popup and check whether it shows `Not assigned`. Use its keyboard icon to open `chrome://extensions/shortcuts`, then assign or remap the command.
-- Production service is unreachable: open the backend `/health` endpoint directly, then check Render deployment status and privacy-safe request logs.
-
-## Deployment
-
-The backend includes Docker deployment files under `backend/`. See [backend/DEPLOYMENT.md](backend/DEPLOYMENT.md).
-
-The Store extension is pinned to the production HTTPS `/api/transcribe` endpoint. Verify `/health` directly, then follow [qa/deployment-smoke-test.md](qa/deployment-smoke-test.md) for a complete production-path check. The backend also includes a reusable command-line smoke test:
-
-```bash
-cd backend
-python scripts/smoke_test.py https://YOUR_BACKEND_HOST
-```
-
-## Chrome Web Store Materials
-
-Privacy, release, Store listing, and search-discovery materials are available in [PRIVACY.md](PRIVACY.md), [store/](store/), [site/](site/), and [qa/](qa/). The generated ZIP under `dist/` is intentionally ignored by Git and should be rebuilt only for an extension-code release. Website-only changes do not require a new extension package.
-
-Use [store/seo-strategy.md](store/seo-strategy.md) for the discovery strategy, [docs/site-deployment.md](docs/site-deployment.md) for GitHub Pages deployment, [qa/seo-launch-checklist.md](qa/seo-launch-checklist.md) for Search Console measurement, and [qa/site-quality-checklist.md](qa/site-quality-checklist.md) for website QA.
-
-## Post-Publish Operations
-
-Use [qa/post-publish-monitoring.md](qa/post-publish-monitoring.md) for daily first-week checks, weekly follow-up, Store-installed smoke testing, Render log review, xAI usage review, emergency cutoff steps, and mitigation guidance.
-
-Use [qa/support-triage.md](qa/support-triage.md) for safe support intake and issue routing. Do not ask users for raw audio, transcript text, passwords, payment details, API keys, or private page content.
-
-## Repository Rename
-
-The recommended GitHub repository name is `dictozy-voice-dictation-extension`. After renaming the repository on GitHub, update the local remote with:
-
-```bash
-git remote set-url origin https://github.com/fredjkhar/dictozy-voice-dictation-extension.git
-```
-
-The local folder does not need to be renamed for the project to keep working.
-
-## Commit Readiness
-
-Before committing:
-
-- Confirm `backend/.env` is not in `git status`.
-- Confirm `backend/.venv/`, `__pycache__/`, and `.pytest_cache/` are not in `git status`.
-- Run the verification commands above.
-- Do not commit real API keys, raw audio, or generated local caches.
-
-## GitHub Project Hygiene
-
-Issue templates are available for:
-
-- Bug reports
-- Hardening tasks
-- Future feature requests
-
-Use hardening tasks for reliability, privacy, documentation, and QA work. Use feature requests for product scope changes.
-
-
-## Structured improvements
-
-Phase 1 work, acceptance criteria, evidence and deferred phases are tracked in
-[docs/IMPROVEMENT_ROADMAP.md](docs/IMPROVEMENT_ROADMAP.md). This branch is not deployed or published.
-Use [qa/phase-1-acceptance.md](qa/phase-1-acceptance.md) for human checks before a release decision.
-The browser suite distinguishes injected Chrome/media fixtures from an unpacked MV3 extension
-running in bundled Chromium with synthetic audio and a stubbed backend. Neither calls production.
-
-Phase 2 adds optional **Try dictation** practice, elapsed/remaining recording time, Stop/Discard,
-and accessible temporary recovery feedback. See the [Phase 2 report](docs/PHASE_2_REPORT.md)
-and [installed-extension manual checklist](qa/phase-2-acceptance.md). Release gates remain open.
-
-Phase 3 improves open-shadow focus handling and avoids nearby native controls when positioning the
-microphone. See the dated [compatibility matrix](docs/COMPATIBILITY_MATRIX.md),
-[Phase 3 report](docs/PHASE_3_REPORT.md), and [manual pilot checklist](qa/phase-3-acceptance.md).
-Live Gmail/ChatGPT checks establish field detection and selected layout behavior only; full
-named-application dictation and physical-microphone acceptance remain pending. Recording limits
-remain 10/30 seconds. No deployment or publication is included.

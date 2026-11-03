@@ -1,0 +1,32 @@
+digraph dictozy_architecture {
+  graph [rankdir=TB, bgcolor="#F8FAFC", pad="0.27", nodesep="0.36", ranksep="0.74", splines=polyline, outputorder=edgesfirst, fontname="DejaVu Sans", labelloc=b, fontsize=11, fontcolor="#475569", label="Transcript returns through the backend and service worker.\nText is inserted only if the original target remains safe."];
+  node [shape=box, style="rounded,filled", color="#CBD5E1", penwidth=1.6, fillcolor="#FFFFFF", fontname="DejaVu Sans", fontcolor="#0F172A", fontsize=15, margin="0.22,0.17"];
+  edge [color="#2563EB", penwidth=2.5, arrowsize=0.8, fontname="DejaVu Sans", fontcolor="#475569", fontsize=10];
+
+  subgraph cluster_chrome {
+    label="  CHROME  /  MANIFEST V3  ";
+    labelloc=t; labeljust=l; fontsize=13; fontcolor="#1D4ED8"; fontname="DejaVu Sans";
+    style="rounded,filled"; color="#BFDBFE"; fillcolor="#EFF6FF"; penwidth=1.7; margin=22;
+    field [label=<<B>Selected web field</B><BR/><FONT POINT-SIZE="11">Explicit mic / shortcut</FONT><BR/><FONT POINT-SIZE="11">Record and safe insertion</FONT>>, color="#93C5FD", fillcolor="#FFFFFF"];
+    worker [label=<<B>MV3 service worker</B><BR/><FONT POINT-SIZE="11">Requests and cancellation</FONT><BR/><FONT POINT-SIZE="11">No provider API key</FONT>>, color="#93C5FD", fillcolor="#FFFFFF"];
+    preferences [label=<<B>Chrome local storage</B><BR/><FONT POINT-SIZE="11">Preferences and vocabulary</FONT><BR/><FONT POINT-SIZE="11">Sharing off until opted in</FONT>>, fontcolor="#334155", fontsize=13, color="#BFDBFE", fillcolor="#F8FBFF", margin="0.17,0.14"];
+    {rank=same; preferences; field;}
+  }
+
+  subgraph cluster_api {
+    label="  DICTOZY BACKEND  ";
+    labelloc=t; labeljust=l; fontsize=13; fontcolor="#1D4ED8"; fontname="DejaVu Sans";
+    style="rounded,filled"; color="#BFDBFE"; fillcolor="#EFF6FF"; penwidth=1.7; margin=22;
+    backend [label=<<B>FastAPI on Render</B><BR/><FONT POINT-SIZE="11">Validate and normalize audio</FONT><BR/><FONT POINT-SIZE="11">Apply request limits</FONT>>, color="#93C5FD", fillcolor="#FFFFFF"];
+    secret [label=<<B>Server-side secret</B><BR/><FONT POINT-SIZE="11">XAI_API_KEY</FONT>>, color="#BFDBFE", fillcolor="#F8FBFF", fontcolor="#334155", fontsize=13, margin="0.17,0.14"];
+    {rank=same; backend; secret;}
+  }
+
+  provider [label=<<B>xAI Speech-to-Text</B><BR/><FONT POINT-SIZE="11">Processes audio</FONT><BR/><FONT POINT-SIZE="11">Returns transcript text</FONT>>, color="#86EFAC", fillcolor="#F0FDF4"];
+
+  field -> worker [label="recorded audio"];
+  worker -> backend [label="HTTPS / audio + language\nopted-in terms only", minlen=2];
+  backend -> provider [label="STT request", minlen=2];
+  preferences -> worker [style=dashed, color="#64748B", penwidth=1.8, label="local settings", constraint=false];
+  secret -> backend [style=dashed, color="#64748B", penwidth=1.7, arrowhead=none, constraint=false];
+}
