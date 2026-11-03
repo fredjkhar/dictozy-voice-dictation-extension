@@ -26,7 +26,8 @@
     <link rel="icon" type="image/png" sizes="48x48" href="/assets/dictozy-icon-48.png">
     <link rel="icon" type="image/png" sizes="128x128" href="/assets/dictozy-icon-128.png">
     <link rel="apple-touch-icon" href="/assets/dictozy-icon-256.png">
-    <link rel="stylesheet" href="/styles.css?v=20261102b">
+    <link rel="stylesheet" href="/styles.css?v=nav1">
+    <script src="/navigation.js" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -41,7 +42,25 @@
           <a href="/guide.html">Guide</a>
           <a href="/support.html" aria-current="page">Support</a>
         </nav>
-        <a class="header-install" href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Add to Chrome <span aria-hidden="true">↗</span></a>
+        <a class="header-install" href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma" aria-label="Add Dictozy to Chrome">
+          <span class="install-label">Add to Chrome</span>
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18 18 6M6 6h12v12"/></svg>
+        </a>
+        <details class="site-menu">
+          <summary aria-label="Menu">
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+              <path class="menu-bars" d="M4 6h16M4 12h16M4 18h16"/>
+              <path class="menu-close" d="m6 6 12 12M18 6 6 18"/>
+            </svg>
+          </summary>
+          <nav aria-label="Mobile navigation">
+            <a href="/">Overview</a>
+            <a href="/guide.html">Interactive guide</a>
+            <a href="/support.html" aria-current="page">Support</a>
+            <a href="/privacy.html">Privacy</a>
+            <a class="menu-install" href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Add to Chrome <span aria-hidden="true">↗</span></a>
+          </nav>
+        </details>
       </div>
     </header>
 
@@ -233,14 +252,27 @@
 
     <footer class="site-footer">
       <div class="site-footer__inner">
-        <div class="footer-brand"><img src="/assets/dictozy-lockup.svg?v=d3fef1f2" alt="Dictozy" width="99" height="24" loading="lazy"></div>
+        <div class="footer-brand">
+          <img src="/assets/dictozy-lockup.svg?v=d3fef1f2" alt="Dictozy" width="99" height="24" loading="lazy">
+          <p>Voice dictation for Chrome, right where you write.</p>
+        </div>
         <nav aria-label="Footer navigation">
-          <a href="/">Home</a>
-          <a href="/guide.html">Interactive guide</a>
-          <a href="/privacy.html">Privacy</a>
-          <a href="/support.html" aria-current="page">Support</a>
-          <a href="mailto:dictozy.support@gmail.com">Email support</a>
-          <a href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Chrome Web Store</a>
+          <div class="footer-group">
+            <h2>Explore</h2>
+            <ul>
+              <li><a href="/">Overview</a></li>
+              <li><a href="/guide.html">Interactive guide</a></li>
+              <li><a href="https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma">Chrome Web Store</a></li>
+            </ul>
+          </div>
+          <div class="footer-group">
+            <h2>Help</h2>
+            <ul>
+              <li><a href="/support.html" aria-current="page">Support</a></li>
+              <li><a href="/privacy.html">Privacy</a></li>
+              <li><a href="mailto:dictozy.support@gmail.com">Email support</a></li>
+            </ul>
+          </div>
         </nav>
       </div>
     </footer>
