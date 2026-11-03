@@ -12,7 +12,7 @@
 <p align="center">
   <a href="https://chromewebstore.google.com/detail/dictozy-voice-dictation/folpeencabfejhjokmldikaelonphmma">Chrome Web Store</a> ·
   <a href="https://dictozy.com/">Website</a> ·
-  <a href="site/guide.html">Interactive guide source</a> ·
+  <a href="https://dictozy.com/guide.html">Interactive guide</a> ·
   <a href="https://dictozy.com/privacy.html">Privacy policy</a> ·
   <a href="mailto:dictozy.support@gmail.com">Email support</a>
 </p>
@@ -27,11 +27,12 @@
 
 | Surface | Verified state |
 | --- | --- |
-| Chrome Web Store | **0.1.13 public.** Version 0.1.14 was submitted for review; automatic publication is **off**, so approval alone will not publish it. |
+| Chrome Web Store | The public listing showed **0.1.13** on November 2. At the last dashboard check, 0.1.14 was pending review with automatic publication off. It awaits separate manual publication. |
 | `main` extension | **0.1.14**: refreshed blue icon, popup, practice page, recording and recovery UI, with existing dictation behaviour preserved. |
-| `main` website | Modernized blue design and a six-step interactive guide are merged but **not yet deployed**. Its 0.1.14 version metadata is staged only in source. |
-| Public website | The prior live site remains on 0.1.13 until the matching Store release is verified and GitHub Pages is manually deployed. |
+| Public website | The modernized [homepage](https://dictozy.com/) and [six-step guide](https://dictozy.com/guide.html) went live ahead of the 0.1.14 extension. The homepage badge, structured data and product screenshots reflect the installable **0.1.13** release. |
 | Backend | Existing approved FastAPI deployment remains live. Render auto-deploy is **off**; the 0.1.14 update does not require a backend release. |
+
+GitHub Pages deployed [`b858960`](https://github.com/fredjkhar/dictozy-voice-dictation-extension/commit/b8589605a5c580ba29ec7d90f1803a26ebf47abe) on November 2 at 9:29 p.m. EST. [Deployment run](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/41566346843). The live homepage, guide, support and privacy pages matched that revision. Switch the site to the prepared 0.1.14 version and captures after the public Store listing, icon and artwork are verified.
 
 See the [0.1.14 candidate record](store/release-0.1.14.md), [0.1.13 published release record](store/release-0.1.13.md), and [website review](docs/WEBSITE_REVIEW.md) for dated evidence. Check the Store listing for the latest public version rather than treating this snapshot as a live status indicator.
 
