@@ -17,24 +17,24 @@
   <a href="mailto:dictozy.support@gmail.com">Email support</a>
 </p>
 
-![Actual Dictozy 0.1.14 candidate recording controls in a Chrome field, captured with synthetic audio.](store/assets/0.1.14/screenshot-dictation-1280x800.png)
+![Dictozy 0.1.14 recording controls beside a Chrome text field.](store/assets/0.1.14/screenshot-dictation-1280x800.png)
 
-*Actual 0.1.14 candidate UI, captured with synthetic audio. This image is **not** a claim that 0.1.14 is already publicly available.*
+*Captured from the 0.1.14 extension in a local writing field with synthetic audio.*
 
 ## Release status
 
-**Snapshot — November 2, 2026.** Repository source, Chrome Web Store publication, and website deployment are separate milestones.
+**Snapshot — November 3, 2026.** Repository source, Chrome Web Store publication, and website deployment are separate milestones.
 
 | Surface | Verified state |
 | --- | --- |
-| Chrome Web Store | The public listing showed **0.1.13** on November 2. At the last dashboard check, 0.1.14 was pending review with automatic publication off. It awaits separate manual publication. |
+| Chrome Web Store | The public listing shows **0.1.14**, updated November 3, 2026. Existing installations may update later. |
 | `main` extension | **0.1.14**: refreshed blue icon, popup, practice page, recording and recovery UI, with existing dictation behaviour preserved. |
-| Public website | The modernized [homepage](https://dictozy.com/) and [six-step guide](https://dictozy.com/guide.html) went live ahead of the 0.1.14 extension. The homepage badge, structured data and product screenshots reflect the installable **0.1.13** release. |
+| Public website | The modernized [homepage](https://dictozy.com/) and [six-step guide](https://dictozy.com/guide.html) went live ahead of the 0.1.14 extension. They launched with the 0.1.13 badge, structured data and screenshots. This PR prepares the switch to 0.1.14. Merge and deployment await approval. |
 | Backend | Existing approved FastAPI deployment remains live. Render auto-deploy is **off**; the 0.1.14 update does not require a backend release. |
 
-GitHub Pages deployed [`b858960`](https://github.com/fredjkhar/dictozy-voice-dictation-extension/commit/b8589605a5c580ba29ec7d90f1803a26ebf47abe) on November 2 at 9:29 p.m. EST. [Deployment run](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/41566346843). The live homepage, guide, support and privacy pages matched that revision. Switch the site to the prepared 0.1.14 version and captures after the public Store listing, icon and artwork are verified.
+GitHub Pages deployed [`b858960`](https://github.com/fredjkhar/dictozy-voice-dictation-extension/commit/b8589605a5c580ba29ec7d90f1803a26ebf47abe) on November 2 at 9:29 p.m. EST. [Deployment run](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/41566346843). The live homepage, guide, support and privacy pages matched that revision.
 
-See the [0.1.14 candidate record](store/release-0.1.14.md), [0.1.13 published release record](store/release-0.1.13.md), and [website review](docs/WEBSITE_REVIEW.md) for dated evidence. Check the Store listing for the latest public version rather than treating this snapshot as a live status indicator.
+See the [0.1.14 release record](store/release-0.1.14.md), [0.1.13 published release record](store/release-0.1.13.md), and [website review](docs/WEBSITE_REVIEW.md) for dated evidence. Check the Store listing for the latest public version rather than treating this snapshot as a live status indicator.
 
 ## What Dictozy does
 
