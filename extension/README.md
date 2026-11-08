@@ -37,7 +37,7 @@ The popup stores local settings with `chrome.storage.local`:
 - Keyboard shortcut: the `toggle-dictation` command suggests `Ctrl+Shift+Y` by default and `Command+Shift+Y` on macOS. Chrome may leave it unassigned after a conflict; the popup shows the current assignment and opens `chrome://extensions/shortcuts` for remapping.
 - Language formatting: defaults to English. Automatic asks the backend to omit provider language and formatting parameters; an explicit choice sends its language code so xAI can guide written formatting for numbers, currencies, and units. It is not a guarantee of improved speech recognition.
 - Recording limit: defaults to 10 seconds and is clamped between 1 and 30 seconds.
-- Personal vocabulary (unpublished): save user-entered terms locally; a separate, off-by-default choice enables sending saved terms with future dictation requests. See the Phase 4 notes below.
+- Personal vocabulary: save user-entered terms locally; a separate, off-by-default choice enables sending saved terms with future dictation requests. See the Phase 4 notes below.
 - Reset Site Preferences: removes only explicitly disabled origins and leaves the global enabled state, recording limit, language formatting, and keyboard shortcut unchanged.
 
 The release build pins transcription to `https://voice-dictation-extension.onrender.com/api/transcribe`. Popup messages, page data, and stored settings cannot select another endpoint. xAI remains backend-only.
@@ -125,7 +125,7 @@ For structured QA, use the checklist and local test page in `../qa/`.
 - Canvas-based editors and custom widgets without a standard writable DOM input or contenteditable surface remain unsupported.
 
 
-## Phase 1 safety behavior (unpublished)
+## Phase 1 safety behavior (shipped in 0.1.13)
 
 - Only trusted mouse/keyboard clicks or extension commands can activate recording. Page scripts
   cannot start recording by dispatching a click. Enter and Space on the microphone use the retained
@@ -141,15 +141,14 @@ For structured QA, use the checklist and local test page in `../qa/`.
   inserts into a different field. Copy requires an explicit trusted action and browser clipboard
   availability; failure leaves the result available until expiry. Copy/discard/expiry/new recording,
   disable, hidden tab and page exit clear it. Deliberately cancelled operations have no recovery.
-- No new permissions, storage keys, preferences, language options or duration changes were added.
-  Full recovery UX, timers, onboarding, editor expansion and longer clips remain later phases.
+- No new permissions, storage keys, preferences, language options or duration changes were added in this phase.
 
 See [Phase 1 manual acceptance](../qa/phase-1-acceptance.md) and
 [implementation tracking](../docs/IMPROVEMENT_ROADMAP.md). `npm run test:browser` includes ordinary
 page tests with Chrome/media mocks and separate unpacked-MV3 Chromium tests using a synthetic
 microphone and stubbed backend. Neither establishes physical-microphone or named-site compatibility.
 
-## Phase 2 first use and feedback (unpublished)
+## Phase 2 first use and feedback (shipped in 0.1.13)
 
 Open **Try dictation** in the popup to revisit the optional bundled practice page. Its Try action
 focuses a practice textarea; microphone capture still requires explicit activation of the ordinary
@@ -170,10 +169,11 @@ focused recovery control. It never automatically pastes or rebases stale offsets
 cannot remove a newer result; a clipboard operation already handed to the browser cannot be revoked.
 
 See [Phase 2 manual acceptance](../qa/phase-2-acceptance.md) and the
-[Phase 2 report](../docs/PHASE_2_REPORT.md). Physical microphone, screen-reader, live-editor and
-production validation remain open; bundled Chromium/synthetic audio is a separate test method.
+[Phase 2 report](../docs/PHASE_2_REPORT.md) for evidence at phase closeout. Later scoped microphone,
+screen-reader and live-editor results are in the [compatibility matrix](../docs/COMPATIBILITY_MATRIX.md);
+bundled Chromium/synthetic audio is a separate test method.
 
-## Phase 3 compatibility validation (unpublished)
+## Phase 3 compatibility validation (shipped in 0.1.13)
 
 Focus resolution follows nested open shadow roots. Recording ends immediately when the target loses
 focus to another editor or unsafe target, while movement within one rich editor and to DICTOZY's
@@ -190,7 +190,7 @@ shadow fields, native Undo, rich DOM replacement, iframe exclusion, Permissions 
 insert/discard sessions. Their synthetic audio and stubbed backend do not establish speech accuracy,
 production latency or full Gmail/ChatGPT/Notion/Outlook/WhatsApp compatibility.
 
-## Phase 4 personal vocabulary (unpublished)
+## Phase 4 personal vocabulary (shipped in 0.1.13)
 
 The popup accepts one term per line, up to 100 terms of at most 50 Unicode code points each.
 Saving keeps the list local and does not enable transmission. Enable the separate sharing control
@@ -210,10 +210,10 @@ Page/content-script messages cannot supply these terms. Both extension and backe
 normalize Unicode to NFC and remove case-insensitive duplicates. The backend forwards valid terms
 to the existing xAI endpoint as repeated `keyterm` fields and does not persist or log them.
 
-Release coordination is still required: the live backend is unchanged and vocabulary handling
-has not been verified there. An older backend may ignore the new fields. Under separate release
-approval, deploy and verify the backward-compatible backend before distributing this extension
-change, and publish the matching privacy disclosures. All six release gates remain open.
+The [0.1.13 release record](../store/release-0.1.13.md) preserves the backend-first rollout,
+corrected live vocabulary request, privacy publication and remaining limitations. The published
+0.1.14 UI refresh does not require another backend deployment. Live recognition improvements
+from vocabulary have not been measured.
 
 For a focused local check, use the existing mocked browser tests: save a small list with sharing
 off, reopen the popup, enable it, then disable and clear it. Confirm disabled/empty requests omit

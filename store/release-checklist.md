@@ -2,9 +2,9 @@
 
 Dictozy `0.1.12` is published, verified 2026-10-17 (Store update date September 7, 2026). The checklist below is the historical 0.1.12 release checklist, not an instruction to resubmit that version or evidence that each checkbox was completed. Do not replace or alter an active Store draft. For live-release monitoring, use [../qa/post-publish-monitoring.md](../qa/post-publish-monitoring.md).
 
-Phase 1 changes are unpublished. Before a future approved release, assign a new version, regenerate its package, and complete [Phase 1 acceptance](../qa/phase-1-acceptance.md). Never upload the changed branch under the already-published 0.1.12 version.
+Phase 1 changes subsequently shipped in [0.1.13](release-0.1.13.md); the current published release is [0.1.14](release-0.1.14.md). Preserve the original checklist below as history, not an instruction to rebuild or resubmit an already-published version.
 
-### Future vocabulary release coordination (unpublished)
+### Original vocabulary release coordination (October 2026, before publication)
 
 - Keep all six release gates in the [roadmap](../docs/IMPROVEMENT_ROADMAP.md) open until separately supported by evidence; local vocabulary tests do not close them.
 - Under separate approval, deploy and verify the backward-compatible vocabulary backend before distributing the extension change. The unchanged live backend is unverified and may ignore the new fields.

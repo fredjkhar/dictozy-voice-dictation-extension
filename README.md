@@ -23,16 +23,16 @@
 
 ## Release status
 
-**Snapshot — November 3, 2026.** Repository source, Chrome Web Store publication, and website deployment are separate milestones.
+**Snapshot — November 7, 2026.** Repository source, Chrome Web Store publication, and website deployment are separate milestones.
 
 | Surface | Verified state |
 | --- | --- |
 | Chrome Web Store | The public listing shows **0.1.14**, updated November 3, 2026. Existing installations may update later. |
 | `main` extension | **0.1.14**: refreshed blue icon, popup, practice page, recording and recovery UI, with existing dictation behaviour preserved. |
-| Public website | The modernized [homepage](https://dictozy.com/) and [six-step guide](https://dictozy.com/guide.html) went live ahead of the 0.1.14 extension. They launched with the 0.1.13 badge, structured data and screenshots. This PR prepares the switch to 0.1.14. Merge and deployment await approval. |
-| Backend | Existing approved FastAPI deployment remains live. Render auto-deploy is **off**; the 0.1.14 update does not require a backend release. |
+| Public website | The modernized [homepage](https://dictozy.com/) and [six-step guide](https://dictozy.com/guide.html) launched with 0.1.13 information ahead of the extension. PR #12 is merged and deployed; the live homepage now shows the 0.1.14 badge, structured data and recording capture, with the matching settings capture linked from Support. |
+| Backend | The [recorded approved deployment](store/release-0.1.13.md#backend-evidence--corrected-vocabulary-verification) has Render auto-deploy **off**; the 0.1.14 update does not require a backend release. |
 
-GitHub Pages deployed [`b858960`](https://github.com/fredjkhar/dictozy-voice-dictation-extension/commit/b8589605a5c580ba29ec7d90f1803a26ebf47abe) on November 2 at 9:29 p.m. EST. [Deployment run](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/41566346843). The live homepage, guide, support and privacy pages matched that revision.
+The initial modernized site deployment used [`b858960`](https://github.com/fredjkhar/dictozy-voice-dictation-extension/commit/b8589605a5c580ba29ec7d90f1803a26ebf47abe) on November 2 at 9:29 p.m. EST ([run](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/41566346843)). The latest successful [Pages run](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/41762462173) deployed `18597b4846785b1d1f8606e8cd025caa20d355f0` on November 3. Fresh homepage, guide, support and privacy responses matched that source on November 7.
 
 See the [0.1.14 release record](store/release-0.1.14.md), [0.1.13 published release record](store/release-0.1.13.md), and [website review](docs/WEBSITE_REVIEW.md) for dated evidence. Check the Store listing for the latest public version rather than treating this snapshot as a live status indicator.
 

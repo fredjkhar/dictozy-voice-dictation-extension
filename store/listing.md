@@ -1,6 +1,6 @@
 # Chrome Web Store Listing Copy
 
-Use this file as the source of truth when updating the existing Chrome Web Store listing. Dictozy `0.1.12` is published, verified from public Store metadata on 2026-10-17 (Store update date September 7, 2026). Phase 1 branch fixes are not part of that publication. Do not replace or alter an active Store draft.
+This file preserves the historical `0.1.12` listing copy, verified from public Store metadata on 2026-10-17 (Store update date September 7, 2026), before the Phase 1 fixes shipped. It is not current paste-ready copy. See the [0.1.14 release record](release-0.1.14.md) for the published release. Do not replace or alter an active Store draft.
 
 ## Dashboard Product Details
 

@@ -23,7 +23,7 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 - The unpacked extension loads without errors in `chrome://extensions`.
 - Popup settings persist after closing and reopening the popup.
-- The popup shows `Dictozy` branding and version `0.1.12` in `chrome://extensions` when testing the unpacked release candidate.
+- The popup shows `Dictozy` branding and version `0.1.14` in `chrome://extensions` when testing the current unpacked source.
 - The popup displays the current `toggle-dictation` shortcut or `Not assigned`.
 - The popup keyboard icon opens `chrome://extensions/shortcuts`.
 - The suggested shortcut is `Ctrl+Shift+Y`, or `Command+Shift+Y` on macOS, when Chrome can assign it without a conflict.
@@ -108,16 +108,16 @@ For the published extension, use [post-publish-monitoring.md](post-publish-monit
 
 ## Store Presentation
 
-- `store/listing.md` uses user-friendly copy for the public listing and technical language for reviewer notes.
+- The current listing matches the published release recorded in `store/release-0.1.14.md`; `store/listing.md` is historical 0.1.12 copy.
 - `site/index.html` opens locally and presents the current product without unsupported features.
-- `store/assets/screenshot-dictation-1280x800.png`, `store/assets/screenshot-settings-1280x800.png`, and `store/assets/promo-small-440x280.png` match the current Dictozy name, icon, and popup.
+- The recording/settings screenshots in `store/assets/0.1.14/` match the current extension. Select promotional artwork using `store/assets/README.md`, which distinguishes the original submission from the refined tile.
 - The Chrome Web Store description does not imply background recording, direct xAI calls from the extension, or features that are not implemented.
 
 ## Published Extension Smoke QA
 
 - Install Dictozy from the Chrome Web Store.
 - Confirm extension ID `folpeencabfejhjokmldikaelonphmma`.
-- Confirm version `0.1.12` on the published extension (verified 2026-10-17).
+- Confirm version `0.1.14` on the published extension (Store Updated date November 3, 2026); existing installations may update later.
 - Confirm English is selected by default, then save and smoke-test Automatic and one explicit non-English language.
 - Run a short dictation on a supported HTTPS text field.
 - Confirm recording starts only after clicking the visible microphone button or pressing the assigned browser shortcut.

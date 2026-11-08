@@ -13,12 +13,12 @@ The GitHub Pages workflow remains manual. A normal push updates the repository b
 From the repository root:
 
 ```bash
-python3 -m http.server 8080 --directory site
+python3 -m http.server 8080 --bind 127.0.0.1 --directory site
 ```
 
 Open `http://127.0.0.1:8080/`.
 
-The `site/` folder is the complete public artifact. It contains only intentional website files: HTML pages, the shared stylesheet, icons, social-sharing screenshots, `.nojekyll`, crawler files, and the Search Console verification file. Developer documentation and browser tests remain outside the deployed folder. Visible product previews use HTML and CSS versions of Dictozy's controls so they stay sharp and responsive.
+The `site/` folder is the complete public artifact. It contains HTML pages, local stylesheets and scripts, icons, product captures, social artwork, `.nojekyll`, crawler files, and the Search Console verification file. Developer documentation and browser tests remain outside the deployed folder. Product screenshots are genuine extension captures; the guide's HTML/CSS controls are explicitly labelled simulations.
 
 Because the artifact is served from the custom-domain root, `site/robots.txt` is authoritative at `https://dictozy.com/robots.txt`. It must reference the production sitemap at `https://dictozy.com/sitemap.xml`.
 
@@ -28,14 +28,14 @@ The manual workflow in `.github/workflows/pages.yml` uploads only `site/` as the
 
 When deployment is explicitly approved:
 
-1. Push the reviewed commit to GitHub.
+1. Merge the reviewed, approved website change into `main` after checks pass.
 2. Open the repository on GitHub.
 3. Open **Actions** and select **Deploy Dictozy landing page**.
-4. Run the workflow from the intended branch.
-5. Wait for the `github-pages` environment deployment to complete.
-6. Open every required public URL and confirm the response and rendered page.
+4. Confirm Pages Source is **GitHub Actions** and the `github-pages` environment permits `main` only, then run the workflow from `main`. Stop if configuration differs; do not change it to force a deployment.
+5. Wait for the `github-pages` environment deployment to complete and verify its source SHA.
+6. Open every required public URL and confirm the response and rendered page. A successful workflow alone does not prove the intended public content is visible.
 
-Do not upload the full repository. The contents of `site/` must remain the artifact root so `/`, `/privacy.html`, `/support.html`, `/robots.txt`, `/sitemap.xml`, and `/assets/...` resolve correctly.
+Do not upload the full repository or select **Deploy from a branch**. The contents of `site/` must remain the artifact root so `/`, `/guide.html`, `/privacy.html`, `/support.html`, `/robots.txt`, `/sitemap.xml`, and `/assets/...` resolve correctly. `/README.md` and `/site/index.html` must not become competing public pages.
 
 GitHub's official custom-workflow documentation describes `actions/configure-pages`, `actions/upload-pages-artifact`, and `actions/deploy-pages`:
 
@@ -47,6 +47,7 @@ Confirm these pages return `200` over HTTPS:
 
 ```text
 https://dictozy.com/
+https://dictozy.com/guide.html
 https://dictozy.com/privacy.html
 https://dictozy.com/support.html
 https://dictozy.com/robots.txt
@@ -61,8 +62,8 @@ Also verify:
 3. Images load, the product remains clear at mobile and desktop widths, and no horizontal overflow appears.
 4. The homepage's SoftwareApplication JSON-LD parses and contains no rating or review data.
 5. The Search Console verification file still contains the exact token issued by Google.
-6. PageSpeed Insights is run against the live homepage, privacy page, and support page. Record real results rather than estimating them from local tests.
-7. The updated sitemap is submitted in Search Console and all three indexable URLs are inspected.
+6. When performance checks are relevant to the change, record real PageSpeed Insights results rather than estimating them from local tests.
+7. Search Console submission and inspection of the four indexable URLs require separate authorization; do not treat them as automatic deployment steps.
 
 ## Chrome Web Store URLs
 
@@ -86,7 +87,7 @@ Support:
 https://dictozy.com/support.html
 ```
 
-This website release does not require an extension package update and must not alter the `0.1.10` Store draft under review.
+Website-only changes do not require an extension package update and must not alter the published Store item or any draft.
 
 ## Legacy Redirect
 
@@ -100,9 +101,9 @@ It must return a permanent redirect to `https://dictozy.com/`. It must not appea
 
 ## Performance And Measurement
 
-The site intentionally has no executable page JavaScript, external font, analytics script, tracking pixel, advertising file, or separate CDN dependency. The single small stylesheet remains render-blocking so visitors do not receive an unstyled first render. Add analytics only as a separate privacy and measurement decision with a real configuration and updated disclosures.
+The site uses small first-party `navigation.js` and `guide.js` scripts, with readable navigation and guide content without JavaScript. It has no external font, analytics script, tracking pixel, advertising file, or separate CDN dependency. Local stylesheets prevent an unstyled first render. Add analytics only as a separate privacy and measurement decision with a real configuration and updated disclosures.
 
-Displayed icons use explicit dimensions and local size variants. The 1280x800 PNG files are social-sharing images rather than visible page UI. Do not add WebP or AVIF variants unless a real rendered image shows a measurable delivery benefit and retains a compatible fallback.
+Displayed icons and product images use explicit dimensions and local assets. Visible product captures use WebP; the social card is a separate 1200 × 630 PNG. Preserve historical images and only regenerate assets when an approved change requires it.
 
 ## HSTS Limitation
 
@@ -110,4 +111,4 @@ HSTS is an HTTP response header and cannot be implemented in HTML. The current G
 
 ## Structured-Data Limitation
 
-The homepage includes truthful `SoftwareApplication` metadata and a zero-price offer because the extension is free. Its `softwareVersion` must reflect the version visible on the public Chrome Web Store listing, not a draft under review. At the Phase 36 implementation point, the public version is `0.1.9`; update this field after `0.1.10` is actually published. Dictozy does not add fabricated ratings or reviews. Rich Results Test warnings about rating or review eligibility must be recorded rather than worked around with unsupported data.
+The homepage includes truthful `SoftwareApplication` metadata and a zero-price offer because the extension is free. Its `softwareVersion` must reflect the version visible on the public Chrome Web Store listing, not a draft under review; the current synchronized version is `0.1.14`. Dictozy does not add fabricated ratings or reviews. Rich Results Test warnings about rating or review eligibility must be recorded rather than worked around with unsupported data.
