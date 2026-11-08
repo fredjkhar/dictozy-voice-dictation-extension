@@ -1,6 +1,6 @@
 # Dictozy identity
 
-The editable sources are [mark.svg](mark.svg) and the original outlined [wordmark.svg](wordmark.svg). The D’s white upright doubles as the microphone capsule. A sky-blue pickup arc sits inside the letter. The master uses simple vector shapes without fonts, scripts, metadata, embedded images or external references.
+The original editable sources are [mark.svg](mark.svg) and [wordmark.svg](wordmark.svg). The approved website lettering is now in [dictozy-lockup.svg](../../site/assets/dictozy-lockup.svg); the [refined promotional tile](promo-refined.md) reuses those exact outlines. The D’s white upright doubles as the microphone capsule. A sky-blue pickup arc sits inside the letter. The master uses simple vector shapes without fonts, scripts, metadata, embedded images or external references.
 
 | Colour | Application |
 |---|---|
@@ -10,9 +10,9 @@ The editable sources are [mark.svg](mark.svg) and the original outlined [wordmar
 | White `#FFFFFF` | Letter and wordmark on dark backgrounds |
 | Sky `#7DD3FC` | Microphone pickup detail |
 
-The [light](lockup-light.svg) and [dark](lockup-dark.svg) lockups each have a 264 × 64 viewBox. Both website and extension assets come from these same geometries. Use the generated SVGs at their original aspect ratio and give a linked logo the accessible name “Dictozy”. The website can use the 32px export for its favicon and the 256px export for its existing touch icon.
+The historical [light](lockup-light.svg) and [dark](lockup-dark.svg) lockups each have a 264 × 64 viewBox. Their lettering predates the approved website refinement; do not copy these lockups over the current website logo. Use SVGs at their original aspect ratio and give a linked logo the accessible name “Dictozy”. The website uses the 32px export for its favicon and the 256px export for its touch icon.
 
-With the repository’s locked Playwright development dependencies and Chromium installed, run `node store/brand-0.1.14/export.cjs` from the repository root. It regenerates the extension icons, lockups, [toolbar proof](toolbar-proof.png), [Store icon](../assets/0.1.14/icon-128.png) and [promotional tile](../assets/0.1.14/promo-small-440x280.png). Copy the generated lockups and website sizes unchanged to the website branch. The historic Store materials and packaged 0.1.13 remain available with their original release.
+The original `node store/brand-0.1.14/export.cjs` command regenerates the extension icons, old lockups, [toolbar proof](toolbar-proof.png), [Store icon](../assets/0.1.14/icon-128.png) and [original promotional tile](../assets/0.1.14/promo-small-440x280.png). Preserve those historical outputs. For the refined tile only, use `node store/brand-0.1.14/export-promo-refined.cjs` with the repository’s locked Playwright dependencies and Chromium. It leaves unrelated assets unchanged.
 
 The 16, 32 and 48px releases were inspected at 1× on light and dark surfaces. The 128px PNG in the manifest is also the prepared Store icon. Its visible 96 × 96 artwork has 16 transparent pixels on every side. The small promotional PNG is 440 × 280. The separate recording/settings captures use the Store’s preferred 1280 × 800 screenshot size. [Chrome Web Store image guidance](https://developer.chrome.com/docs/webstore/images)
 

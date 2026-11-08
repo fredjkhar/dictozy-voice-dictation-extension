@@ -2,9 +2,9 @@
 
 Preview the branch locally with `python3 -m http.server 4174 --bind 127.0.0.1 --directory site`. Open the homepage at `http://127.0.0.1:4174/` and follow **Explore the interactive guide**. Run `python3 scripts/validate_site.py` and `npm run test:site` after installing the locked development dependencies and Playwright Chromium. Use loopback for review. The production pages retain their indexable metadata.
 
-## Release status · November 3, 2026
+## Release status · November 7, 2026
 
-The [modernized website and guide launched on November 2](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/41566346843) with 0.1.13 version information and screenshots. The [0.1.14 release record](../store/release-0.1.14.md) now confirms public availability. This PR prepares the version and screenshot switch. Merge and deployment await approval.
+The [modernized website and guide launched on November 2](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/41566346843) with 0.1.13 version information and screenshots. The [0.1.14 release record](../store/release-0.1.14.md) confirms public availability. PR #12's version and screenshot switch is merged and [deployed](https://github.com/fredjkhar/dictozy-voice-dictation-extension/actions/runs/41762462173). Fresh homepage, guide, support and privacy responses matched the deployed source `18597b4846785b1d1f8606e8cd025caa20d355f0` on November 7.
 
 ## Original brand and capture review · November 2, 2026
 

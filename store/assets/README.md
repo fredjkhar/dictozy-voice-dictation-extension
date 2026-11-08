@@ -1,6 +1,6 @@
 # Store Visual Assets
 
-The proposed 0.1.14 recording, settings, icon and promo artwork is in [0.1.14/](0.1.14/). See its [capture method, hashes and release order](../release-0.1.14.md) before preparing a future Store draft.
+The original 0.1.14 recording, settings, icon and promo artwork is in [0.1.14/](0.1.14/). See the [published release and capture evidence](../release-0.1.14.md). The separate [refined promotional tile](0.1.14/promo-small-440x280-refined.png) uses the approved website lettering; its [reproduction notes](../brand-0.1.14/promo-refined.md) preserve the original submission hashes. Its Store upload status has not been verified.
 
 ## Earlier prepared assets
 
@@ -8,15 +8,15 @@ The proposed 0.1.14 recording, settings, icon and promo artwork is in [0.1.14/](
 - `screenshot-settings-1280x800.png`: popup settings with global and current-site controls, English language formatting, the current keyboard shortcut, 10-second limit, and Reset Site Preferences in the normal settings panel.
 - `promo-small-440x280.png`: small promotional tile.
 
-The deterministic HTML sources live in `../source/`. Re-render them at their exact viewport sizes after changing listing visuals.
+The deterministic HTML sources live in `../source/`. They reproduce the earlier assets below, not the current extension UI; preserve the historical files.
 
-The settings screenshot shows the simplified production popup truthfully. The assets show Dictozy branding, the global and current-site toggles, English language formatting, the current shortcut assignment, the 10-second default recording limit, microphone/stop icon controls, Reset Site Preferences, and no backend or development-only controls. Cancellation and transient error states are verified in QA rather than represented as permanent screenshot states.
+The earlier settings screenshot showed the production popup at capture time. Those assets show Dictozy branding, the global and current-site toggles, English language formatting, the current shortcut assignment, the 10-second default recording limit, microphone/stop icon controls, Reset Site Preferences, and no backend or development-only controls. Cancellation and transient error states were verified in QA rather than represented as permanent screenshot states.
 
 For the Phase 31 listing update, keep `screenshot-dictation-1280x800.png` first because it shows the core voice-typing workflow. Keep `screenshot-settings-1280x800.png` second to explain global, current-site, language, shortcut, and recording controls. The raster files remain accurate and are not regenerated for the metadata-only update.
 
-## Rendering
+## Historical rendering
 
-Render the deterministic sources from the repository root with Chrome:
+The original rendering commands, retained as historical reproduction evidence, were:
 
 ```bash
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=1280,800 --screenshot=store/assets/screenshot-dictation-1280x800.png file://"$PWD/store/source/dictation.html"
