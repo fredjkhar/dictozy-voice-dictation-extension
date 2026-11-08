@@ -15,6 +15,7 @@ EXPECTED_IMAGES = {
     ROOT / "store/assets/0.1.14/screenshot-dictation-1280x800.png": (1280, 800),
     ROOT / "store/assets/0.1.14/screenshot-settings-1280x800.png": (1280, 800),
     ROOT / "store/assets/0.1.14/promo-small-440x280.png": (440, 280),
+    ROOT / "store/assets/0.1.14/promo-small-440x280-refined.png": (440, 280),
 }
 REQUIRED_FILES = (
     ROOT / "PRIVACY.md",
