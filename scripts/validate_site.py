@@ -409,7 +409,7 @@ def validate_product_previews(pages: dict[str, ParsedPage], errors: list[str]) -
     for anchor in ("install", "record", "insert", "recover", "vocabulary", "troubleshoot"):
         if anchor not in guide.ids:
             errors.append(f"guide.html: missing walkthrough destination #{anchor}")
-    if "interactive demo — no microphone access or audio is sent." not in normalize(guide.text):
+    if "demo only — no microphone access or audio upload." not in normalize(guide.text):
         errors.append("guide.html: missing static simulation boundary")
 
 

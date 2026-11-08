@@ -248,27 +248,39 @@ test("hero copy and illustration remain visible and legible in both layouts", as
   }
 });
 
-test("the reflowed guide index clears the active workspace at tablet width and enlarged text", async ({ page }) => {
-  await page.setViewportSize({ width: 768, height: 900 });
-  await page.goto("/guide.html#recover");
-  await page.locator("#edit-draft").click();
-  for (const fontSize of ["100%", "200%"]) {
-    const dimensions = await page.evaluate(size => {
-      document.documentElement.style.fontSize = size;
-      document.querySelector(".guide-workspace").scrollIntoView({ block: "start" });
-      const index = document.querySelector(".guide-index").getBoundingClientRect();
-      const paper = document.querySelector(".guide-paper").getBoundingClientRect();
-      return {
+test("the continuous demo and optional scenarios reflow without crowding at narrow and enlarged sizes", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/guide.html");
+    const mic = page.locator("#sample-mic");
+    if (width === 390) await expect(mic).toBeInViewport();
+    for (const fontSize of ["100%", "200%"]) {
+      await page.evaluate(size => { document.documentElement.style.fontSize = size; }, fontSize);
+      await page.locator("#recover summary").click();
+      await page.locator("#edit-draft").click();
+      await page.locator("#vocabulary summary").click();
+      await page.locator("#save-term").click();
+      const dimensions = await page.evaluate(() => ({
         viewport: document.documentElement.clientWidth,
         total: document.documentElement.scrollWidth,
-        overlap: Math.min(
-          Math.min(index.bottom, paper.bottom) - Math.max(index.top, paper.top),
-          Math.min(index.right, paper.right) - Math.max(index.left, paper.left),
-        ),
-      };
-    }, fontSize);
-    expect(dimensions.total, fontSize).toBeLessThanOrEqual(dimensions.viewport + 1);
-    expect(dimensions.overlap, fontSize).toBeLessThanOrEqual(1);
+        controls: [...document.querySelectorAll("main button:not([hidden]), main summary")]
+          .filter(el => el.checkVisibility()).map(el => {
+            const box = el.getBoundingClientRect();
+            return { left: box.left, right: box.right, height: box.height };
+          }),
+      }));
+      expect(dimensions.total, `${width}px / ${fontSize}`).toBeLessThanOrEqual(dimensions.viewport + 1);
+      for (const control of dimensions.controls) {
+        expect(control.left).toBeGreaterThanOrEqual(0);
+        expect(control.right).toBeLessThanOrEqual(width + 1);
+        expect(control.height).toBeGreaterThanOrEqual(44);
+      }
+      await page.locator("#recover summary").click();
+      await page.locator("#vocabulary summary").click();
+      await page.reload();
+    }
+    expect(await page.locator("main").evaluate(el => el.getAnimations({ subtree: true }).length)).toBe(0);
   }
 });
 
