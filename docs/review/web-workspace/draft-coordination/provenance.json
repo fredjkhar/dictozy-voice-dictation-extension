@@ -1,0 +1,56 @@
+{
+  "source_commit": "be51c88271f92c65ac2500ff7883865f655f294a",
+  "method": "Native Chromium localStorage and Web Locks, two pages in one context; no recording, backend or provider requests.",
+  "browser": "149.0.7827.55",
+  "captures_sha256": {
+    "saved-status-390.webp": "07c2b77111aa172f67f84b3c916ae520c21a0e630826f185dd89e9e9bd355a93",
+    "conflict-paused-390.webp": "a3886b738b8476cb5ab75017178d50fd9db65d733e57c0f7a4ef8e0746d63c1c",
+    "replace-confirmation-1440.webp": "d8dbece66b7dfca3a74e59006fbf4c5f55e9d2c2cb7110bd75d8cb676ef944c0"
+  },
+  "sources_sha256": {
+    "site/workspace.js": "bee5355d396ec98ff1efe523184fccefd9f0c8103fcb915f5180b2069f2b5715",
+    "site/workspace.html": "187a6dbf9b3038b6af00b768dc351eb32d948161423ca3a8f732ba21d7519310",
+    "site/workspace.css": "e35c892738c0477d692cf841607f82101ec8754d248f0cedd1066b27c3f26919"
+  },
+  "layouts": [
+    {
+      "state": "saved-status-390",
+      "surface": "page",
+      "width": 390,
+      "scrollWidth": 390
+    },
+    {
+      "state": "saved-status-390",
+      "surface": "workspace",
+      "width": 358,
+      "scrollWidth": 358
+    },
+    {
+      "state": "conflict-paused-390",
+      "surface": "page",
+      "width": 390,
+      "scrollWidth": 390
+    },
+    {
+      "state": "conflict-paused-390",
+      "surface": "workspace",
+      "width": 358,
+      "scrollWidth": 358
+    },
+    {
+      "state": "replace-confirmation-1440",
+      "surface": "page",
+      "width": 1440,
+      "scrollWidth": 1440
+    },
+    {
+      "state": "replace-confirmation-1440",
+      "surface": "workspace",
+      "width": 960,
+      "scrollWidth": 960
+    }
+  ],
+  "keyboard": "Escape closed the nonblocking replacement dialog, restored Remember focus and preserved unsaved text.",
+  "blocked_external": [],
+  "page_errors": []
+}
