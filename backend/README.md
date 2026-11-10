@@ -2,7 +2,7 @@
 
 This folder contains the FastAPI backend for Dictozy: Voice Dictation.
 
-The backend accepts user-triggered audio from the Chrome extension, calls xAI Speech-to-Text, and returns transcript text to the extension.
+The backend accepts user-triggered audio from the Chrome extension, calls xAI Speech-to-Text, and returns transcript text. The prepared website workspace uses the same endpoint; production website access requires a separate approved configuration and release.
 
 The `/api/transcribe` endpoint validates the uploaded audio file, sends it to xAI from the backend only, and returns the transcript. The browser extension must never call xAI directly, and the xAI API key must stay in backend environment variables.
 
@@ -53,7 +53,15 @@ Optional hardening settings are included in `.env.example`:
 
 For production configuration, use `.env.production.example` as a template and provide secrets through the hosting provider's environment or secret manager.
 
-For local backend testing, keep `BACKEND_CORS_ORIGINS` limited to trusted local origins. Production requires only `chrome-extension://folpeencabfejhjokmldikaelonphmma` and rejects wildcard, localhost, or additional origins at startup.
+For local backend testing, keep `BACKEND_CORS_ORIGINS` limited to trusted local origins. Production requires `chrome-extension://folpeencabfejhjokmldikaelonphmma`; the only optional additional origin is exactly `https://dictozy.com`. Wildcard, localhost, arbitrary origins and duplicate entries are rejected at startup. The production template remains extension-only.
+
+For provider-free website review, run from this folder with installed backend dependencies:
+
+```bash
+python3 -m scripts.workspace_review --port 4199 --site-port 4198
+```
+
+This loopback-only entry point ignores `.env` files, clears inherited provider credentials, disables outbound socket connections, and replaces only the server-side provider call. Audio decoding/validation and the ordinary request guards still run. `/review/status` exposes only the mock mode and call count. Responses are deterministic samples, not recognition results. This development script is outside `app/`, is excluded from the Docker runtime image, and is not a client-selectable API mode. Ordinary `uvicorn app.main:app` below uses the real provider and can incur charges.
 
 Run the development server:
 

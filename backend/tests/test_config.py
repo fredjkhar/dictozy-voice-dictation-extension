@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from app.core.config import PRODUCTION_EXTENSION_ORIGIN, Settings, parse_bool_env
+from app.core.config import PRODUCTION_EXTENSION_ORIGIN, PRODUCTION_WEBSITE_ORIGIN, Settings, parse_bool_env
 
 
 @pytest.mark.parametrize("value", [None, "", "   "])
@@ -40,13 +40,21 @@ def test_parse_bool_env_rejects_invalid_values(monkeypatch) -> None:
         parse_bool_env("TEST_BOOLEAN", True)
 
 
-def test_production_settings_require_only_the_published_extension_origin() -> None:
+def test_production_settings_preserve_extension_only_rollout() -> None:
     settings = Settings(
         app_env="production",
         backend_cors_origins=PRODUCTION_EXTENSION_ORIGIN,
     )
 
     assert settings.cors_origins == [PRODUCTION_EXTENSION_ORIGIN]
+
+
+def test_production_website_origin_requires_explicit_opt_in() -> None:
+    settings = Settings(
+        app_env="production",
+        backend_cors_origins=f"{PRODUCTION_EXTENSION_ORIGIN},{PRODUCTION_WEBSITE_ORIGIN}",
+    )
+    assert settings.cors_origins == [PRODUCTION_EXTENSION_ORIGIN, PRODUCTION_WEBSITE_ORIGIN]
 
 
 @pytest.mark.parametrize(
@@ -56,6 +64,15 @@ def test_production_settings_require_only_the_published_extension_origin() -> No
         "*",
         "http://localhost:3000",
         f"{PRODUCTION_EXTENSION_ORIGIN},http://localhost:3000",
+        PRODUCTION_WEBSITE_ORIGIN,
+        f"{PRODUCTION_EXTENSION_ORIGIN},null",
+        f"{PRODUCTION_EXTENSION_ORIGIN},https://example.com",
+        f"{PRODUCTION_EXTENSION_ORIGIN},http://dictozy.com",
+        f"{PRODUCTION_EXTENSION_ORIGIN},https://www.dictozy.com",
+        f"{PRODUCTION_EXTENSION_ORIGIN},https://dictozy.com/",
+        f"{PRODUCTION_EXTENSION_ORIGIN},https://dictozy.com:443",
+        f"{PRODUCTION_EXTENSION_ORIGIN},https://dictozy.com.evil.test",
+        f"{PRODUCTION_EXTENSION_ORIGIN},{PRODUCTION_EXTENSION_ORIGIN}",
     ],
 )
 def test_production_settings_reject_unsafe_cors_origins(origins: str) -> None:

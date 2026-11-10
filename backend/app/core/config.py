@@ -9,6 +9,8 @@ load_dotenv()
 
 DEFAULT_MAX_TRANSCRIBE_CONTENT_LENGTH_BYTES = 11 * 1024 * 1024
 PRODUCTION_EXTENSION_ORIGIN = "chrome-extension://folpeencabfejhjokmldikaelonphmma"
+PRODUCTION_WEBSITE_ORIGIN = "https://dictozy.com"
+PRODUCTION_CLIENT_ORIGINS = frozenset({PRODUCTION_EXTENSION_ORIGIN, PRODUCTION_WEBSITE_ORIGIN})
 
 
 def parse_bool_env(name: str, default: bool) -> bool:
@@ -65,9 +67,13 @@ class Settings:
         if self.app_env.strip().lower() != "production":
             return
 
-        if self.cors_origins != [PRODUCTION_EXTENSION_ORIGIN]:
+        origins = self.cors_origins
+        if (PRODUCTION_EXTENSION_ORIGIN not in origins
+                or len(origins) != len(set(origins))
+                or not set(origins).issubset(PRODUCTION_CLIENT_ORIGINS)):
             raise ValueError(
-                "Production BACKEND_CORS_ORIGINS must contain only the published Dictozy extension origin."
+                "Production BACKEND_CORS_ORIGINS must include the published Dictozy extension origin "
+                "and may additionally include only https://dictozy.com, without duplicates."
             )
 
         if min(self.transcribe_max_concurrent_requests, self.transcribe_rate_limit_requests,
