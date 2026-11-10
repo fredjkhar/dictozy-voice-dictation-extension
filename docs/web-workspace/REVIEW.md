@@ -123,6 +123,15 @@ At implementation completion: **437 automated tests passed**:
 | Chromium website workflows | 47 |
 | Backend pytest | 170 |
 
+After the cross-tab correction, the site validator and **55 website Chromium
+tests passed**, including eight native same-browser Storage/Web Locks regressions
+for revocation, Clear, concurrent updates, queued writes, renewed consent, reload,
+storage failures and confirmation races. Stale-tab checks suppress storage-event
+delivery to prove write-time validation. Unrelated suites were not manually
+rerun for this correction; normal PR CI remains applicable. The three
+[updated status/dialog captures](../review/web-workspace/draft-coordination/README.md)
+preserve the original layout and earlier visual evidence.
+
 Site, shared-copy, package-input and Store-asset validators passed. No package
 was built. The privacy patch applies cleanly; `PRIVACY.md` and the published
 HTML article remain byte-identical to base `c14be560dfdab7ae2e10972dfe0b9ce14cacc216`.
