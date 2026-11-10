@@ -2,6 +2,17 @@
   const DISABLED_ORIGINS_STORAGE_KEY = "disabledSiteOrigins";
   const MAX_DISABLED_ORIGINS = 250;
 
+  // Product-owned pages use their built-in recorder. This is independent of
+  // the user's site preferences and intentionally does not cover subdomains.
+  function isOfficialSite(value) {
+    try {
+      const url = new URL(value);
+      return ["http:", "https:"].includes(url.protocol) && url.hostname === "dictozy.com";
+    } catch (_error) {
+      return false;
+    }
+  }
+
   function normalizeOrigin(value) {
     if (typeof value !== "string" || value.length > 2048) {
       return null;
@@ -93,6 +104,7 @@
   globalThis.DictozySitePreferences = Object.freeze({
     DISABLED_ORIGINS_STORAGE_KEY,
     MAX_DISABLED_ORIGINS,
+    isOfficialSite,
     isOriginDisabled,
     normalizeDisabledOrigins,
     normalizeOrigin,

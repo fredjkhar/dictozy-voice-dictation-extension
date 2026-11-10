@@ -2,6 +2,7 @@ importScripts("config.js");
 importScripts("dictation-lifecycle.js");
 importScripts("background-utils.js");
 importScripts("vocabulary.js");
+importScripts("site-preferences.js");
 
 const TRANSCRIBE_AUDIO_MESSAGE = "VOICE_DICTATION_TRANSCRIBE_AUDIO";
 const CANCEL_TRANSCRIPTION_MESSAGE = "VOICE_DICTATION_CANCEL_TRANSCRIPTION";
@@ -44,6 +45,7 @@ const {
   normalizeTranscriptionLanguage,
 } = globalThis.VoiceDictationConfig;
 const { normalizeRequestId } = globalThis.DictozyLifecycle;
+const { isOfficialSite } = globalThis.DictozySitePreferences;
 const { prepareAudioDataUrl } = globalThis.DictozyBackgroundUtils;
 const { STORAGE_KEY: VOCABULARY_STORAGE_KEY, normalizeVocabularySettings } = globalThis.DictozyVocabulary;
 const activeTranscriptions = new Map();
@@ -315,7 +317,7 @@ async function sendToggleToActiveTab() {
     });
     const tabId = tabs[0]?.id;
 
-    if (!Number.isInteger(tabId)) {
+    if (!Number.isInteger(tabId) || isOfficialSite(tabs[0]?.url)) {
       return false;
     }
 
@@ -334,6 +336,11 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!isTrustedSender(sender) || !ALLOWED_MESSAGE_TYPES.has(message?.type)) {
+    return false;
+  }
+
+  if (isOfficialSite(sender?.url) || isOfficialSite(sender?.tab?.url)) {
+    sendResponse(createFailure(FAILURE_CODES.invalidRequest, "Use Dictozy's built-in recorder on this website."));
     return false;
   }
 
