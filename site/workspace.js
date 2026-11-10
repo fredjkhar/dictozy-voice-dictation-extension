@@ -49,43 +49,177 @@
     byId("copy-text").disabled = draft.value.length === 0;
     byId("clear-text").disabled = draft.value.length === 0;
   }
-  function removeSavedDraft() {
+  // One persisted draft; a fresh consent token also prevents delete/re-enable ABA.
+  // The lock serializes the read/check/write across cooperating same-origin tabs.
+  // Storage events are only a UI hint, never the authority for a write.
+  const canCoordinateDraft = typeof navigator.locks?.request === "function" &&
+    typeof crypto.randomUUID === "function";
+  let rememberedRaw = null;
+  let saveEpoch = 0;
+  let pageLeaving = false;
+  let cancelReplacement = null;
+  function savingStatus(message) {
+    // Do not reannounce identical success text on every keystroke.
+    if (saveStatus.textContent !== message) saveStatus.textContent = message;
+  }
+  function pauseSaving(message) {
+    saveEpoch += 1;
+    rememberedRaw = null;
+    remember.checked = false;
+    savingStatus(message);
+  }
+  function parseSavedDraft(raw) {
+    if (raw === null) return null;
+    const saved = JSON.parse(raw);
+    if (!saved || typeof saved.text !== "string") throw new Error("Invalid draft");
+    const keys = Object.keys(saved).sort().join(",");
+    if (saved.version === 1 && keys === "text,version") return saved;
+    const token = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (saved.version !== 2 || keys !== "consent,revision,text,version" ||
+        !token.test(saved.consent) || !token.test(saved.revision)) throw new Error("Invalid draft");
+    return saved;
+  }
+  function pauseForChange(raw) {
+    pauseSaving(raw === null
+      ? "Remembering was turned off or cleared in another tab. Your text is still here."
+      : "Saving paused: another tab changed the saved draft. Your text is still here. Turn remembering on to save this tab instead.");
+  }
+  async function withDraftLock(action) {
+    if (!canCoordinateDraft) throw new Error("Draft coordination unavailable");
+    return navigator.locks.request(storageKey, { mode: "exclusive" }, action);
+  }
+  function writeDraft(consent) {
+    const raw = JSON.stringify({ version: 2, consent, revision: crypto.randomUUID(), text: draft.value });
+    localStorage.setItem(storageKey, raw);
+    rememberedRaw = raw;
+    remember.checked = true;
+    savingStatus(draft.value === "" ? "Remembering is on. This draft is empty." : "Saved in this browser.");
+  }
+  function saveDraft() {
+    if (!remember.checked || !rememberedRaw || clearing || pageLeaving) return;
+    const epoch = saveEpoch;
+    withDraftLock(() => {
+      if (epoch !== saveEpoch || !remember.checked || pageLeaving) return;
+      const current = localStorage.getItem(storageKey);
+      if (current !== rememberedRaw) { pauseForChange(current); return; }
+      const saved = parseSavedDraft(current);
+      // Read the current editor in the critical section, not an old queued input.
+      if (saved.text !== draft.value) writeDraft(saved.consent);
+    }).catch(() => {
+      if (epoch === saveEpoch && !pageLeaving) pauseSaving("Could not save this draft. Saving is paused; your text is still here. Copy it or try remembering again.");
+    });
+  }
+  async function removeSavedDraft() {
+    pauseSaving("Turning remembering off…");
+    const epoch = saveEpoch;
     try {
-      localStorage.removeItem(storageKey);
+      await withDraftLock(() => {
+        // Explicit revocation is global for this one saved draft, including queued saves.
+        localStorage.getItem(storageKey);
+        localStorage.removeItem(storageKey);
+      });
+      if (epoch === saveEpoch) savingStatus("Remembering is off. The saved copy was removed; open tabs keep their text.");
       return true;
     } catch (_) {
-      saveStatus.textContent = "Browser storage could not be cleared. Clear this site's stored data in your browser settings to remove any saved copy.";
+      if (epoch === saveEpoch) savingStatus("Browser storage could not be cleared. Saving is off here, but other tabs may still save. Remove this site's stored data in browser settings.");
       return false;
     }
   }
-  function saveDraft() {
-    if (!remember.checked || clearing) return;
+  function confirmDraftReplacement() {
+    const dialog = byId("replace-draft-dialog");
+    return new Promise((resolve) => {
+      function finish(accepted) {
+        dialog.close();
+        byId("keep-saved-draft").removeEventListener("click", keep);
+        byId("replace-saved-draft").removeEventListener("click", replace);
+        dialog.removeEventListener("cancel", cancel);
+        cancelReplacement = null;
+        if (!pageLeaving) remember.focus({ preventScroll: true });
+        resolve(accepted);
+      }
+      const keep = () => finish(false);
+      const replace = () => finish(true);
+      const cancel = (event) => { event.preventDefault(); finish(false); };
+      byId("keep-saved-draft").addEventListener("click", keep);
+      byId("replace-saved-draft").addEventListener("click", replace);
+      dialog.addEventListener("cancel", cancel);
+      cancelReplacement = keep;
+      dialog.showModal();
+    });
+  }
+  async function enableRemembering() {
+    const epoch = ++saveEpoch;
+    rememberedRaw = null;
     try {
-      if (draft.value === "") localStorage.removeItem(storageKey);
-      else localStorage.setItem(storageKey, JSON.stringify({ version: 1, text: draft.value }));
-      saveStatus.textContent = draft.value === "" ? "No saved draft." : "Saved in this browser.";
+      const confirmedRaw = localStorage.getItem(storageKey);
+      const saved = parseSavedDraft(confirmedRaw);
+      if (saved && saved.text !== draft.value) {
+        // Do not cover active capture/cancel controls. The HTML dialog is nonblocking,
+        // so existing recovery expiry and other cleanup timers continue normally.
+        if (!["idle", "success", "error"].includes(controller?.getState())) {
+          pauseSaving("Saving is paused. Finish or cancel dictation before replacing the saved draft.");
+          return;
+        }
+        // Never hold the shared lock while a person considers a confirmation.
+        if (!await confirmDraftReplacement()) {
+          if (epoch === saveEpoch) pauseSaving("Remembering is off. The saved draft was left unchanged.");
+          return;
+        }
+      }
+      await withDraftLock(() => {
+        if (epoch !== saveEpoch || pageLeaving) return;
+        const current = localStorage.getItem(storageKey);
+        if (current !== confirmedRaw) { pauseForChange(current); return; }
+        writeDraft(crypto.randomUUID());
+      });
     } catch (_) {
-      saveStatus.textContent = "Could not save this draft. Keep this page open and copy your text; browser storage may be full or unavailable.";
+      if (epoch === saveEpoch && !pageLeaving) pauseSaving("Could not save this draft. Saving is paused; your text is still here. Copy it or try remembering again.");
     }
   }
-  let storedReadable = false;
+  // Restore synchronously before typing can begin; never replace text on a storage event.
+  let initialRaw;
   try {
-    const stored = localStorage.getItem(storageKey);
-    storedReadable = true;
-    if (stored !== null) {
-      const saved = JSON.parse(stored);
-      if (!saved || saved.version !== 1 || typeof saved.text !== "string" || Object.keys(saved).some(key => !["version", "text"].includes(key))) throw new Error("Invalid draft");
+    initialRaw = localStorage.getItem(storageKey);
+    const saved = parseSavedDraft(initialRaw);
+    if (saved) {
       draft.value = saved.text;
-      remember.checked = true;
-      saveStatus.textContent = "Restored the draft you chose to remember in this browser.";
+      if (saved.version === 2 && canCoordinateDraft) {
+        rememberedRaw = initialRaw;
+        remember.checked = true;
+        savingStatus("Restored the draft you chose to remember in this browser.");
+      } else {
+        savingStatus("Saved draft restored. Turn remembering on to save it again.");
+      }
     }
   } catch (_) {
-    if (storedReadable && removeSavedDraft()) {
-      saveStatus.textContent = "An invalid saved draft was removed. Remembering is off.";
-    } else if (!storedReadable) {
-      saveStatus.textContent = "Browser storage is unavailable. Remembering is off; any previously saved copy could not be checked or removed.";
+    if (initialRaw !== undefined) {
+      const epoch = saveEpoch;
+      withDraftLock(() => {
+        if (epoch !== saveEpoch || pageLeaving || localStorage.getItem(storageKey) !== initialRaw) return false;
+        localStorage.removeItem(storageKey);
+        return true;
+      }).then((removed) => {
+        if (removed && epoch === saveEpoch) savingStatus("An invalid saved draft was removed. Remembering is off.");
+      }).catch(() => {
+        if (epoch === saveEpoch && canCoordinateDraft) savingStatus("Browser storage could not be cleared. Remembering is off; remove this site's stored data in browser settings.");
+      });
+    } else {
+      savingStatus("Browser storage is unavailable. Remembering is off; any previously saved copy could not be checked or removed.");
     }
   }
+  if (!canCoordinateDraft) {
+    remember.disabled = true;
+    savingStatus("Automatic saving is unavailable in this browser. Your text stays here; use Copy. Existing saved data can be removed in browser settings.");
+  }
+  window.addEventListener("storage", (event) => {
+    if ((event.key !== storageKey && event.key !== null) || !rememberedRaw || !remember.checked) return;
+    try {
+      const current = localStorage.getItem(storageKey);
+      if (current !== rememberedRaw) pauseForChange(current);
+    } catch (_) {
+      pauseSaving("Could not check the saved draft. Saving is paused; your text is still here.");
+    }
+  });
   draft.addEventListener("input", () => {
     copySequence += 1;
     updateCounts();
@@ -93,8 +227,8 @@
   });
   remember.addEventListener("change", (event) => {
     if (!event.isTrusted) return;
-    if (remember.checked) saveDraft();
-    else if (removeSavedDraft()) saveStatus.textContent = "Remembering is off. The saved copy was removed; your text remains here.";
+    if (remember.checked) enableRemembering();
+    else removeSavedDraft();
   });
   byId("copy-text").addEventListener("click", async (event) => {
     if (!event.isTrusted || !draft.value) return;
@@ -123,11 +257,12 @@
   }
   byId("cancel-clear").addEventListener("click", keepText);
   byId("clear-dialog").addEventListener("cancel", (event) => { event.preventDefault(); keepText(); });
-  byId("confirm-clear").addEventListener("click", (event) => {
+  byId("confirm-clear").addEventListener("click", async (event) => {
     if (!event.isTrusted) return;
     controller?.cancel();
     controller?.clearRecovery();
     copySequence += 1;
+    const removal = removeSavedDraft();
     clearing = true;
     draft.focus({ preventScroll: true });
     draft.select();
@@ -137,11 +272,14 @@
     }
     clearing = false;
     updateCounts();
-    const removed = removeSavedDraft();
-    if (removed) saveStatus.textContent = remember.checked ? "No saved draft." : "Remembering is off.";
-    feedback.textContent = removed ? "Text cleared. No saved copy remains in this app." : "Text cleared here. The saved copy could not be removed; see the storage message below.";
+    feedback.textContent = "Text cleared here. Removing the saved copy…";
     byId("clear-dialog").close();
     draft.focus({ preventScroll: true });
+    const sequence = copySequence;
+    const removed = await removal;
+    if (sequence === copySequence) feedback.textContent = removed
+      ? "Text cleared. The saved copy was removed."
+      : "Text cleared here. The saved copy could not be removed; see the storage message.";
   });
 
   async function transcribe(blob, operation) {
@@ -210,6 +348,9 @@
   if (!networkAllowed) feedback.textContent = "Dictation is unavailable in this preview. Typing and copying still work.";
   updateCounts();
   new ResizeObserver(resizeWorkspace).observe(document.body);
-  window.addEventListener("pagehide", () => { copySequence += 1; for (const abort of activeRequests.values()) abort.abort(); });
+  window.addEventListener("pagehide", () => { pageLeaving = true; saveEpoch += 1; cancelReplacement?.(); copySequence += 1; for (const abort of activeRequests.values()) abort.abort(); });
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) { pageLeaving = false; pauseSaving("Saving is paused after returning to this page. Turn remembering on to resume."); }
+  });
   resizeWorkspace();
 })();

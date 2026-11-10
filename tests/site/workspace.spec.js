@@ -217,10 +217,15 @@ test("malformed saved data and storage failures never claim a successful save or
   await frame.locator(".workspace-settings summary").click();
   await frame.locator("#draft").fill("Retain this text.");
   await frame.evaluate(() => {
+    window.originalSetItem = Storage.prototype.setItem;
     Storage.prototype.setItem = () => { throw new DOMException("Full", "QuotaExceededError"); };
   });
   await frame.locator("#remember-draft").check();
   await expect(frame.locator("#save-status")).toContainText("Could not save");
+  await expect(frame.locator("#remember-draft")).not.toBeChecked();
+  await frame.evaluate(() => { Storage.prototype.setItem = window.originalSetItem; });
+  await frame.locator("#remember-draft").check();
+  await expect(frame.locator("#save-status")).toHaveText("Saved in this browser.");
   await frame.evaluate(() => {
     Storage.prototype.removeItem = () => { throw new DOMException("Denied", "SecurityError"); };
   });

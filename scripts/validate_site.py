@@ -361,7 +361,7 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
         if name == "workspace.html":
             expected_sources = ["/workspace-config.js?v=web1", "/shared/dom-utils.js?v=web1",
                                 "/shared/dictation-lifecycle.js?v=web1", "/shared/config.js?v=web1",
-                                "/shared/dictation-controller.js?v=web1", "/workspace.js?v=web1"]
+                                "/shared/dictation-controller.js?v=web1", "/workspace.js?v=draft2"]
         if name == "guide.html":
             expected_sources.append("guide.js?v=continuous-1")
         external = [script for script in page.scripts if "src" in script.attributes]

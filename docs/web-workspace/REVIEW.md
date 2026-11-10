@@ -22,6 +22,25 @@ removes the current and saved draft, cancels pending work and clears recovery.
 Storage and clipboard failures are reported without claiming success. No draft
 text, surrounding field contents or vocabulary enters website requests.
 
+PR #16's draft-persistence correction coordinates one local draft across tabs.
+Every save/revocation takes an exclusive browser Web Lock and rereads the
+authoritative consent/revision before writing. Turning remembering off or
+confirming Clear removes the record and invalidates stale/queued saves without
+editing any other tab's text. Conflicts pause saving; replacing another saved
+version needs an explicit, nonblocking confirmation and another revision check.
+Save/error feedback is visible beside the editor; repeated success messages are
+not announced on every keystroke. No draft history or synchronization service is
+added. [Web Locks](https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API)
+coordinate cooperating same-origin tabs; storage events only update the UI.
+
+The previous development-only record format can restore plain text, but requires
+renewed consent before saving. Refresh any already-open **pre-fix** preview tabs
+after preserving unsaved text: already-running old JavaScript cannot join the
+new protocol. Browsers without Web Locks leave automatic saving unavailable,
+while typing/copying/dictation remain usable. A failed storage deletion is
+reported honestly; cross-tab revocation cannot be promised until deletion
+succeeds or the owner clears site storage.
+
 `shared/` is the canonical source of the controller, lifecycle, safe insertion,
 configuration/language normalization and product panel CSS. Run
 `python3 scripts/sync_shared.py` after editing it. Package and site validation
