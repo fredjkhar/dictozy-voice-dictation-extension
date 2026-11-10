@@ -10,10 +10,10 @@ files for an older installation, and work with a shallow CI checkout.
 Run from the repository root:
 
 ```bash
-npm run test:browser -- --grep 'native workspace with' --workers=1
+npm run test:browser -- --grep 'native workspace with|scrolling the parent' --workers=1
 ```
 
-November 10, 2026 local result: **3/3 passed** in bundled Chromium 149.0.7827.55.
+November 10, 2026 local result: **4/4 passed** in bundled Chromium 149.0.7827.55.
 The three modes are no extension, installed published 0.1.14, and installed
 candidate. Each uses the actual website workspace and shared controller:
 
@@ -44,3 +44,15 @@ Both installed extensions subsequently dictate in an unrelated supported HTTPS
 field, with one extension request. The candidate official-site exclusion is
 independent of the user's global and disabled-site preferences. Only the canonical
 `dictozy.com` host is excluded; lookalike domains and unverified subdomains are not.
+
+The fourth case scrolls the parent at a 390 × 600 viewport until the recording
+control is outside the visible viewport, then verifies capture stops, tracks stop,
+the draft is preserved and no upload or recovery appears.
+
+A separate November 10 local smoke used the real review website on port 4198
+and the real FastAPI upload/audio-validation path on port 4199. Native synthetic
+audio produced one 11,242-byte multipart POST, HTTP 200, one server-side stub call
+and one insertion. The transcription request was not intercepted or fulfilled
+by Playwright. Both browser and review server blocked nonlocal/provider egress;
+no paid provider call occurred. This confirms local integration, not live xAI
+recognition or production operation.

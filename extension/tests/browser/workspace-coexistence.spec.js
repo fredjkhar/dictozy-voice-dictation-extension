@@ -209,3 +209,31 @@ for (const mode of ["none", "published", "updated"]) {
     } finally { await fixture.close(); }
   });
 }
+
+test("scrolling the parent past the visible recording controls cancels native capture without uploading", async () => {
+  const fixture = await launch("none");
+  const { page, events } = fixture;
+  try {
+    await page.setViewportSize({ width: 390, height: 600 });
+    await page.goto(`${OFFICIAL}/try.html`);
+    const frame = page.frameLocator("#writing-workspace");
+    const draft = frame.locator("#draft");
+    await draft.fill("Keep my draft.");
+    await frame.locator(MIC).click();
+    await expect(frame.locator(MIC)).toHaveAttribute("data-state", "recording");
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    expect(await page.evaluate(() => {
+      const outer = document.getElementById("writing-workspace");
+      const inner = outer.contentDocument.querySelector(".voice-dictation-mic-button");
+      return outer.getBoundingClientRect().top + inner.getBoundingClientRect().bottom;
+    })).toBeLessThanOrEqual(0);
+    await expect.poll(() => frame.locator(MIC).getAttribute("data-state")).not.toBe("recording");
+    await expect.poll(() => events.filter(event => event.kind === "track-stop").length).toBeGreaterThanOrEqual(1);
+    await page.waitForTimeout(350);
+    expect(events.filter(event => event.kind === "capture")).toHaveLength(1);
+    expect(events.filter(event => event.kind === "insertion")).toHaveLength(0);
+    expect(fixture.uploads()).toBe(0);
+    await expect(draft).toHaveValue("Keep my draft.");
+    await expect(frame.locator(".voice-dictation-recovery")).toHaveCount(0);
+  } finally { await fixture.close(); }
+});
