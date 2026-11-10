@@ -20,6 +20,7 @@ async function startAndStop(page) {
 test("one note carries recording through processing, insertion, Undo and replay with keyboard focus", async ({ page }) => {
   await page.clock.install();
   await page.goto("/guide.html");
+  await expect(page.locator('script[src^="guide.js"]')).toHaveAttribute("src", "guide.js?v=continuous-1");
   await expect(page.getByRole("heading", { name: "Try Dictozy.", exact: true })).toBeVisible();
   await expect(page.getByText("Start the sample, then stop to see text appear.", { exact: true })).toBeVisible();
   await expect(page.getByText("Demo only — no microphone access or audio upload.", { exact: false }).first()).toBeVisible();
