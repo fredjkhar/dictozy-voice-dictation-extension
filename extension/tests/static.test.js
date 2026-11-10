@@ -23,10 +23,12 @@ test("manifest is prepared for Dictozy 0.1.14 with production-only backend acces
   assert.ok(manifest.description.length <= 132);
   assert.deepEqual(manifest.permissions, ["storage"]);
   assert.deepEqual(manifest.host_permissions, ["https://voice-dictation-extension.onrender.com/*"]);
+  assert.deepEqual(manifest.content_scripts[0].exclude_matches, ["*://dictozy.com/*"]);
   assert.deepEqual(manifest.content_scripts[0].js, [
     "dom-utils.js",
     "dictation-lifecycle.js",
     "site-preferences.js",
+    "dictation-controller.js",
     "content.js",
   ]);
   assert.deepEqual(manifest.commands, {
@@ -108,7 +110,7 @@ test("per-site controls remain local and add no provider or page data to transcr
 });
 
 test("page recording control uses icon states instead of text-only labels", () => {
-  const content = readExtensionFile("content.js");
+  const content = readExtensionFile("dictation-controller.js");
   const styles = readExtensionFile("content.css");
 
   assert.match(content, /MIC_BUTTON_ICONS/);
@@ -130,16 +132,26 @@ test("dictation lifecycle adds cancellable request IDs without direct provider a
   assert.match(background, /X-Request-ID/);
   assert.match(background, /AbortController/);
   assert.match(content, /VOICE_DICTATION_CANCEL_TRANSCRIPTION/);
-  assert.match(content, /createRequestId/);
+  assert.match(readExtensionFile("dictation-controller.js"), /createRequestId/);
   assert.match(lifecycle, /createRequestLifecycle/);
   assert.equal(`${background}\n${content}\n${lifecycle}`.includes(directProviderEndpoint), false);
   assert.equal(`${background}\n${content}\n${lifecycle}`.includes(providerKeyName), false);
 });
 
 test("default recording limit is 10 seconds", () => {
-  const content = readExtensionFile("content.js");
+  const content = readExtensionFile("dictation-controller.js");
   const popupJs = readExtensionFile("popup.js");
 
   assert.match(content, /DEFAULT_RECORDING_DURATION_MS\s*=\s*10000/);
   assert.match(popupJs, /DEFAULT_RECORDING_DURATION_SECONDS\s*=\s*10/);
+});
+
+// One canonical implementation is copied locally into both distributable trees.
+test("shared dictation sources are identical and independent of extension APIs", () => {
+  const { execFileSync } = require("node:child_process");
+  execFileSync("python3", ["scripts/sync_shared.py", "--check"], { cwd: rootDir });
+  const controller = readExtensionFile("dictation-controller.js");
+  assert.equal(/chrome\./.test(controller), false);
+  assert.match(readExtensionFile("content.js"), /DictozyController\.mount/);
+  assert.equal(/getUserMedia|new MediaRecorder|insertIntoFormField/.test(readExtensionFile("content.js")), false);
 });

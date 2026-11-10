@@ -375,6 +375,7 @@ async function loadContentScript(page, initialStorage = null) {
   await page.addScriptTag({ url: "/extension/dom-utils.js" });
   await page.addScriptTag({ url: "/extension/dictation-lifecycle.js" });
   await page.addScriptTag({ url: "/extension/site-preferences.js" });
+  await page.addScriptTag({ url: "/extension/dictation-controller.js" });
   await page.addScriptTag({ url: "/extension/content.js" });
 }
 
