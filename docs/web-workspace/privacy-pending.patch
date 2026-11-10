@@ -1,0 +1,97 @@
+--- a/PRIVACY.md
++++ b/PRIVACY.md
+@@ -1,6 +1,6 @@
+ # Privacy Policy
+
+-Effective date: November 1, 2026
++Effective date: {{PUBLICATION_DATE}}
+
+ Dictozy: Voice Dictation helps you dictate short text into supported web fields. Recording starts only when you click the visible microphone button or press the assigned browser shortcut. Dictozy returns the transcript for the field you selected.
+
+@@ -18,6 +18,8 @@
+
+ Sites are enabled by default. Dictozy stores an exact origin only when the user explicitly disables that origin. It does not retain a record for each site visited, and it does not use site preferences as browsing history. Dictozy does not activate on password or payment fields. Recording starts only after an explicit user action. In version 0.1.13, hiding the tab cancels the active recording.
+
++The website writing workspace handles audio only after you select its microphone, the returned transcript, and the plain text you type or paste into its editor. Website duration and language settings apply to the current page visit and are independent of extension settings. The workspace does not import extension preferences or vocabulary and does not offer website vocabulary sharing.
++
+ ## How Data Is Used
+
+ Recorded audio is sent to the fixed Dictozy production backend solely to generate a transcript. The selected language-formatting code is sent with that user-triggered audio request. For an explicit language, the backend passes the code to xAI Speech-to-Text to guide written formatting such as numbers, currencies, and units. In Automatic mode, the backend omits the provider language and formatting parameters. The backend returns the transcript to the extension for insertion into the selected field.
+@@ -26,9 +28,11 @@
+
+ Saving vocabulary does not enable sharing. If the user separately enables personal vocabulary, saved terms are sent with subsequent dictation requests to the Dictozy backend and then to xAI as transcription hints. Terms may include names, organizations or other personal information the user chooses to enter. Dictozy does not extract terms from page contents or transcripts. Hints do not guarantee a particular spelling or improved recognition.
+
+-Site preferences, origins, URLs, and hostnames are not sent to Dictozy's backend, xAI, or an analytics service.
++Extension site-preference values, browsing history and surrounding page contents are not included in transcription requests. Browsers supply the requesting origin for cross-origin access checks; application code does not forward that origin to xAI. No analytics service is used.
+
+ Data is not used for advertising, profiling, credit decisions, or sale to third parties.
++
++Website dictation sends the recorded clip and selected language-formatting code to the same Dictozy backend and xAI service described here. The editor contents and any remembered draft are not included in that request. Transcripts are inserted as plain text only when the original field and selection are still safe. The separate interactive Guide is a simulation: it does not access the microphone or upload audio.
+
+ ## Data Sharing
+
+@@ -51,6 +55,8 @@
+
+ To limit abuse, the backend temporarily counts requests by connection address and tracks overall audio usage in memory. Application request logs record a request identifier, method, route category, status and response time. They do not include audio, transcripts, vocabulary terms, field contents or client IP addresses. Hosting-provider logs are governed separately.
+
++The website does not automatically save a draft. If you enable “Remember this draft on this device,” one current plain-text draft is stored in this browser’s local storage and restored on a later visit. This is not cloud backup or synchronization. Turning remembering off removes that saved copy while leaving the open editor text available; confirmed Clear cancels pending dictation and removes the current text and saved copy. There is no application-managed draft history. Storage may be unavailable, full or cleared by the browser; failures are reported. Removal is not a guarantee of forensic erasure by the browser or operating system. Ordinary browser Undo can retain editing state while the page is open. Website duration and language choices are not stored between visits. The website shares the temporary one-result, up-to-60-second recovery behavior described above; cancelled dictation is not recoverable. Copy text and recovery Copy write only after an explicit action; the website does not read the clipboard. Clipboard contents remain subject to system clipboard settings.
++
+ ## Security
+
+ Production audio requests use HTTPS. The xAI API key is stored only in backend environment variables and is never included in extension code. Browser permissions are limited to storage, supported webpage access required for dictation, and the fixed Dictozy production backend host.
+@@ -61,6 +67,8 @@
+
+ Users can add, edit or clear personal vocabulary in the popup and independently enable or disable its transmission. Saving, editing or enabling vocabulary does not start recording or request microphone access.
+
++In the website workspace, select the microphone to start, Stop to submit the clip, Discard to stop without submission, or Cancel while processing. Hiding or leaving the page cancels pending dictation; moving the recording controls out of view also stops capture. Website recording does not use the extension’s reserved browser shortcut. Copy text requires an explicit action, and Clear asks for confirmation for nonempty text. Website dictation requires supported browser recording features and an internet connection; ordinary typing remains available if recording is unavailable.
++
+ ## Limited Use
+
+ The use of information received from Google APIs adheres to the Chrome Web Store User Data Policy, including the Limited Use requirements.
+--- a/site/privacy.html
++++ b/site/privacy.html
+@@ -75,7 +75,7 @@
+             This policy explains what Dictozy handles to provide voice dictation, where that data goes,
+             what stays in Chrome, and the controls available to you.
+           </p>
+-          <p class="page-meta">Effective date: November 1, 2026</p>
++          <p class="page-meta">Effective date: {{PUBLICATION_DATE}}</p>
+         </div>
+       </header>
+
+@@ -120,6 +120,7 @@
+               It does not retain a record for each site visited, and it does not use site preferences as browsing history.
+               Dictozy does not activate on password or payment fields. Recording starts only after an explicit user action. In version 0.1.13, hiding the tab cancels the active recording.
+             </p>
++            <p>The website writing workspace handles audio only after you select its microphone, the returned transcript, and the plain text you type or paste into its editor. Website duration and language settings apply to the current page visit and are independent of extension settings. The workspace does not import extension preferences or vocabulary and does not offer website vocabulary sharing.</p>
+           </section>
+
+           <section class="policy-section" id="how-data-is-used" aria-labelledby="how-data-is-used-title">
+@@ -143,9 +144,10 @@
+               or transcripts. Hints do not guarantee a particular spelling or improved recognition.
+             </p>
+             <p>
+-              Site preferences, origins, URLs, and hostnames are not sent to Dictozy's backend, xAI, or an analytics service.
++              Extension site-preference values, browsing history and surrounding page contents are not included in transcription requests. Browsers supply the requesting origin for cross-origin access checks; application code does not forward that origin to xAI. No analytics service is used.
+             </p>
+             <p>Data is not used for advertising, profiling, credit decisions, or sale to third parties.</p>
++            <p>Website dictation sends the recorded clip and selected language-formatting code to the same Dictozy backend and xAI service described here. The editor contents and any remembered draft are not included in that request. Transcripts are inserted as plain text only when the original field and selection are still safe. The separate interactive Guide is a simulation: it does not access the microphone or upload audio.</p>
+           </section>
+
+           <section class="policy-section" id="data-sharing" aria-labelledby="data-sharing-title">
+@@ -202,6 +204,7 @@
+               time. They do not include audio, transcripts, vocabulary terms, field contents or client IP addresses.
+               Hosting-provider logs are governed separately.
+             </p>
++            <p>The website does not automatically save a draft. If you enable “Remember this draft on this device,” one current plain-text draft is stored in this browser’s local storage and restored on a later visit. This is not cloud backup or synchronization. Turning remembering off removes that saved copy while leaving the open editor text available; confirmed Clear cancels pending dictation and removes the current text and saved copy. There is no application-managed draft history. Storage may be unavailable, full or cleared by the browser; failures are reported. Removal is not a guarantee of forensic erasure by the browser or operating system. Ordinary browser Undo can retain editing state while the page is open. Website duration and language choices are not stored between visits. The website shares the temporary one-result, up-to-60-second recovery behavior described above; cancelled dictation is not recoverable. Copy text and recovery Copy write only after an explicit action; the website does not read the clipboard. Clipboard contents remain subject to system clipboard settings.</p>
+           </section>
+
+           <section class="policy-section" id="security" aria-labelledby="security-title">
+@@ -224,6 +227,7 @@
+               Users can add, edit or clear personal vocabulary in the popup and independently enable or disable its transmission.
+               Saving, editing or enabling vocabulary does not start recording or request microphone access.
+             </p>
++            <p>In the website workspace, select the microphone to start, Stop to submit the clip, Discard to stop without submission, or Cancel while processing. Hiding or leaving the page cancels pending dictation; moving the recording controls out of view also stops capture. Website recording does not use the extension’s reserved browser shortcut. Copy text requires an explicit action, and Clear asks for confirmation for nonempty text. Website dictation requires supported browser recording features and an internet connection; ordinary typing remains available if recording is unavailable.</p>
+           </section>
+
+           <section class="policy-section" id="limited-use" aria-labelledby="limited-use-title">

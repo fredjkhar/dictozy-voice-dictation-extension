@@ -36,6 +36,8 @@ The initial modernized site deployment used [`b858960`](https://github.com/fredj
 
 See the [0.1.14 release record](store/release-0.1.14.md), [0.1.13 published release record](store/release-0.1.13.md), and [website review](docs/WEBSITE_REVIEW.md) for dated evidence. Check the Store listing for the latest public version rather than treating this snapshot as a live status indicator.
 
+**Local development, not released:** this branch adds a built-in website writing workspace and shares the recording controller with the extension. See the [workspace review](docs/web-workspace/REVIEW.md) for the provider-free preview, compatibility evidence, pending privacy patch and separate release gates. The published 0.1.14 package is unchanged; the refactored extension needs a separately approved new version before packaging.
+
 ## What Dictozy does
 
 - **Record on purpose.** Click the microphone beside a supported field or use your assigned Chrome shortcut. Stop to transcribe or Discard to cancel. Recording defaults to 10 seconds, configurable from 1 to 30 seconds.
@@ -90,6 +92,8 @@ python3 -m http.server 8080 --bind 127.0.0.1 --directory site
 
 Open `http://127.0.0.1:8080/` and `http://127.0.0.1:8080/guide.html`. The guide's recording and vocabulary interactions are **simulations**; no microphone access or audio upload occurs.
 
+For the real recording workspace with a **server-side mocked provider**, use the two loopback server commands in the [workspace review](docs/web-workspace/REVIEW.md#local-preview). Open `http://127.0.0.1:4198/try.html`. The ordinary static server above does not redirect transcription to a local backend and leaves workspace dictation disabled.
+
 **Run the backend locally** for backend development (this alone does not change the extension's endpoint):
 
 ```bash
@@ -114,6 +118,7 @@ npm run test:browser                      # MV3/Chromium workflows, stubbed prov
 npm run test:site                         # website and interactive guide
 python3 scripts/validate_site.py         # site links, policy and SEO invariants
 python3 scripts/validate_store_assets.py # Store image checks
+python3 scripts/sync_shared.py --check   # shared source / artifact byte identity
 python3 scripts/package_extension.py --check-only
 ```
 
@@ -130,13 +135,14 @@ The browser suites use isolated fixtures and synthetic audio; they are **not** a
 python3 scripts/package_extension.py
 ```
 
-The generated `dist/` output is ignored by Git. The published package and version provenance must remain distinct from later documentation/website commits.
+The generated `dist/` output is ignored by Git. The published package and version provenance must remain distinct from later documentation/website commits. On this development branch, ZIP creation under the unchanged 0.1.14 version is blocked intentionally; `--check-only` still validates inputs.
 
 ## Project map
 
 | Path | Purpose |
 | --- | --- |
 | [`extension/`](extension/) | MV3 content script, service worker, popup, practice, state management and icons |
+| [`shared/`](shared/) | Canonical recording/controller, safe insertion, configuration and panel CSS; copied reproducibly into extension/site artifacts |
 | [`backend/`](backend/) | FastAPI route, audio validation/normalization, xAI service and tests |
 | [`site/`](site/) | Static website, support/privacy pages and the interactive guide; manual Pages deployment |
 | [`store/`](store/) | Release notes, package/capture provenance, Store icons and screenshots |
