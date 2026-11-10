@@ -97,15 +97,44 @@ test("simultaneous draft updates serialize; conflict pauses without replacing ei
   expect(updated.consent).toBe(original.consent);
   expect(updated.revision).not.toBe(original.revision);
   expect(await b.frame.evaluate(() => window.__draftWrites)).toEqual([]);
-  b.page.once("dialog", dialog => dialog.dismiss());
   await b.remember.click();
+  await b.frame.locator("#keep-saved-draft").click();
   await expect(b.remember).not.toBeChecked();
   expect((await saved(a)).text).toBe("Newer version from A.");
   await expect(b.draft).toHaveValue("Unsaved version from B.");
-  b.page.once("dialog", dialog => dialog.accept());
   await b.remember.click();
+  await b.frame.locator("#replace-saved-draft").click();
   await expect.poll(async () => (await saved(a))?.text).toBe("Unsaved version from B.");
   await expect(a.draft).toHaveValue("Newer version from A.");
+});
+
+test("replacement confirmation is nonblocking and rechecks the saved revision after waiting for the lock", async ({ context, baseURL }) => {
+  const a = await openWorkspace(context, baseURL);
+  await remember(a);
+  const b = await openWorkspace(context, baseURL, { suppressStorageEvents: true });
+  await a.draft.fill("A's first newer revision.");
+  await expect.poll(async () => (await saved(a))?.text).toBe("A's first newer revision.");
+  await b.draft.fill("B's unsaved replacement.");
+  await expect(b.remember).not.toBeChecked();
+  await b.remember.click();
+  await expect(b.frame.locator("#replace-draft-dialog")).toBeVisible();
+  // This callback must execute while the confirmation is open. A blocking
+  // window.confirm would suspend recording/recovery cleanup timers too.
+  expect(await b.frame.evaluate(() => new Promise(resolve => setTimeout(() => {
+    resolve(document.getElementById("replace-draft-dialog").open);
+  }, 25)))).toBe(true);
+
+  await holdLock(a);
+  await a.draft.fill("A's latest revision while B confirms.");
+  await b.frame.locator("#replace-saved-draft").click();
+  await expect(b.frame.locator("#replace-draft-dialog")).not.toBeVisible();
+  await releaseLock(a);
+  await expect.poll(async () => (await saved(a))?.text).toBe("A's latest revision while B confirms.");
+  await expect(b.remember).not.toBeChecked();
+  await expect(b.status).toContainText(/paused|another tab|newer/i);
+  await expect(a.draft).toHaveValue("A's latest revision while B confirms.");
+  await expect(b.draft).toHaveValue("B's unsaved replacement.");
+  expect(await b.frame.evaluate(() => window.__draftWrites)).toEqual([]);
 });
 
 test("revocation followed by identical-text opt-in does not revive the older consent", async ({ context, baseURL }) => {
@@ -175,8 +204,8 @@ test("cross-tab storage read/write/delete failures preserve unsaved editors and 
     Storage.prototype.getItem = window.__originalGet;
     Storage.prototype.setItem = () => { throw new DOMException("Full", "QuotaExceededError"); };
   });
-  b.page.once("dialog", dialog => dialog.accept());
   await b.remember.click();
+  await b.frame.locator("#replace-saved-draft").click();
   await expect(b.status).toContainText(/could not|unavailable/i);
   expect((await saved(a)).text).toBe("Original local draft.");
   await expect(b.draft).toHaveValue("Keep my unsaved B writing.");
