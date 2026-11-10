@@ -1,0 +1,26 @@
+{
+  "source": "actual task worktree site",
+  "page": "http://127.0.0.1:4198/try.html",
+  "backend": "http://127.0.0.1:4199/api/transcribe",
+  "browser": "149.0.7827.55",
+  "nativeSyntheticAudio": true,
+  "realFastApiRoute": true,
+  "captures": 1,
+  "insertions": 1,
+  "stops": 2,
+  "posts": [
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:4199/api/transcribe",
+      "bytes": 11242
+    }
+  ],
+  "responses": [
+    200
+  ],
+  "stubProviderCalls": 1,
+  "blockedExternalRequests": 0,
+  "paidProviderCalls": 0,
+  "observed_at": "2026-11-10T15:19:06-05:00",
+  "measurement_notes": "Native Chromium synthetic microphone; actual local FastAPI multipart/audio validation; server-side provider stub; not recognition or live-provider evidence. No extension was installed in this local transport smoke."
+}
