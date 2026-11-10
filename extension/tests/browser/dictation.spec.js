@@ -2729,3 +2729,52 @@ test("recording Tab navigation honors editor handlers and ignores synthetic keys
   await page.keyboard.press("Space");
   await expect(field).toHaveValue("Default transcript");
 });
+
+
+test("shared environment guard blocks capture, stops late permission and cancels hidden-context recording", async ({ page }) => {
+  await page.goto("/qa/manual-test-page.html");
+  await page.addStyleTag({ url: "/extension/content.css" });
+  for (const name of ["dom-utils", "dictation-lifecycle", "dictation-controller"]) {
+    await page.addScriptTag({ url: `/extension/${name}.js` });
+  }
+  await page.evaluate(() => {
+    window.__contextSafe = false;
+    window.__contextSubmissions = 0;
+    window.__contextController = DictozyController.mount({
+      getState: async () => ({ enabled: true }),
+      getRecordingDurationMs: async () => 10000,
+      isContextSafe: () => window.__contextSafe,
+      transcribe: async () => { window.__contextSubmissions += 1; return { ok: true, transcript: "Unexpected" }; },
+    });
+  });
+  const field = await focusFirstTextField(page);
+  await page.locator(MIC_BUTTON).click();
+  expect(await page.evaluate(() => window.__dictozyTest.microphoneRequests)).toBe(0);
+
+  await page.evaluate(async () => {
+    window.__contextSafe = true;
+    window.__dictozyTest.deferMicrophone = true;
+    await window.__contextController.refresh();
+  });
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "requesting");
+  await page.evaluate(() => {
+    window.__contextSafe = false;
+    window.__dictozyTest.resolveMicrophone();
+  });
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.trackStops)).toBe(1);
+  expect(await page.evaluate(() => window.__dictozyTest.recordingStarts)).toBe(0);
+
+  await page.evaluate(async () => {
+    window.__contextSafe = true;
+    window.__dictozyTest.deferMicrophone = false;
+    await window.__contextController.refresh();
+  });
+  await page.locator(MIC_BUTTON).click();
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "recording");
+  await page.evaluate(() => { window.__contextSafe = false; });
+  await expect.poll(() => page.evaluate(() => window.__dictozyTest.trackStops)).toBe(2);
+  await expect(page.locator(MIC_BUTTON)).toHaveAttribute("data-state", "idle");
+  expect(await page.evaluate(() => window.__contextSubmissions)).toBe(0);
+  await expect(field).toHaveValue("");
+});

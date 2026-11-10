@@ -481,8 +481,13 @@
     return getUsableField(getCurrentEditableField());
   }
 
+  function isEnvironmentSafe() {
+    try { return !adapter.isContextSafe || adapter.isContextSafe() === true; }
+    catch (_error) { return false; }
+  }
+
   function isRecordingContextSafe() {
-    return !document.hidden && document.hasFocus?.() !== false && getUsableField(recordingTargetField) &&
+    return isEnvironmentSafe() && !document.hidden && document.hasFocus?.() !== false && getUsableField(recordingTargetField) &&
       getFocusedSupportedField() === recordingTargetField;
   }
 
@@ -1156,7 +1161,7 @@
   }
 
   async function startRecording() {
-    if (!isDictationEnabled() || document.hidden) {
+    if (!isDictationEnabled() || document.hidden || !isEnvironmentSafe()) {
       hideMicButton();
       return;
     }
