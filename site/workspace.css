@@ -1,0 +1,58 @@
+/* Website-owned layout; recording controls keep their shared product styling. */
+.workspace-page { width: min(100% - 2rem, 960px); margin-inline: auto; padding-block: clamp(2rem, 4vw, 3.5rem); }
+.workspace-intro h1 { font-size: clamp(2.5rem, 5vw, 4rem); font-weight: 670; line-height: 1.05; letter-spacing: -.055em; margin-block: .6rem .75rem; }
+.workspace-intro > p:last-child { color: var(--text-secondary); font-size: 1.125rem; }
+#writing-workspace, .workspace-nojs { display: block; border: 0; width: 100%; height: 680px; margin-block: 1.5rem 1rem; }
+#writing-workspace[hidden] { display: none; }
+.workspace-install, .workspace-help { color: var(--text-secondary); font-size: .95rem; margin-block: .65rem; }
+.workspace-install a, .workspace-help a { text-underline-offset: .2em; }
+.workspace-frame { background: var(--page); overflow-x: clip; }
+.workspace-frame #workspace-guard { margin: 1.5rem; }
+.workspace-frame main { padding: 4px; }
+.workspace-frame [hidden] { display: none !important; }
+.workspace-review { padding: .7rem 1rem; margin-bottom: 1rem; border: 1px solid #a5c3f2; border-radius: 10px; background: #eff6ff; color: #1e40af; font-size: .9rem; }
+.writing-card { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 18px; overflow: hidden; box-shadow: 0 8px 24px #0b122008; }
+.writing-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid #e2e8f0; }
+.writing-heading label { font-size: 1rem; font-weight: 650; }
+#word-count { color: var(--text-secondary); font-size: .85rem; white-space: nowrap; }
+#draft { display: block; box-sizing: border-box; width: 100%; min-height: 300px; padding: 1.25rem; border: 0; border-radius: 0; resize: vertical; color: var(--text-primary); background: var(--surface); font: 1.125rem/1.7 var(--font-sans); }
+#draft::placeholder { color: #64748b; }
+#draft:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: -3px; }
+.workspace-toolbar { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .75rem; padding: 1rem 1.25rem; border-top: 1px solid #e2e8f0; background: #f8fafc; }
+#workspaceControls { display: flex; flex: 1 1 250px; flex-wrap: wrap; align-items: center; gap: .6rem; min-width: 0; }
+.workspace-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.workspace-frame :is(button,select) { min-height: 44px; border: 1px solid #94a3b8; border-radius: 9px; padding: .55rem .85rem; background: white; color: var(--text-primary); font: 600 .9rem/1.3 var(--font-sans); cursor: pointer; }
+.workspace-frame :is(button,select):hover { border-color: var(--brand-primary); background: #eff6ff; }
+.workspace-frame button:disabled { opacity: .55; cursor: default; }
+.workspace-frame :is(button,select,input,summary):focus-visible { outline: 3px solid var(--brand-primary); outline-offset: 3px; }
+.workspace-frame .voice-dictation-mic-button { position: static; flex: 0 0 48px; width: 48px; height: 48px; min-width: 48px; border-radius: 50%; padding: 0; background: #2563eb; color: #fff; border-color: #1d4ed8; }
+.workspace-frame .voice-dictation-mic-button[data-state="recording"] { background: #b91c1c; border-color: #991b1b; }
+.workspace-frame .voice-dictation-mic-button[data-state="error"] { background: #b45309; border-color: #92400e; }
+.workspace-frame .voice-dictation-mic-button[data-state="success"] { background: #15803d; border-color: #166534; }
+.workspace-frame .voice-dictation-status { position: static; max-width: 100%; width: auto; transform: none; flex: 1 1 240px; white-space: normal; }
+.workspace-frame .voice-dictation-recovery { position: static; inset: auto; transform: none; width: auto; max-width: none; margin: 0 1.25rem 1rem; }
+#workspace-feedback { color: #334155; padding: 0 1.25rem; margin: 0 0 1rem; font-size: .95rem; }
+#workspace-feedback:empty { display: none; }
+.workspace-note, .workspace-settings p { color: var(--text-secondary); font-size: .9rem; line-height: 1.55; }
+.workspace-note { margin: 1rem .2rem; }
+.workspace-settings { border-top: 1px solid var(--border-subtle); padding-top: .25rem; }
+.workspace-settings > summary { min-height: 44px; padding: .65rem .2rem; font-weight: 650; cursor: pointer; }
+.workspace-settings > p { margin: .6rem .2rem; }
+.workspace-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem .2rem; }
+.workspace-settings-grid label { display: grid; gap: .4rem; font-size: .9rem; font-weight: 600; }
+.workspace-settings-grid select { width: 100%; min-width: 0; }
+.workspace-remember { display: flex; align-items: center; gap: .65rem; min-height: 44px; font-weight: 600; font-size: .95rem; }
+.workspace-remember input { width: 20px; height: 20px; accent-color: var(--brand-primary); flex: 0 0 20px; }
+.workspace-frame dialog { max-width: min(430px, calc(100% - 2rem)); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 1.5rem; color: var(--text-primary); box-shadow: 0 14px 44px #0b122033; }
+.workspace-frame dialog::backdrop { background: #0b122055; }
+.workspace-frame dialog h2 { font-size: 1.5rem; }
+.workspace-frame dialog p { margin-block: .75rem 1.2rem; }
+.workspace-frame .workspace-danger { background: #b91c1c; color: white; border-color: #991b1b; }
+@media (max-width: 520px) {
+  #draft { min-height: 260px; padding: 1rem; }
+  .writing-heading, .workspace-toolbar { padding: .85rem; }
+  #workspaceControls { flex-basis: 100%; }
+  .workspace-settings-grid { grid-template-columns: 1fr; }
+  .workspace-frame .voice-dictation-recovery { margin-inline: .85rem; }
+}
+@media (prefers-reduced-motion: reduce) { .workspace-frame *, .workspace-frame *::before { animation: none !important; transition: none !important; } }

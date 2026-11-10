@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src https://voice-dictation-extension.onrender.com; media-src 'none'; img-src 'self' data:; form-action 'none'; object-src 'none'; base-uri 'self'">
+  <title>Your text | Dictozy</title>
+  <link rel="stylesheet" href="/styles.css?v=nav1">
+  <link rel="stylesheet" href="/shared/content.css?v=web1">
+  <link rel="stylesheet" href="/workspace.css?v=web1">
+  <script src="/workspace-config.js?v=web1" defer></script>
+  <script src="/shared/dom-utils.js?v=web1" defer></script>
+  <script src="/shared/dictation-lifecycle.js?v=web1" defer></script>
+  <script src="/shared/config.js?v=web1" defer></script>
+  <script src="/shared/dictation-controller.js?v=web1" defer></script>
+  <script src="/workspace.js?v=web1" defer></script>
+</head>
+<body class="workspace-frame">
+  <p id="workspace-guard">Open the <a href="/try.html" target="_top">Dictozy writing workspace</a> to type or dictate. This embedded document does not record independently.</p>
+  <main id="workspace" hidden>
+    <p id="local-review" class="workspace-review" hidden>Local review: transcription responses are mocked; no provider requests.</p>
+    <div class="writing-card">
+      <div class="writing-heading"><label for="draft">Your text</label><span id="word-count" aria-live="off">0 words</span></div>
+      <textarea id="draft" disabled spellcheck="true" autocomplete="off" aria-describedby="recording-explanation" placeholder="Start with your voice, or type a thought…"></textarea>
+      <div class="workspace-toolbar"><div id="workspaceControls"></div><div class="workspace-actions"><button id="copy-text" type="button" disabled>Copy text</button><button id="clear-text" type="button" disabled>Clear</button></div></div>
+      <div id="workspaceRecovery"></div>
+      <p id="workspace-feedback" role="status" aria-atomic="true"></p>
+    </div>
+    <p id="recording-explanation" class="workspace-note">Select the microphone to record. Audio goes through Dictozy’s backend to xAI. Stop submits the clip; Discard does not. Use your normal Undo shortcut after insertion.</p>
+    <details class="workspace-settings"><summary>Settings &amp; local draft</summary>
+      <p>Website settings are independent of the extension. Duration and language apply to this visit.</p>
+      <div class="workspace-settings-grid"><label for="duration">Recording limit <select id="duration"><option value="1000">1 second</option><option value="5000">5 seconds</option><option value="10000" selected>10 seconds</option><option value="15000">15 seconds</option><option value="20000">20 seconds</option><option value="30000">30 seconds</option></select></label><label for="language">Language formatting <select id="language"><option value="en">English</option></select></label></div>
+      <label class="workspace-remember"><input type="checkbox" id="remember-draft" aria-describedby="remember-help"> Remember this draft on this device</label>
+      <p id="remember-help">Off by default. When enabled, one draft is kept in this browser’s local storage, not cloud backup. Turning it off removes the saved copy and keeps your text here. Browser storage can be cleared or unavailable.</p>
+      <p id="save-status" role="status" aria-atomic="true"></p>
+    </details>
+    <dialog id="clear-dialog" aria-labelledby="clear-title" aria-describedby="clear-description"><h2 id="clear-title">Clear your text?</h2><p id="clear-description">This clears this draft and its saved copy, and cancels any pending dictation. There is no saved draft history.</p><div class="workspace-actions"><button id="cancel-clear" type="button" autofocus>Keep text</button><button id="confirm-clear" type="button" class="workspace-danger">Clear text</button></div></dialog>
+  </main>
+</body>
+</html>

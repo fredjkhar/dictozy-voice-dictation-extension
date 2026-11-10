@@ -12,12 +12,14 @@ import sys
 from urllib.parse import unquote, urlsplit
 import xml.etree.ElementTree as ET
 
+from sync_shared import stale_copies
+
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE_DIR = ROOT / "site"
 PRIVACY_SOURCE = ROOT / "PRIVACY.md"
-INDEXABLE_PAGES = ("index.html", "guide.html", "privacy.html", "support.html")
-PUBLIC_PAGES = (*INDEXABLE_PAGES, "404.html")
+INDEXABLE_PAGES = ("index.html", "guide.html", "try.html", "privacy.html", "support.html")
+PUBLIC_PAGES = (*INDEXABLE_PAGES, "404.html", "workspace.html")
 VERIFICATION_FILE = "google477277a037f62b85.html"
 VERIFICATION_CONTENT = b"google-site-verification: google477277a037f62b85.html"
 STORE_URL = "https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma"
@@ -155,6 +157,8 @@ class PageParser(HTMLParser):
                 self._add_srcset(attributes["srcset"])
         elif tag == "source" and attributes.get("srcset"):
             self._add_srcset(attributes["srcset"])
+        elif tag == "iframe" and attributes.get("src"):
+            self.page.resources.append(("frame", attributes["src"]))
         elif tag == "link":
             rel_values = set(attributes.get("rel", "").casefold().split())
             href = attributes.get("href")
@@ -352,10 +356,16 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
                 errors.append(f"{name}: possible tracking pixel detected")
 
         expected_sources = ["/navigation.js"]
+        if name == "try.html":
+            expected_sources.append("try.js?v=web1")
+        if name == "workspace.html":
+            expected_sources = ["/workspace-config.js?v=web1", "/shared/dom-utils.js?v=web1",
+                                "/shared/dictation-lifecycle.js?v=web1", "/shared/config.js?v=web1",
+                                "/shared/dictation-controller.js?v=web1", "/workspace.js?v=web1"]
         if name == "guide.html":
             expected_sources.append("guide.js?v=continuous-1")
         external = [script for script in page.scripts if "src" in script.attributes]
-        if sorted(script.attributes["src"] for script in external) != sorted(expected_sources):
+        if [script.attributes["src"] for script in external] != expected_sources:
             errors.append(f"{name}: expected only these local script dependencies: {expected_sources}")
         for script in external:
             source = script.attributes["src"]
@@ -365,7 +375,7 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
                 errors.append(f"{name}: missing script: {source}")
         for script in page.scripts:
             if "src" not in script.attributes and (
-                name == "guide.html" or script.attributes.get("type", "").casefold() != "application/ld+json"
+                name in {"guide.html", "try.html", "workspace.html"} or script.attributes.get("type", "").casefold() != "application/ld+json"
             ):
                 errors.append(f"{name}: unexpected inline script")
 
@@ -411,6 +421,26 @@ def validate_product_previews(pages: dict[str, ParsedPage], errors: list[str]) -
             errors.append(f"guide.html: missing walkthrough destination #{anchor}")
     if "demo only — no microphone access or audio upload." not in normalize(guide.text):
         errors.append("guide.html: missing static simulation boundary")
+
+    workspace = pages["workspace.html"]
+    if "noindex" not in normalize(workspace.meta("name", "robots") or ""):
+        errors.append("workspace.html: internal writing surface must remain noindex")
+    if workspace.canonical_urls:
+        errors.append("workspace.html: only try.html is the public workspace destination")
+    for name, connection in (("guide.html", "'none'"), ("try.html", "'none'"),
+                             ("workspace.html", "https://voice-dictation-extension.onrender.com")):
+        policy = pages[name].meta("http-equiv", "content-security-policy") or ""
+        directives = {parts[0]: parts[1:] for directive in policy.split(";") if (parts := directive.split())}
+        if directives.get("connect-src") != [connection]:
+            errors.append(f"{name}: unexpected network policy")
+        if name != "guide.html" and directives.get("script-src") != ["'self'"]:
+            errors.append(f"{name}: executable scripts must remain first-party only")
+    config = (SITE_DIR / "workspace-config.js").read_text(encoding="utf-8")
+    if config != ('"use strict";\n// Production configuration is fixed. Only the loopback review server replaces this response.\n'
+                  'globalThis.DictozyWebConfig = Object.freeze({\n'
+                  '  endpoint: "https://voice-dictation-extension.onrender.com/api/transcribe",\n'
+                  '  localReview: false,\n});\n'):
+        errors.append("workspace-config.js: production transport configuration must remain fixed; no review override")
 
 
 def validate_policy_and_support(pages: dict[str, ParsedPage], errors: list[str]) -> None:
@@ -498,6 +528,8 @@ def validate_sitemap_and_404(pages: dict[str, ParsedPage], errors: list[str]) ->
 
 
 def validate_artifact(errors: list[str]) -> None:
+    for path in stale_copies():
+        errors.append(f"stale shared source copy: {path}; run scripts/sync_shared.py")
     for name in PUBLIC_PAGES:
         if not (SITE_DIR / name).is_file():
             errors.append(f"missing required public page: site/{name}")
