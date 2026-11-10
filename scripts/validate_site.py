@@ -353,7 +353,7 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
 
         expected_sources = ["/navigation.js"]
         if name == "guide.html":
-            expected_sources.append("guide.js")
+            expected_sources.append("guide.js?v=continuous-1")
         external = [script for script in page.scripts if "src" in script.attributes]
         if sorted(script.attributes["src"] for script in external) != sorted(expected_sources):
             errors.append(f"{name}: expected only these local script dependencies: {expected_sources}")
@@ -361,7 +361,7 @@ def validate_scripts_and_privacy(pages: dict[str, ParsedPage], errors: list[str]
             source = script.attributes["src"]
             if "defer" not in script.attributes or "async" in script.attributes:
                 errors.append(f"{name}: external script must be deferred: {source}")
-            if source in expected_sources and not (SITE_DIR / source.lstrip("/")).is_file():
+            if source in expected_sources and not (SITE_DIR / urlsplit(source).path.lstrip("/")).is_file():
                 errors.append(f"{name}: missing script: {source}")
         for script in page.scripts:
             if "src" not in script.attributes and (
@@ -409,7 +409,7 @@ def validate_product_previews(pages: dict[str, ParsedPage], errors: list[str]) -
     for anchor in ("install", "record", "insert", "recover", "vocabulary", "troubleshoot"):
         if anchor not in guide.ids:
             errors.append(f"guide.html: missing walkthrough destination #{anchor}")
-    if "interactive demo — no microphone access or audio is sent." not in normalize(guide.text):
+    if "demo only — no microphone access or audio upload." not in normalize(guide.text):
         errors.append("guide.html: missing static simulation boundary")
 
 

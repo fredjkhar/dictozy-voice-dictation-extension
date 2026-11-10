@@ -82,7 +82,7 @@ npx playwright install chromium
 
 > **Important:** The unpacked extension in `main` still targets the fixed **production** Dictozy backend. Running FastAPI locally does not redirect it. An ordinary recording can reach xAI and consume paid credits. For provider-free verification, use the repository's mocked/synthetic Chromium workflows below; do not use a real microphone for routine testing.
 
-**Preview the website and six-step guide** without installing the extension or making transcription requests:
+**Preview the website and interactive guide** without installing the extension or making transcription requests:
 
 ```bash
 python3 -m http.server 8080 --bind 127.0.0.1 --directory site
@@ -138,7 +138,7 @@ The generated `dist/` output is ignored by Git. The published package and versio
 | --- | --- |
 | [`extension/`](extension/) | MV3 content script, service worker, popup, practice, state management and icons |
 | [`backend/`](backend/) | FastAPI route, audio validation/normalization, xAI service and tests |
-| [`site/`](site/) | Static website, support/privacy pages and the six-step guide; manual Pages deployment |
+| [`site/`](site/) | Static website, support/privacy pages and the interactive guide; manual Pages deployment |
 | [`store/`](store/) | Release notes, package/capture provenance, Store icons and screenshots |
 | [`docs/`](docs/) | Architecture diagrams, compatibility evidence and implementation reports |
 | [`qa/`](qa/) | Browser fixtures, test procedures, smoke checks and support triage |
