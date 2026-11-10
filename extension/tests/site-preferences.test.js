@@ -27,6 +27,16 @@ test("site preferences accept only canonical HTTP and HTTPS origins", () => {
   assert.equal(normalizeOrigin("not an origin"), null);
 });
 
+test("official-site exclusion is exact and independent of disabled-site preferences", () => {
+  const { isOfficialSite } = loadSitePreferences();
+  for (const url of ["https://dictozy.com/try.html", "https://DICTOZY.com/workspace.html?x=1", "http://dictozy.com/"]) {
+    assert.equal(isOfficialSite(url), true, url);
+  }
+  for (const url of [undefined, "https://www.dictozy.com/", "https://dictozy.com.evil.example/", "https://evil.example/dictozy.com", "chrome-extension://dictozy.com/", "https://example.com/"]) {
+    assert.equal(isOfficialSite(url), false, String(url));
+  }
+});
+
 test("site preferences are default-enabled and isolated by origin", () => {
   const { isOriginDisabled, setOriginEnabled } = loadSitePreferences();
   const disabled = setOriginEnabled([], "https://example.com", false).origins;

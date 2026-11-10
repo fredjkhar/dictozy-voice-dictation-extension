@@ -55,6 +55,11 @@
     return MICROPHONE_FAILURES.unknown;
   }
 
+  function normalizeRecordingDurationMs(value) {
+    const duration = Number(value);
+    return Number.isFinite(duration) ? Math.min(30000, Math.max(1000, Math.round(duration))) : 10000;
+  }
+
   function normalizeRequestId(value) {
     if (typeof value !== "string") {
       return "";
@@ -247,5 +252,6 @@
     getMicrophoneAccessFailure,
     getRequestReference,
     normalizeRequestId,
+    normalizeRecordingDurationMs,
   });
 })();

@@ -1,0 +1,31 @@
+{
+  "purpose": "Immutable published-extension runtime snapshot for installed-browser coexistence tests; not a release package or a rebuild of the Store ZIP.",
+  "source_commit": "27f2171fcc7a3d0e48c7062aa2781864abf9ab47",
+  "published_package_sha256": "0176e85eff0cd1668d102fd3f0b49f858b0beee76d7d8b56afd303ad02042899",
+  "archive": "published-0.1.14.tar.gz",
+  "archive_sha256": "a630e65b3c06b1a9c68e7fd558b0891aa8cd780a2ae26a53ee811418b3642fb7",
+  "capture_method": "git archive of exactly the 21 PACKAGE_FILES from the immutable source commit, gzip mtime=0",
+  "files_sha256": {
+    "manifest.json": "1b49eed3f880c23b0c16b39db5c1ca144cbd385fc2acd30496c3a6f737a4d9db",
+    "config.js": "a917fe282ab7ff173597305e2039bcaeffbc7cbde2350b17b2dfcc46c4f7d634",
+    "vocabulary.js": "4974cc50adb0bbd03310e2ab63d6e5385a9f5ed6d36509fffdb4dc8b3c7a903d",
+    "background-utils.js": "c80387827945f8b3bdbb619b71b315009d8baba06ec7f77ec7f359dabb9bc52f",
+    "dom-utils.js": "9b2832df659a0c243dfc62f01408fb25c3995eb0c4f16fc5c49863cb0324e634",
+    "dictation-lifecycle.js": "eb24ffbdcec26cf1de74f276664df25de7b7d4ff7c414b2db896a16c0af88be0",
+    "site-preferences.js": "cb9320282d05a7f37a85a1f9aadc42a9bed3ba380c5375ce5ec92d72726c3d39",
+    "content.js": "5e709edacc749aba31e15b2fd9d13e41d0e3299a9c5d074589f86d4b77bf7a0a",
+    "content.css": "24036e9e3b3f850d9610d85f2a4f7f3b6761d3e9330b200c63ad3f3b6c49783b",
+    "background.js": "87b9f2abbd632a5a82fab1dfd4119b99b58738fdd4464a9117e56f8ad3ed5afa",
+    "popup.html": "e2c8737ac3d4bb07ddd0cc7694e196c6d436107c1adb85574e3f68786e275135",
+    "popup.css": "843c19d0ec1baa7545bef76a609197005cfd978817a704c23744ff246096f5f1",
+    "popup.js": "4e22cfce129ae142795cc6bb6a45ca738dc54f7cddf732e448e9c5e2768eebac",
+    "popup-vocabulary.js": "dd746a63a94325699e126ba3d12d67d09ed4cb90fd18f0072964bfedf0a9d19b",
+    "practice.html": "a077a7f6013bbaacfb39d4d7c4351fca0f31406cda31c1515bb15c3cbc749cee",
+    "practice.js": "b3b301ff5a066ce0fb9472fab9affd3438c94e79971b0105bbe26451bbe23e78",
+    "practice.css": "9d26ed1e55fcaa29b8b46ba2fe37fcc1fb3c9c03568d0d3003bdceeb52007f0b",
+    "icons/icon-16.png": "61c6da81fd7f7da54aaf7ae4aff6e4cf18c8473f4d1d6fe3fb211171a1ae43e5",
+    "icons/icon-32.png": "9e7b38cda02efe11a103e8b01b69f6a27df481b00aba894756a4cb217b08369d",
+    "icons/icon-48.png": "e70044ab210a84a590bcb0664532f62057b9f01b2aa12ebd37db9927040723eb",
+    "icons/icon-128.png": "dacbea173712f1d173b13db4ec944eb0ddfd1fdaba86984108e6063263582bc6"
+  }
+}

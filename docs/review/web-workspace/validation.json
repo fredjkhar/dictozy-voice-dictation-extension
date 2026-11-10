@@ -1,0 +1,444 @@
+{
+  "browser": "149.0.7827.55",
+  "method": "Real Chromium APIs with fake microphone device; browser-routed fixed transcript, loopback-only requests. No provider or physical microphone.",
+  "source_commit": "3a5bfbf90bd4ae76944381c51c819b8fed95f9cb",
+  "captures_sha256": {
+    "empty-1440.webp": "d987e5c1806a8cd78f0efb59dad394f0f0d112a4194f8d89c8b44975b2d7dfc6",
+    "empty-768.webp": "c833598c9f55d12c4821f2c1d358ea25f7475c1703562fe8360c1135ce2981fe",
+    "empty-390.webp": "41b8ca1c8d6eb25bcc03e6fe5db54b084b1f5743b8bc23fc2d3dda2e7f181ca9",
+    "empty-320.webp": "fe7f80109958a1acd54e2dfe93d4d8a42af18d6d7902a793bf68ba0a55b4b37f",
+    "populated-1440.webp": "56869c4d98ae232fd73307b69bc2d76986e1bf37a521f33904d773122d9cf131",
+    "copy-feedback-1440.webp": "d51df3e22bfd3838d689427f8fe0e44e7d5ae088449b0512de9282d5618d69fd",
+    "clear-confirmation-1440.webp": "c4791f4d79683be3d0e5f0fb0c2940b658fd2f03ef513d577bf4ef958599644d",
+    "settings-1440.webp": "1855f92b13a14cd4884ce46e4fd4d022fccb0c4d916ba583988f3bd88bfd51c8",
+    "recording-390.webp": "d46f07b8d2cfdc7493626e722186aa62e5330ed335473b8e4caa857f0ca396f9",
+    "processing-390.webp": "6fcc50e08db116ee150bdac27330e31c2df6dcf1fa73e5e1e1fbcd7bfd04db13",
+    "recovery-390.webp": "90826a39b3fc2667410a68acb3c28ab6e8fa5ade7370c5502170f87e66004d06",
+    "settings-390.webp": "55895136003f624532e732e8844a8e76ad257167c9780469db71cea4e5e25c84",
+    "enlarged-text-320.webp": "6bbc2219931523485633f42ea89e38f0bc02e9bdfad73e6e35df59c334c03f5a",
+    "no-javascript-390.webp": "a48e2727ec84574ad259efcae6b78537f3a6e4508af647c30024d3f00a69bd12"
+  },
+  "working_tree_files_sha256": {
+    "site/try.html": "76d7a022e8b48bf8dcdee5b4bf492b1243ab8be64adfc9bcb5c06a4421b09311",
+    "site/try.js": "314dbb25b5a38abe5ec05dfb0383c1c1827217d3e4f070f157b603b5c543b8d9",
+    "site/workspace.html": "f3b247212264185ef5755be993def86478267e4fa091ea53563e311e1ac9a9ed",
+    "site/workspace.js": "e83aab793413a72608cfc6a7440bb5116db6646f72dd7c743990a7c6a8fdcfd1",
+    "site/workspace.css": "9acf73fb58c84b1657678470b2c5db13c881feab840d9c51fc0e9cfeae70cf2f",
+    "site/shared/dictation-controller.js": "760f933d1541e1c2c5aac29f6ee742be576e159fe0758d7db4709619489ea9db"
+  },
+  "blocked_external": [],
+  "page_errors": [],
+  "reports": [
+    {
+      "state": "empty-1440",
+      "target": "page",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".header-install"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "state": "empty-1440",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "empty-1440",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 1440,
+          "scrollWidth": 1440,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 960,
+          "scrollWidth": 960,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "empty-768",
+      "target": "page",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".header-install"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "state": "empty-768",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "empty-768",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 768,
+          "scrollWidth": 768,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 736,
+          "scrollWidth": 736,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "empty-390",
+      "target": "page",
+      "violations": []
+    },
+    {
+      "state": "empty-390",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "empty-390",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 390,
+          "scrollWidth": 390,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 358,
+          "scrollWidth": 358,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "empty-320",
+      "target": "page",
+      "violations": []
+    },
+    {
+      "state": "empty-320",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "empty-320",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 320,
+          "scrollWidth": 320,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 288,
+          "scrollWidth": 288,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "populated-1440",
+      "target": "page",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".header-install"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "state": "populated-1440",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "populated-1440",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 1440,
+          "scrollWidth": 1440,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 960,
+          "scrollWidth": 960,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "copy-feedback-1440",
+      "target": "page",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".header-install"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "state": "copy-feedback-1440",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "copy-feedback-1440",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 1440,
+          "scrollWidth": 1440,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 960,
+          "scrollWidth": 960,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "clear-confirmation-1440",
+      "target": "page",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".header-install"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "state": "clear-confirmation-1440",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "clear-confirmation-1440",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 1440,
+          "scrollWidth": 1440,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 960,
+          "scrollWidth": 960,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "settings-1440",
+      "target": "page",
+      "violations": [
+        {
+          "id": "label-content-name-mismatch",
+          "impact": "serious",
+          "nodes": [
+            [
+              ".header-install"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "state": "settings-1440",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "settings-1440",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 1440,
+          "scrollWidth": 1440,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 960,
+          "scrollWidth": 960,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "recording-390",
+      "target": "page",
+      "violations": []
+    },
+    {
+      "state": "recording-390",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "recording-390",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 390,
+          "scrollWidth": 390,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 358,
+          "scrollWidth": 358,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "processing-390",
+      "target": "page",
+      "violations": []
+    },
+    {
+      "state": "processing-390",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "processing-390",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 390,
+          "scrollWidth": 390,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 358,
+          "scrollWidth": 358,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "recovery-390",
+      "target": "page",
+      "violations": []
+    },
+    {
+      "state": "recovery-390",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "recovery-390",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 390,
+          "scrollWidth": 390,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 358,
+          "scrollWidth": 358,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "settings-390",
+      "target": "page",
+      "violations": []
+    },
+    {
+      "state": "settings-390",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "settings-390",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 390,
+          "scrollWidth": 390,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 358,
+          "scrollWidth": 358,
+          "overflow": false
+        }
+      ]
+    },
+    {
+      "state": "enlarged-text-320",
+      "target": "page",
+      "violations": []
+    },
+    {
+      "state": "enlarged-text-320",
+      "target": "workspace",
+      "violations": []
+    },
+    {
+      "state": "enlarged-text-320",
+      "layouts": [
+        {
+          "label": "page",
+          "width": 320,
+          "scrollWidth": 320,
+          "overflow": false
+        },
+        {
+          "label": "workspace",
+          "width": 256,
+          "scrollWidth": 256,
+          "overflow": false
+        }
+      ]
+    }
+  ]
+}

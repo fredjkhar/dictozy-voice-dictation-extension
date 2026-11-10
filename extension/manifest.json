@@ -40,7 +40,8 @@
         "http://localhost/*",
         "https://*/*"
       ],
-      "js": ["dom-utils.js", "dictation-lifecycle.js", "site-preferences.js", "content.js"],
+      "exclude_matches": ["*://dictozy.com/*"],
+      "js": ["dom-utils.js", "dictation-lifecycle.js", "site-preferences.js", "dictation-controller.js", "content.js"],
       "css": ["content.css"]
     }
   ]

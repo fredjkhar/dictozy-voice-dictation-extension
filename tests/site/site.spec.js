@@ -3,7 +3,7 @@ const { createHash } = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const PUBLIC_PAGES = ["/index.html", "/guide.html", "/privacy.html", "/support.html", "/404.html"];
+const PUBLIC_PAGES = ["/index.html", "/guide.html", "/try.html", "/privacy.html", "/support.html", "/404.html"];
 const STORE_URL = "https://chromewebstore.google.com/detail/folpeencabfejhjokmldikaelonphmma";
 const PRODUCTION_ROOT = "https://dictozy.com/";
 const LEGACY_ROOT = "https://fredjkhar.github.io/dictozy-voice-dictation-extension/";
@@ -423,7 +423,7 @@ test.describe("mobile navigation without JavaScript", () => {
   test.use({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
 
   test("all pages expose the right menu destinations, current page and footer links", async ({ page }) => {
-    const internal = { Overview: "/", "Interactive guide": "/guide.html", Support: "/support.html", Privacy: "/privacy.html" };
+    const internal = { Overview: "/", "Try it": "/try.html", "Interactive guide": "/guide.html", Support: "/support.html", Privacy: "/privacy.html" };
     for (const path of PUBLIC_PAGES) {
       await page.goto(path);
       const summary = page.locator("header summary");

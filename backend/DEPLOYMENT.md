@@ -26,13 +26,17 @@ The template already contains the published Dictozy extension origin. Keep the r
 
 ## Chrome Web Store Extension ID
 
-The published extension ID is fixed. Production startup requires this exact origin:
+The published extension ID is fixed. Production startup requires this exact origin; the existing extension-only configuration remains valid:
 
 ```text
 BACKEND_CORS_ORIGINS=chrome-extension://folpeencabfejhjokmldikaelonphmma
 ```
 
-Do not add a trailing slash or additional origins. When `APP_ENV=production`, the backend fails startup unless this is the only CORS origin. Redeploy after changing the environment variable and verify both `/health` and a real extension transcription. See [../store/release-checklist.md](../store/release-checklist.md) for the complete sequence.
+Do not add a trailing slash. The website-workspace source additionally permits the exact canonical origin `https://dictozy.com`, only when explicitly appended to this list during a separately approved rollout. Other origins (including `www`, wildcard, `null`, arbitrary HTTPS sites and localhost), duplicate entries, and omission of the extension origin fail production startup. Nothing in this source change enables website access in the live environment.
+
+Both clients use the same `/api/transcribe` handler and shared process-local concurrency, rate and audio-duration guards. CORS allows the browser's POST preflight with `Content-Type` and `X-Request-ID`; it does not authenticate callers or enforce financial exposure. No frontend secret or client flag is introduced. See [../store/release-checklist.md](../store/release-checklist.md) for the existing release procedure.
+
+Before a public website launch, independently reverify one worker/replica, the accepted proxy configuration, the cutoff, and current provider spending protection (finite prepaid balance, automatic top-up disabled, and no unbounded invoiced allowance). Do not reuse a historical balance as evidence. A public unauthenticated endpoint remains vulnerable to distributed resource abuse; the shared 3,600-second rolling process allowance resets on restart and multiplies across instances. Production activation is blocked until this financial exposure is explicitly reviewed and bounded. This work adds no durable cap, infrastructure, billing change or production setting.
 
 ## Docker Build
 

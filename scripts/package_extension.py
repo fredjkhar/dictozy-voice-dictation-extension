@@ -11,6 +11,8 @@ import struct
 import sys
 import zipfile
 
+from sync_shared import stale_copies
+
 
 ROOT = Path(__file__).resolve().parents[1]
 EXTENSION_DIR = ROOT / "extension"
@@ -24,7 +26,7 @@ EXPECTED_CONTENT_MATCHES = {
     "http://localhost/*",
     "https://*/*",
 }
-EXPECTED_CONTENT_SCRIPTS = ["dom-utils.js", "dictation-lifecycle.js", "site-preferences.js", "content.js"]
+EXPECTED_CONTENT_SCRIPTS = ["dom-utils.js", "dictation-lifecycle.js", "site-preferences.js", "dictation-controller.js", "content.js"]
 EXPECTED_COMMANDS = {
     "toggle-dictation": {
         "suggested_key": {
@@ -42,6 +44,7 @@ PACKAGE_FILES = (
     "dom-utils.js",
     "dictation-lifecycle.js",
     "site-preferences.js",
+    "dictation-controller.js",
     "content.js",
     "content.css",
     "background.js",
@@ -125,6 +128,8 @@ def validate_manifest(manifest: dict[str, object]) -> None:
         matches = content_scripts[0].get("matches", [])
         if set(matches) != EXPECTED_CONTENT_MATCHES:
             errors.append("content script matches do not match the audited page scope")
+        if content_scripts[0].get("exclude_matches") != ["*://dictozy.com/*"]:
+            errors.append("content scripts must exclude exactly the official Dictozy hostname")
         if content_scripts[0].get("js") != EXPECTED_CONTENT_SCRIPTS:
             errors.append(f"content scripts must be exactly {EXPECTED_CONTENT_SCRIPTS}")
 
@@ -145,6 +150,9 @@ def validate_manifest(manifest: dict[str, object]) -> None:
 
 
 def validate_files() -> None:
+    stale = stale_copies()
+    if stale:
+        raise ValueError("Stale shared source copies: " + ", ".join(stale))
     missing = [name for name in PACKAGE_FILES if not (EXTENSION_DIR / name).is_file()]
     if missing:
         raise ValueError("Missing extension files:\n- " + "\n- ".join(missing))
@@ -186,6 +194,9 @@ def build_zip(manifest: dict[str, object], output_dir: Path) -> Path:
     version = manifest.get("version")
     if not isinstance(version, str) or not version:
         raise ValueError("manifest version is missing")
+
+    if version == "0.1.14":
+        raise ValueError("Shared-code candidate requires a separately approved new extension version; do not replace published 0.1.14")
 
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / f"dictozy-v{version}.zip"

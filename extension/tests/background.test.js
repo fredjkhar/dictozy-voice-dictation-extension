@@ -41,6 +41,7 @@ function createBackground({
     Promise,
     Response,
     Uint8Array,
+    URL,
     atob,
     chrome: {
       commands: {
@@ -200,6 +201,20 @@ test("background safely ignores missing, restricted, and unrelated command targe
   await unrelatedCommand.dispatchCommand("unrelated-command");
   assert.equal(unrelatedCommand.tabQueries.length, 0);
   assert.equal(unrelatedCommand.tabMessageCalls.length, 0);
+});
+
+test("official-site commands and page messages stand aside without changing preferences", async () => {
+  const storageValues = { extensionEnabled: true, disabledSiteOrigins: ["https://unrelated.example"] };
+  const background = createBackground({ tabs: [{ id: 7, url: "https://dictozy.com/try.html" }], storageValues });
+  await background.dispatchCommand(TOGGLE_COMMAND);
+  assert.equal(background.tabMessageCalls.length, 0);
+  const response = await background.dispatch({ type: TRANSCRIBE_MESSAGE, requestId: "workspace-request-123", audioDataUrl: AUDIO_DATA_URL }, {
+    id: EXTENSION_ID, url: "https://dictozy.com/workspace.html", tab: { id: 7, url: "https://dictozy.com/try.html" },
+  });
+  assert.equal(response.ok, false);
+  assert.match(response.message, /built-in recorder/);
+  assert.equal(background.fetchCalls.length, 0);
+  assert.deepEqual(storageValues, { extensionEnabled: true, disabledSiteOrigins: ["https://unrelated.example"] });
 });
 
 test("background pins the endpoint and sends and returns the request ID header", async () => {

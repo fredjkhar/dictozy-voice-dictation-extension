@@ -248,3 +248,14 @@ test("activity feedback reflects recent samples without changing whole-recording
   await monitor.stop();
   assert.equal(monitor.getActivity(), null);
 });
+
+test("shared recording duration normalization preserves one-to-thirty-second limits", () => {
+  const { normalizeRecordingDurationMs } = loadLifecycle();
+  assert.equal(normalizeRecordingDurationMs(undefined), 10000);
+  assert.equal(normalizeRecordingDurationMs("not a duration"), 10000);
+  assert.equal(normalizeRecordingDurationMs(Infinity), 10000);
+  assert.equal(normalizeRecordingDurationMs(-1), 1000);
+  assert.equal(normalizeRecordingDurationMs(60000), 30000);
+  assert.equal(normalizeRecordingDurationMs("14000"), 14000);
+  assert.equal(normalizeRecordingDurationMs(1234.7), 1235);
+});
