@@ -157,6 +157,7 @@ test("Clear cancellation preserves selection; confirmed Clear deletes draft and 
   expect(await draft.evaluate(el => [el.selectionStart, el.selectionEnd, el.selectionDirection])).toEqual([5, 9, "backward"]);
   await frame.locator(".workspace-settings summary").click();
   await frame.locator("#remember-draft").check();
+  await expect(frame.locator("#save-status")).toHaveText("Saved in this browser.");
   state.defer();
   await recordAndStop(frame);
   await expect.poll(() => state.requests.length).toBe(1);
@@ -164,7 +165,9 @@ test("Clear cancellation preserves selection; confirmed Clear deletes draft and 
   await frame.locator("#confirm-clear").click();
   state.release();
   await expect(draft).toHaveValue("");
-  expect(await frame.evaluate(key => localStorage.getItem(key), storageKey)).toBeNull();
+  await expect.poll(() => frame.evaluate(key => localStorage.getItem(key), storageKey), { timeout: 5000 }).toBeNull();
+  await expect(frame.locator("#save-status")).toHaveText("Remembering is off. The saved copy was removed; open tabs keep their text.");
+  await expect(frame.locator("#workspace-feedback")).toHaveText("Text cleared. The saved copy was removed.");
   await page.waitForTimeout(150);
   await expect(draft).toHaveValue("");
   await expect(frame.locator(".voice-dictation-recovery")).toHaveCount(0);
@@ -204,8 +207,26 @@ test("remembering requires consent, restores one plain-text draft, and disabling
   await expect(frame.locator("#remember-draft")).toBeChecked();
   await expect(frame.locator("#workspace b")).toHaveCount(0);
   await frame.locator(".workspace-settings summary").click();
-  await frame.locator("#remember-draft").uncheck();
-  expect(await frame.evaluate(key => localStorage.getItem(key), storageKey)).toBeNull();
+  const saved = await frame.evaluate(key => localStorage.getItem(key), storageKey);
+  expect(saved).not.toBeNull();
+  // Unchecking revokes local saving immediately; persistence deletion awaits this lock.
+  await frame.evaluate(key => new Promise(acquired => {
+    navigator.locks.request(key, () => new Promise(release => {
+      window.releaseDraftDeletionLock = release;
+      acquired();
+    }));
+  }), storageKey);
+  try {
+    await frame.locator("#remember-draft").uncheck();
+    await expect(frame.locator("#remember-draft")).not.toBeChecked();
+    await expect(frame.locator("#save-status")).toHaveText("Turning remembering off…");
+    expect(await frame.evaluate(key => localStorage.getItem(key), storageKey)).toBe(saved);
+    await expect(frame.locator("#draft")).toHaveValue("<b>Plain text only</b>\nOne draft.");
+  } finally {
+    await frame.evaluate(() => window.releaseDraftDeletionLock());
+  }
+  await expect.poll(() => frame.evaluate(key => localStorage.getItem(key), storageKey), { timeout: 5000 }).toBeNull();
+  await expect(frame.locator("#save-status")).toHaveText("Remembering is off. The saved copy was removed; open tabs keep their text.");
   await expect(frame.locator("#draft")).toHaveValue("<b>Plain text only</b>\nOne draft.");
 });
 
@@ -213,14 +234,16 @@ test("malformed saved data and storage failures never claim a successful save or
   const { frame } = await workspace(page, baseURL, { stored: '{"version":1,"text":42}' });
   await expect(frame.locator("#draft")).toHaveValue("");
   await expect(frame.locator("#remember-draft")).not.toBeChecked();
-  expect(await frame.evaluate(key => localStorage.getItem(key), storageKey)).toBeNull();
+  await expect.poll(() => frame.evaluate(key => localStorage.getItem(key), storageKey), { timeout: 5000 }).toBeNull();
+  await expect(frame.locator("#save-status")).toHaveText("An invalid saved draft was removed. Remembering is off.");
   await frame.locator(".workspace-settings summary").click();
   await frame.locator("#draft").fill("Retain this text.");
   await frame.evaluate(() => {
     window.originalSetItem = Storage.prototype.setItem;
     Storage.prototype.setItem = () => { throw new DOMException("Full", "QuotaExceededError"); };
   });
-  await frame.locator("#remember-draft").check();
+  // The failed save intentionally unchecks it; check() races that final state.
+  await frame.locator("#remember-draft").click();
   await expect(frame.locator("#save-status")).toContainText("Could not save");
   await expect(frame.locator("#remember-draft")).not.toBeChecked();
   await frame.evaluate(() => { Storage.prototype.setItem = window.originalSetItem; });
